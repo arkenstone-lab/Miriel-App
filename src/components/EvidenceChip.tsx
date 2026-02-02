@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useColorScheme } from 'nativewind'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useEntry } from '@/features/entry/hooks'
@@ -11,6 +12,8 @@ interface EvidenceChipProps {
 export function EvidenceChip({ entryId }: EvidenceChipProps) {
   const router = useRouter()
   const { data: entry } = useEntry(entryId)
+  const { colorScheme } = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const { t } = useTranslation('summary')
 
   const preview = entry
@@ -25,14 +28,14 @@ export function EvidenceChip({ entryId }: EvidenceChipProps) {
       onPress={() => router.push(`/entries/${entryId}`)}
       activeOpacity={0.7}
     >
-      <FontAwesome name="link" size={10} color="#6366f1" />
+      <FontAwesome name="link" size={10} color={isDark ? '#a5b4fc' : '#6366f1'} />
       <Text className="text-xs text-indigo-600 dark:text-indigo-400 ml-1.5 flex-shrink" numberOfLines={1}>
         {preview}
       </Text>
       <FontAwesome
         name="chevron-right"
         size={8}
-        color="#a5b4fc"
+        color={isDark ? '#6366f1' : '#a5b4fc'}
         style={{ marginLeft: 4 }}
       />
     </TouchableOpacity>

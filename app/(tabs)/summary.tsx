@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { View, Text, FlatList } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useSummaries, useGenerateSummary } from '@/features/summary/hooks'
+import { useSummaries, useGenerateSummary, useGenerateWeeklySummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { SummaryDetailView } from '@/components/SummaryDetailView'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
@@ -12,31 +13,48 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import type { Summary } from '@/features/summary/types'
 
-function SummaryCard({
+function formatWeekRange(periodStart: string): string {
+  const start = new Date(periodStart + 'T00:00:00')
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`
+  return `${fmt(start)} ~ ${fmt(end)}`
+}
+
+function SummaryListCard({
   summary,
+  period,
   onPress,
   isSelected,
 }: {
   summary: Summary
+  period: 'daily' | 'weekly'
   onPress: () => void
   isSelected: boolean
 }) {
   const { t } = useTranslation('summary')
   const { t: tCommon } = useTranslation('common')
   const sentenceCount = summary.sentences_data?.length || summary.text.split('\n').filter(Boolean).length
+  const countLabel = period === 'daily'
+    ? t('daily.summaryCount', { count: sentenceCount })
+    : t('weekly.pointCount', { count: sentenceCount })
+  const dateLabel = period === 'daily'
+    ? summary.period_start
+    : formatWeekRange(summary.period_start)
+
   return (
     <Card
       onPress={onPress}
       className={`mb-3 ${isSelected ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : ''}`}
     >
       <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-        {summary.period_start}
+        {dateLabel}
       </Text>
       <Text className="text-base text-gray-900 dark:text-gray-100 leading-6" numberOfLines={3}>
         {summary.text}
       </Text>
       <View className="flex-row gap-2 mt-2.5">
-        <Badge label={t('daily.summaryCount', { count: sentenceCount })} variant="gray" />
+        <Badge label={countLabel} variant="gray" />
         {summary.entry_links.length > 0 && (
           <Badge label={tCommon('label.evidenceCount', { count: summary.entry_links.length })} variant="indigo" />
         )}
@@ -46,14 +64,27 @@ function SummaryCard({
 }
 
 export default function SummaryScreen() {
-  const { data: summaries, isLoading, error } = useSummaries('daily')
-  const generateMutation = useGenerateSummary()
+  const [period, setPeriod] = useState<'daily' | 'weekly'>('daily')
+  const { data: summaries, isLoading, error } = useSummaries(period)
+  const dailyMutation = useGenerateSummary()
+  const weeklyMutation = useGenerateWeeklySummary()
+  const generateMutation = period === 'daily' ? dailyMutation : weeklyMutation
   const { isDesktop } = useResponsiveLayout()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { t } = useTranslation('summary')
   const { t: tCommon } = useTranslation('common')
 
   const selectedSummary = summaries?.find((s) => s.id === selectedId)
+
+  const periodOptions: { label: string; value: 'daily' | 'weekly' }[] = [
+    { label: t('tab.daily'), value: 'daily' },
+    { label: t('tab.weekly'), value: 'weekly' },
+  ]
+
+  const handlePeriodChange = (v: 'daily' | 'weekly') => {
+    setPeriod(v)
+    setSelectedId(null)
+  }
 
   if (isLoading) return <LoadingState />
 
@@ -73,6 +104,17 @@ export default function SummaryScreen() {
     setSelectedId(summary.id)
   }
 
+  const generateLabel = period === 'daily'
+    ? (generateMutation.isPending ? t('daily.generating') : t('daily.generateButton'))
+    : (generateMutation.isPending ? t('weekly.generating') : t('weekly.generateButton'))
+
+  const emptyEmoji = period === 'daily' ? '📊' : '📅'
+  const emptyTitle = period === 'daily' ? t('daily.emptyTitle') : t('weekly.emptyTitle')
+  const emptyDesc = period === 'daily' ? t('daily.emptyDescription') : t('weekly.emptyDescription')
+  const detailPlaceholder = period === 'daily'
+    ? tCommon('placeholder.selectSummary')
+    : tCommon('placeholder.selectWeekly')
+
   const master = (
     <View className="flex-1 bg-gray-50 dark:bg-gray-950">
       <FlatList
@@ -80,29 +122,34 @@ export default function SummaryScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View className="px-4">
-            <SummaryCard
+            <SummaryListCard
               summary={item}
+              period={period}
               onPress={() => handleSelect(item)}
               isSelected={isDesktop && selectedId === item.id}
             />
           </View>
         )}
         ListHeaderComponent={
-          <View className="px-4 pt-4 pb-1">
+          <View className="px-4 pt-4 pb-1" style={{ gap: 12 }}>
+            <SegmentedControl
+              options={periodOptions}
+              value={period}
+              onChange={handlePeriodChange}
+            />
             <Button
-              title={generateMutation.isPending ? t('daily.generating') : t('daily.generateButton')}
+              title={generateLabel}
               onPress={handleGenerate}
               loading={generateMutation.isPending}
               size="lg"
             />
-            <View className="h-4" />
           </View>
         }
         ListEmptyComponent={
           <EmptyState
-            emoji="📊"
-            title={t('daily.emptyTitle')}
-            description={t('daily.emptyDescription')}
+            emoji={emptyEmoji}
+            title={emptyTitle}
+            description={emptyDesc}
           />
         }
       />
@@ -114,7 +161,7 @@ export default function SummaryScreen() {
       <MasterDetailLayout
         master={master}
         detail={selectedSummary ? <SummaryDetailView summary={selectedSummary} /> : null}
-        detailPlaceholder={tCommon('placeholder.selectSummary')}
+        detailPlaceholder={detailPlaceholder}
       />
     )
   }

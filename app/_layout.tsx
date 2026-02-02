@@ -16,7 +16,7 @@ SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   const { initialized, user, initialize } = useAuthStore()
-  const { theme, initialized: settingsReady, initialize: initSettings } = useSettingsStore()
+  const { theme, hasSeenOnboarding, initialized: settingsReady, initialize: initSettings } = useSettingsStore()
   const { colorScheme, setColorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
   const segments = useSegments()
@@ -35,24 +35,28 @@ export default function RootLayout() {
   }, [theme, settingsReady])
 
   useEffect(() => {
-    if (!initialized) return
+    if (!initialized || !settingsReady) return
 
     SplashScreen.hideAsync()
 
     const inAuthGroup = segments[0] === '(auth)'
+    const inOnboarding = segments[0] === '(onboarding)'
 
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login')
-    } else if (user && inAuthGroup) {
+    } else if (user && !hasSeenOnboarding && !inOnboarding) {
+      router.replace('/(onboarding)')
+    } else if (user && hasSeenOnboarding && (inAuthGroup || inOnboarding)) {
       router.replace('/(tabs)')
     }
-  }, [initialized, user, segments])
+  }, [initialized, settingsReady, user, hasSeenOnboarding, segments])
 
-  if (!initialized) {
+  if (!initialized || !settingsReady) {
     return null
   }
 
   const inAuthGroup = segments[0] === '(auth)'
+  const inOnboardingGroup = segments[0] === '(onboarding)'
 
   const stack = (
     <Stack screenOptions={{
@@ -62,6 +66,7 @@ export default function RootLayout() {
       contentStyle: { backgroundColor: isDark ? '#030712' : '#f9fafb' },
     }}>
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="entries/new"
@@ -92,7 +97,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {user && !inAuthGroup ? <AppShell>{stack}</AppShell> : stack}
+      {user && !inAuthGroup && !inOnboardingGroup ? <AppShell>{stack}</AppShell> : stack}
     </QueryClientProvider>
   )
 }

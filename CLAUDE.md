@@ -206,9 +206,18 @@ interface UserStats {
 - [x] AI 출력 스키마 정형화 (ProcessedEntry 타입 + 정규화 함수)
 - [x] settings + privacy 번역 네임스페이스 추가 (ko/en)
 
-### Phase R4: 폴리시 + 제출 준비
-- [ ] 온보딩 (2~3 화면)
-- [ ] 데모 데이터 시딩
+### Phase R4: 폴리시 + 제출 준비 (진행중)
+- [x] 온보딩 (3스텝 가이드: 빠른 기록 → AI 정리 → 리텐션 습관)
+- [x] 데모 데이터 시딩 (22 Entry + 12 Summary + 15 Todo, 설정 화면에서 실행)
+- [x] 다크모드 보완 (MasterDetail 디테일 패인, 대시보드 모바일, 채팅 배경, FontAwesome 아이콘 8개 파일)
+- [x] UX 개선: 로그인/회원가입 Enter-to-submit, 채팅 Enter 전송 + Shift+Enter 줄바꿈
+- [x] 닉네임 기능 (설정 화면에서 입력, 대시보드 인사말에 반영)
+- [x] 설정 UI 개선: 데모 데이터 섹션 제거, 닉네임 팝업 모달(EditModal) 전환
+- [x] 모바일 탭바 높이/패딩 수정 (글자 잘림 해결) + 헤더 높이 축소
+- [x] 탭 네비게이션 리팩토링: 일간요약+주간회고 → 통합 "요약" 탭 (Daily/Weekly 토글)
+- [x] 프로필 탭 신설 (유저 정보, 게이미피케이션, 설정, 개인정보, 로그아웃)
+- [x] Write Today FAB (모바일 하단 플로팅 버튼)
+- [x] 공유 컴포넌트 추출 (SegmentedControl, EditModal → src/components/ui/)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -333,6 +342,15 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-03 | 설정 화면을 6번째 탭이 아닌 모달로 구현 | 탭 5개가 이미 충분, 설정은 자주 쓰지 않으므로 사이드바 톱니바퀴 아이콘 진입 | 6번째 탭 추가 |
 | 2026-02-03 | 다크 모드 전체 적용 (후순위 아닌 즉시) | 투자 심사 데모에서 완성도 인상 강화, NativeWind `dark:` 패턴으로 비용 낮음 | 다크 모드 나중에 |
 | 2026-02-03 | 개인정보 고지 + AI 출력 스키마 동시 도입 | 데이터 안전성 시각화 + AI 출력 정형화로 신뢰성 향상 | 고지만 / 스키마만 |
+| 2026-02-03 | 온보딩을 `(onboarding)` route group으로 구현 | Expo Router 파일 기반 라우팅 패턴 유지, settingsStore에서 게이트 제어 | 모달 / 조건부 렌더링 |
+| 2026-02-03 | 데모 데이터 시딩을 설정 화면 버튼으로 제공 | 시연자가 직접 제어 가능, 멱등 실행(clear-first), React Query 캐시 무효화 | CLI 스크립트 / 자동 시딩 |
+| 2026-02-03 | 닉네임을 settingsStore(AsyncStorage)에 저장 | Supabase user_metadata 수정 없이 클라이언트만으로 구현, 데모용 간결함 유지 | Supabase Auth user_metadata |
+| 2026-02-03 | 데모 데이터 섹션을 설정 UI에서 제거 (코드는 유지) | 데모데이 전까지 불필요한 UI 노출 방지, 필요 시 코드 복원 용이 | 설정에 계속 노출 |
+| 2026-02-03 | 설정 입력을 팝업 모달(EditModal)로 전환 | 인라인 TextInput보다 아기자기하고 즐거운 UX, 모달 패턴 재사용 가능 | 인라인 입력 유지 |
+| 2026-02-03 | 일간요약+주간회고 → 통합 "요약" 탭 (SegmentedControl 토글) | 탭 수 최적화, 전환 UX 개선, 한 화면에서 일간/주간 모두 접근 | 별도 탭 유지 |
+| 2026-02-03 | 프로필 탭 신설 (5번째 탭, 설정 통합) | 유저 정보+게이미피케이션+설정을 한 곳에, 모바일 headerRight 설정 버튼 제거로 헤더 깔끔 | 설정 모달 유지 |
+| 2026-02-03 | Write Today FAB (모바일 전용) | 기록 진입 접근성 향상, 모바일 UX 업계 표준 패턴 | 탭바 + 버튼만 |
+| 2026-02-03 | SegmentedControl/EditModal을 공유 컴포넌트로 추출 | settings.tsx와 profile.tsx에서 중복 사용, DRY 원칙 | settings.tsx 인라인 유지 |
 | | | | |
 
 ---
@@ -354,6 +372,20 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 - Dark Mode: NativeWind dark: 클래스는 React Navigation style 객체(headerStyle, tabBarStyle)에 적용 안 됨
   → useColorScheme()에서 colorScheme 읽어서 JS 조건부 스타일 사용 (isDark ? '#111827' : '#ffffff')
 - Dark Mode: 새 컴포넌트 추가 시 bg-white, text-gray-*, border-gray-* 에 반드시 dark: 변형 추가 → docs/dark-mode.md 색상 매핑 참조
+- Onboarding routing: _layout.tsx에서 initialized(auth)와 settingsReady(settings) 모두 true여야 라우팅 결정 가능
+  → 한쪽만 체크하면 hasSeenOnboarding이 아직 false인 채로 판단해 무한 리다이렉트 발생
+- AppShell 래핑: 온보딩 중에는 AppShell(사이드바) 표시하면 안 됨 → inOnboardingGroup 조건 추가 필수
+- Expo Router 타입: 새 route group 추가 후 .expo/types/router.d.ts 재생성 필요 (`npx expo customize tsconfig.json`)
+- Dark Mode: FontAwesome 아이콘의 color prop은 NativeWind className과 무관 → useColorScheme()으로 isDark 읽어서 조건부 색상 전달 필수
+  → indigo: isDark ? '#818cf8' : '#4f46e5' / light gray: isDark ? '#6b7280' : '#d1d5db'
+  → 새 아이콘 추가 시 반드시 dark 색상 매핑 확인
+- Dark Mode: MasterDetailLayout 디테일 패인에 배경색 미지정 시 기본 흰색 → 반드시 bg-gray-50 dark:bg-gray-950 추가
+- Chat Enter/Shift+Enter: React Native에서 multiline TextInput은 onSubmitEditing이 동작 안 함
+  → Platform.OS === 'web'일 때 onKeyPress에서 Enter(shiftKey 없음) 감지해 전송, e.preventDefault()로 줄바꿈 방지
+- Tab Bar 글자 잘림: 기본 높이로는 하단 탭 텍스트가 잘림 → tabBarStyle에 height: 56, paddingBottom: 6, paddingTop: 4 명시
+- Header 높이: 모바일에서 기본 헤더가 너무 높음 → headerStyle: { height: 48 }로 줄임
+- Settings 팝업 모달: React Native Modal + KeyboardAvoidingView + transparent overlay 패턴 사용
+  → onShow 콜백에서 draft 동기화, onSubmitEditing으로 키보드 Done 지원
 ```
 
 ---
@@ -365,6 +397,10 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-02 | v0.1 | 프로젝트 초기 셋업 — 문서 작성, MVP 범위 확정, Expo 전환, Phase R1~R2 완료 | Chris |
 | 2026-02-03 | v0.2 | i18n (한국어+영어) — 시스템 로케일 자동 감지, 전체 UI 문자열 다국어 전환 | Chris |
 | 2026-02-03 | v0.3 | 설정 + 다크 모드 + 개인정보 — 설정 화면, 전체 다크 모드, 개인정보 고지, AI 스키마, 개발자 문서 | Chris |
+| 2026-02-03 | v0.4 | Phase R4 온보딩 + 데모 데이터 — 3스텝 온보딩, 데모 시딩/삭제, i18n onboarding 네임스페이스 | Chris |
+| 2026-02-03 | v0.5 | UX 폴리시 — 다크모드 보완(8파일), Enter-to-submit(인증/채팅), 온보딩 Skip 버튼, 닉네임 기능 | Chris |
+| 2026-02-03 | v0.6 | UI 폴리시 — 설정 팝업 모달, 데모 데이터 UI 제거, 모바일 탭바/헤더 높이 조정 | Chris |
+| 2026-02-03 | v0.7 | 탭 리팩토링 — 요약 탭 통합(Daily/Weekly 토글), 프로필 탭 신설, Write Today FAB, 공유 컴포넌트 추출 | Chris |
 | | | | |
 
 <details>
@@ -420,3 +456,85 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 9. **검증**: TypeScript 0 에러, `bg-white` / `text-gray-900` 누락 검사 0건
 
 </details>
+
+<details>
+<summary>v0.4 상세 이력 (클릭하여 펼치기)</summary>
+
+1. **온보딩 기반**: settingsStore에 `hasSeenOnboarding` + `acknowledgeOnboarding()` 추가, AsyncStorage `@reflectlog/onboarding_seen`
+2. **온보딩 화면** (`app/(onboarding)/index.tsx`): 3스텝 페이저 (빠른 기록 → AI 정리 → 리텐션 습관), 이모지 일러스트, 페이지 인디케이터, Skip/Next/Get Started
+3. **온보딩 라우팅**: `_layout.tsx`에서 `initialized` + `settingsReady` 동시 체크, `(onboarding)` route group, AppShell 래핑 제외
+4. **i18n 확장**: onboarding 네임스페이스 추가 (2 JSON 파일, ko/en)
+5. **데모 데이터 생성기** (`src/lib/demoData.ts`):
+   - 22개 Entry: 14일 중 12일 활성 (D-12, D-11 빈 날 → 스트릭 끊김/회복), early_bird(06:45), night_owl(23:10) 트리거
+   - 12개 Summary: 일간 10개 + 주간 2개, sentences_data에 실제 entry_id 참조
+   - 15개 Todo: done 10 + pending 5, source_entry_id 연결
+6. **시드 실행** (`src/lib/seedDemoData.ts`): clearDemoData() → entries INSERT → summaries INSERT → todos INSERT, 멱등 실행
+7. **설정 화면 확장**: "데모 데이터" 섹션 (불러오기/삭제 버튼, 확인 Alert, 로딩 스피너, React Query 캐시 무효화)
+8. **i18n 확장**: settings.json에 `demo.*` 키 추가 (ko/en)
+9. **검증**: TypeScript 0 에러, Expo Router 타입 재생성 확인
+
+</details>
+
+<details>
+<summary>v0.5 상세 이력 (클릭하여 펼치기)</summary>
+
+1. **온보딩 Skip 버튼**: 카드 내부 텍스트 → SafeAreaView 상단 우측 칩 버튼(bg-gray-100 rounded-full)으로 이동
+2. **다크모드 보완** (8개 파일):
+   - `MasterDetailLayout`: 디테일 패인 + 플레이스홀더에 `bg-gray-50 dark:bg-gray-950` 추가
+   - `entries/new.tsx`: 채팅 모드 `bg-white` → `dark:bg-gray-950`, 모드 토글 텍스트 `dark:` 추가
+   - `(tabs)/index.tsx`: 모바일 대시보드 `bg-gray-50` → `dark:bg-gray-950`
+   - `SummaryDetailView`, `EvidenceChip`, `TodoItem`, `entries/[id].tsx`, `settings.tsx`: FontAwesome 아이콘 hardcoded color → `isDark` 조건부 색상
+3. **Enter-to-submit**:
+   - 로그인/회원가입: 이메일 Enter → 비밀번호 포커스, 비밀번호 Enter → 로그인/가입 실행
+   - 채팅: Enter → 전송, Shift+Enter → 줄바꿈 (웹 onKeyPress + e.preventDefault)
+4. **닉네임 기능**:
+   - settingsStore: `nickname` 상태 + `setNickname()` + AsyncStorage `@reflectlog/nickname`
+   - 설정 화면: 계정 섹션에 닉네임 입력 필드 (max 20자)
+   - 대시보드: `greeting.withName` i18n 키로 "좋은 아침이에요, {name}님" / "Good morning, {name}" 표시
+5. **검증**: TypeScript 0 에러
+
+</details>
+
+<details>
+<summary>v0.6 상세 이력 (클릭하여 펼치기)</summary>
+
+1. **설정 데모 데이터 제거**: `app/settings.tsx`에서 데모 데이터 섹션(불러오기/삭제 버튼, 핸들러, 상태, import) 전체 삭제, `settings.json`(ko/en)에서 `demo.*` 키 삭제 — 코드(`src/lib/demoData.ts`, `seedDemoData.ts`)는 보존
+2. **설정 팝업 모달**: `EditModal` 컴포넌트 신규 — transparent overlay + 중앙 카드 + TextInput + Cancel/Save 버튼, KeyboardAvoidingView 지원
+   - 닉네임: 인라인 TextInput → TouchableOpacity 행(현재값 + chevron-right) → 탭 시 EditModal 팝업
+   - i18n: `modal.cancel`, `modal.save` 키 추가 (ko/en)
+3. **모바일 탭바 수정** (`app/(tabs)/_layout.tsx`):
+   - tabBarStyle: `height: 56, paddingBottom: 6, paddingTop: 4` (텍스트 잘림 해결)
+   - TabBarIcon: `size: 24→22`, `marginBottom: -3→0`
+4. **모바일 헤더 축소**: `headerStyle: { height: 48 }` (기본 ~56에서 축소)
+5. **검증**: TypeScript 0 에러
+
+</details>
+
+<details>
+<summary>v0.7 상세 이력 (클릭하여 펼치기)</summary>
+
+1. **공유 컴포넌트 추출**: `SegmentedControl<T>` + `EditModal` → `src/components/ui/`로 분리, settings.tsx에서 import로 전환
+2. **요약 탭 통합** (`app/(tabs)/summary.tsx`):
+   - `useState<'daily' | 'weekly'>` + `SegmentedControl`로 기간 토글
+   - `SummaryListCard`: period에 따라 날짜 포맷/라벨 분기 (daily: period_start, weekly: formatWeekRange)
+   - 생성 버튼/빈 상태/디테일 플레이스홀더 모두 기간별 분기
+   - `formatWeekRange()` 함수를 weekly.tsx에서 이관
+3. **프로필 탭** (`app/(tabs)/profile.tsx`):
+   - 이니셜 아바타 + 닉네임(EditModal 편집) + 이메일
+   - 활동 현황: StreakCard + LevelProgressCard + StatsRow + BadgeGrid
+   - 설정: 언어/테마 SegmentedControl
+   - 개인정보 고지 (PrivacyNotice 인라인)
+   - 로그아웃 버튼 + 버전 정보
+4. **탭 레이아웃 수정** (`app/(tabs)/_layout.tsx`):
+   - 헤더 height: 48 삭제 (기본값 사용으로 일관성 확보)
+   - 탭바: height 64, paddingBottom 10 (텍스트 잘림 해결)
+   - `weekly` 탭: `href: null`로 탭바에서 숨김
+   - `profile` 탭 추가 (icon: user-circle-o)
+   - 설정 headerRight 버튼 제거 (프로필 탭에 설정 통합)
+   - Write Today FAB: 모바일 전용 인디고 플로팅 버튼 (bottom: 76, right: 20)
+5. **사이드바 수정**: dailySummary+weeklyReview → 단일 "Summary", profile 항목 추가
+6. **i18n 확장**: tab.summary, tab.profile (common), tab.daily/weekly (summary), profile.* (settings)
+7. **검증**: TypeScript 0 에러 (Expo Router 타입 재생성 포함)
+
+</details>
+

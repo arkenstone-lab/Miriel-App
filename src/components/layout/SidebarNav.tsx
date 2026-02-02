@@ -13,9 +13,9 @@ interface NavItem {
 const navItems: NavItem[] = [
   { labelKey: 'tab.home', icon: 'home', path: '/(tabs)' },
   { labelKey: 'tab.timeline', icon: 'list', path: '/(tabs)/timeline' },
-  { labelKey: 'tab.dailySummary', icon: 'file-text-o', path: '/(tabs)/summary' },
-  { labelKey: 'tab.weeklyReview', icon: 'calendar', path: '/(tabs)/weekly' },
+  { labelKey: 'tab.summary', icon: 'file-text-o', path: '/(tabs)/summary' },
   { labelKey: 'tab.todos', icon: 'check-square-o', path: '/(tabs)/todos' },
+  { labelKey: 'tab.profile', icon: 'user-circle-o', path: '/(tabs)/profile' },
 ]
 
 export function SidebarNav() {

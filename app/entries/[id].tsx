@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { View, Text, ScrollView, TextInput, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { useEntry, useUpdateEntry, useDeleteEntry } from '@/features/entry/hooks'
 import { useTodosByEntry, useUpdateTodo } from '@/features/todo/hooks'
@@ -22,6 +23,8 @@ export default function EntryDetailScreen() {
   const updateTodo = useUpdateTodo()
   const { t } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
+  const { colorScheme } = useColorScheme()
+  const isDark = colorScheme === 'dark'
 
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
@@ -159,7 +162,7 @@ export default function EntryDetailScreen() {
                   <FontAwesome
                     name={todo.status === 'done' ? 'check-circle' : 'circle-o'}
                     size={18}
-                    color={todo.status === 'done' ? '#22c55e' : '#d1d5db'}
+                    color={todo.status === 'done' ? '#22c55e' : isDark ? '#6b7280' : '#d1d5db'}
                   />
                   <Text
                     className={`ml-2.5 text-sm flex-1 ${
@@ -187,11 +190,11 @@ export default function EntryDetailScreen() {
               className="bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-800"
             >
               <View className="flex-row items-center">
-                <FontAwesome name="file-text-o" size={16} color="#4f46e5" />
+                <FontAwesome name="file-text-o" size={16} color={isDark ? '#818cf8' : '#4f46e5'} />
                 <Text className="ml-2 text-sm text-indigo-700 dark:text-indigo-300 flex-1" numberOfLines={2}>
                   {dailySummary.text}
                 </Text>
-                <FontAwesome name="chevron-right" size={12} color="#a5b4fc" />
+                <FontAwesome name="chevron-right" size={12} color={isDark ? '#6366f1' : '#a5b4fc'} />
               </View>
             </Card>
           </View>

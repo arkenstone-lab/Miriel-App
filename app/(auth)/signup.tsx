@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { Link } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +8,7 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const passwordRef = useRef<TextInput>(null)
   const signUp = useAuthStore((s) => s.signUp)
   const { t } = useTranslation('auth')
 
@@ -55,6 +56,9 @@ export default function SignupScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            blurOnSubmit={false}
           />
         </View>
 
@@ -63,10 +67,13 @@ export default function SignupScreen() {
           <TextInput
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder={t('signup.passwordPlaceholder')}
+            ref={passwordRef}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             autoComplete="password"
+            returnKeyType="done"
+            onSubmitEditing={handleSignup}
           />
         </View>
 

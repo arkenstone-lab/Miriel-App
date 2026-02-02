@@ -10,38 +10,50 @@ const KEYS = {
   theme: '@reflectlog/theme',
   language: '@reflectlog/language',
   privacySeen: '@reflectlog/privacy_seen',
+  onboardingSeen: '@reflectlog/onboarding_seen',
+  nickname: '@reflectlog/nickname',
 } as const
 
 interface SettingsState {
   theme: ThemeMode
   language: Language | null
+  nickname: string
   hasSeenPrivacyNotice: boolean
+  hasSeenOnboarding: boolean
   initialized: boolean
   initialize: () => Promise<void>
   setTheme: (theme: ThemeMode) => Promise<void>
   setLanguage: (lang: Language | null) => Promise<void>
+  setNickname: (name: string) => Promise<void>
   acknowledgePrivacyNotice: () => Promise<void>
+  acknowledgeOnboarding: () => Promise<void>
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   theme: 'system',
   language: null,
+  nickname: '',
   hasSeenPrivacyNotice: false,
+  hasSeenOnboarding: false,
   initialized: false,
 
   initialize: async () => {
     try {
-      const [storedTheme, storedLang, storedPrivacy] = await Promise.all([
+      const [storedTheme, storedLang, storedPrivacy, storedOnboarding, storedNickname] = await Promise.all([
         AsyncStorage.getItem(KEYS.theme),
         AsyncStorage.getItem(KEYS.language),
         AsyncStorage.getItem(KEYS.privacySeen),
+        AsyncStorage.getItem(KEYS.onboardingSeen),
+        AsyncStorage.getItem(KEYS.nickname),
       ])
 
       const theme = (storedTheme as ThemeMode) || 'system'
       const language = (storedLang as Language) || null
+      const nickname = storedNickname || ''
       const hasSeenPrivacyNotice = storedPrivacy === 'true'
+      const hasSeenOnboarding = storedOnboarding === 'true'
 
-      set({ theme, language, hasSeenPrivacyNotice, initialized: true })
+      set({ theme, language, nickname, hasSeenPrivacyNotice, hasSeenOnboarding, initialized: true })
 
       // Apply persisted language override (null = follow system locale)
       if (language) {
@@ -75,5 +87,20 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   acknowledgePrivacyNotice: async () => {
     set({ hasSeenPrivacyNotice: true })
     await AsyncStorage.setItem(KEYS.privacySeen, 'true')
+  },
+
+  setNickname: async (name: string) => {
+    const trimmed = name.trim()
+    set({ nickname: trimmed })
+    if (trimmed) {
+      await AsyncStorage.setItem(KEYS.nickname, trimmed)
+    } else {
+      await AsyncStorage.removeItem(KEYS.nickname)
+    }
+  },
+
+  acknowledgeOnboarding: async () => {
+    set({ hasSeenOnboarding: true })
+    await AsyncStorage.setItem(KEYS.onboardingSeen, 'true')
   },
 }))

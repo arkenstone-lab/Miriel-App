@@ -1,5 +1,6 @@
 import { View, Text, ScrollView } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { EvidenceChip } from './EvidenceChip'
 import { Badge } from '@/components/ui/Badge'
@@ -27,6 +28,8 @@ function useFormatPeriodLabel() {
 
 export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
   const { t } = useTranslation('summary')
+  const { colorScheme } = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const formatPeriodLabel = useFormatPeriodLabel()
 
   const sentences: SummarySentence[] = summary.sentences_data || []
@@ -48,7 +51,7 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
           <FontAwesome
             name={summary.period === 'weekly' ? 'calendar' : 'file-text-o'}
             size={16}
-            color="#4f46e5"
+            color={isDark ? '#818cf8' : '#4f46e5'}
           />
           <Text className="ml-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
             {summary.period === 'weekly' ? t('weekly.label') : t('daily.label')}
