@@ -2,7 +2,8 @@
   "greeting": {
     "morning": "Good morning",
     "afternoon": "Good afternoon",
-    "evening": "Good evening"
+    "evening": "Good evening",
+    "withName": "{{greeting}}, {{name}}"
   },
   "streak": {
     "consecutiveDays": "Day Streak",

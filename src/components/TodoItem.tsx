@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useColorScheme } from 'nativewind'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useUpdateTodo, useDeleteTodo } from '@/features/todo/hooks'
@@ -22,6 +23,8 @@ export function TodoItem({
   const router = useRouter()
   const updateMutation = useUpdateTodo()
   const deleteMutation = useDeleteTodo()
+  const { colorScheme } = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const { t } = useTranslation('todos')
 
   const toggleStatus = () => {
@@ -41,7 +44,7 @@ export function TodoItem({
           <FontAwesome
             name={todo.status === 'done' ? 'check-circle' : 'circle-o'}
             size={22}
-            color={todo.status === 'done' ? '#22c55e' : '#d1d5db'}
+            color={todo.status === 'done' ? '#22c55e' : isDark ? '#6b7280' : '#d1d5db'}
           />
         </TouchableOpacity>
         <View className="flex-1">
@@ -55,7 +58,7 @@ export function TodoItem({
           <View className="flex-row items-center mt-1.5 gap-2">
             {todo.due_date && (
               <View className="flex-row items-center">
-                <FontAwesome name="clock-o" size={11} color="#9ca3af" />
+                <FontAwesome name="clock-o" size={11} color={isDark ? '#9ca3af' : '#9ca3af'} />
                 <Text className="text-xs text-gray-400 dark:text-gray-500 ml-1">{todo.due_date}</Text>
               </View>
             )}
@@ -64,7 +67,7 @@ export function TodoItem({
                 className="flex-row items-center bg-indigo-50 dark:bg-indigo-900/30 rounded px-2 py-0.5"
                 onPress={() => router.push(`/entries/${todo.source_entry_id}`)}
               >
-                <FontAwesome name="link" size={9} color="#6366f1" />
+                <FontAwesome name="link" size={9} color={isDark ? '#a5b4fc' : '#6366f1'} />
                 <Text className="text-xs text-indigo-600 dark:text-indigo-400 ml-1">{t('evidence.link')}</Text>
               </TouchableOpacity>
             )}
@@ -74,7 +77,7 @@ export function TodoItem({
           onPress={() => deleteMutation.mutate(todo.id)}
           className="ml-2 p-1"
         >
-          <FontAwesome name="trash-o" size={16} color="#d1d5db" />
+          <FontAwesome name="trash-o" size={16} color={isDark ? '#6b7280' : '#d1d5db'} />
         </TouchableOpacity>
       </View>
     </Card>

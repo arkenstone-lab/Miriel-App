@@ -1,4 +1,8 @@
 {
+  "tab": {
+    "daily": "일간",
+    "weekly": "주간"
+  },
   "daily": {
     "generateButton": "오늘 요약 생성",
     "generating": "요약 생성 중...",

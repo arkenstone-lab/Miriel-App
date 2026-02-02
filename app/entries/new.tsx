@@ -8,6 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
@@ -64,6 +66,13 @@ export default function NewEntryScreen() {
     if (!input.trim()) return
     addUserMessage(input.trim())
     setInput('')
+  }
+
+  const handleChatKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    if (Platform.OS === 'web' && e.nativeEvent.key === 'Enter' && !(e as any).shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
   }
 
   const handleSave = async () => {
@@ -183,7 +192,7 @@ export default function NewEntryScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1 bg-white dark:bg-gray-950"
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {/* Mode Toggle */}
@@ -193,7 +202,7 @@ export default function NewEntryScreen() {
           onPress={() => setMode('quick')}
         >
           <FontAwesome name="pencil-square-o" size={16} color="#9ca3af" />
-          <Text className="text-sm text-gray-400 ml-1.5">{t('create.switchToQuick')}</Text>
+          <Text className="text-sm text-gray-400 dark:text-gray-500 ml-1.5">{t('create.switchToQuick')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -225,6 +234,7 @@ export default function NewEntryScreen() {
             multiline
             onSubmitEditing={handleSend}
             blurOnSubmit={false}
+            onKeyPress={handleChatKeyPress}
           />
           <TouchableOpacity
             className={`rounded-xl px-5 py-3 ${

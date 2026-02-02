@@ -1,5 +1,6 @@
 import { View, Text, ScrollView } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { useEntries } from '@/features/entry/hooks'
 import { useGamificationStats } from '@/features/gamification/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
@@ -18,18 +19,22 @@ export default function DashboardScreen() {
   const { data: entries } = useEntries()
   const { data: stats, isLoading } = useGamificationStats()
   const { isDesktop } = useResponsiveLayout()
+  const { nickname } = useSettingsStore()
   const { t } = useTranslation('dashboard')
   const { t: tCommon } = useTranslation('common')
 
   if (isLoading || !stats) return <LoadingState />
 
   const hour = new Date().getHours()
-  const greeting =
+  const timeGreeting =
     hour < 12
       ? t('greeting.morning')
       : hour < 18
       ? t('greeting.afternoon')
       : t('greeting.evening')
+  const greeting = nickname
+    ? t('greeting.withName', { greeting: timeGreeting, name: nickname })
+    : timeGreeting
 
   const d = new Date()
   const dayNames = tCommon('date.dayNames', { returnObjects: true }) as string[]
@@ -83,7 +88,7 @@ export default function DashboardScreen() {
 
   // Mobile layout
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-950">
       <View className="px-4 pt-6 pb-8" style={{ gap: 12 }}>
         <PrivacyNotice mode="banner" />
         {header}

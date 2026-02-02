@@ -9,6 +9,8 @@
     "timeline": "Timeline",
     "dailySummary": "Daily Summary",
     "weeklyReview": "Weekly Review",
+    "summary": "Summary",
+    "profile": "Profile",
     "todos": "To-dos"
   },
   "sidebar": {

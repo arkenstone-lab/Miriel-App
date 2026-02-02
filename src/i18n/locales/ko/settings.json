@@ -14,6 +14,8 @@
   },
   "account": {
     "title": "계정",
+    "nickname": "닉네임",
+    "nicknamePlaceholder": "무엇이라 불러드릴까요?",
     "email": "이메일",
     "signOut": "로그아웃",
     "signOutConfirmTitle": "로그아웃",
@@ -21,6 +23,16 @@
   },
   "privacy": {
     "title": "개인정보 및 데이터"
+  },
+  "modal": {
+    "cancel": "취소",
+    "save": "저장"
+  },
+  "profile": {
+    "title": "내 정보",
+    "activity": "활동 현황",
+    "settings": "설정",
+    "privacyData": "개인정보 및 데이터"
   },
   "version": "버전"
 }
