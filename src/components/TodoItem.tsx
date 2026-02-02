@@ -33,7 +33,7 @@ export function TodoItem({
 
   return (
     <Card
-      className={`mb-3 ${isSelected ? 'border-indigo-300 bg-indigo-50' : ''}`}
+      className={`mb-3 ${isSelected ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : ''}`}
       onPress={onPress}
     >
       <View className="flex-row items-start">
@@ -47,7 +47,7 @@ export function TodoItem({
         <View className="flex-1">
           <Text
             className={`text-base leading-6 ${
-              todo.status === 'done' ? 'text-gray-400 line-through' : 'text-gray-900'
+              todo.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100'
             }`}
           >
             {todo.text}
@@ -56,16 +56,16 @@ export function TodoItem({
             {todo.due_date && (
               <View className="flex-row items-center">
                 <FontAwesome name="clock-o" size={11} color="#9ca3af" />
-                <Text className="text-xs text-gray-400 ml-1">{todo.due_date}</Text>
+                <Text className="text-xs text-gray-400 dark:text-gray-500 ml-1">{todo.due_date}</Text>
               </View>
             )}
             {showSource && todo.source_entry_id && (
               <TouchableOpacity
-                className="flex-row items-center bg-indigo-50 rounded px-2 py-0.5"
+                className="flex-row items-center bg-indigo-50 dark:bg-indigo-900/30 rounded px-2 py-0.5"
                 onPress={() => router.push(`/entries/${todo.source_entry_id}`)}
               >
                 <FontAwesome name="link" size={9} color="#6366f1" />
-                <Text className="text-xs text-indigo-600 ml-1">{t('evidence.link')}</Text>
+                <Text className="text-xs text-indigo-600 dark:text-indigo-400 ml-1">{t('evidence.link')}</Text>
               </TouchableOpacity>
             )}
           </View>

@@ -16,24 +16,24 @@ export function StreakCard({ streak }: StreakCardProps) {
         <Text className="text-3xl mb-1">
           {streak.hasEntryToday ? '🔥' : '💤'}
         </Text>
-        <Text className="text-3xl font-bold text-gray-900">
+        <Text className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           {streak.currentStreak}
         </Text>
-        <Text className="text-xs text-gray-500 mt-0.5">{t('streak.consecutiveDays')}</Text>
+        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('streak.consecutiveDays')}</Text>
       </View>
-      <View className="flex-row justify-between mt-3 pt-3 border-t border-gray-100">
+      <View className="flex-row justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
         <View className="items-center flex-1">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {streak.longestStreak}
           </Text>
-          <Text className="text-[10px] text-gray-400">{t('streak.longestRecord')}</Text>
+          <Text className="text-[10px] text-gray-400 dark:text-gray-500">{t('streak.longestRecord')}</Text>
         </View>
-        <View className="w-px bg-gray-100" />
+        <View className="w-px bg-gray-100 dark:bg-gray-800" />
         <View className="items-center flex-1">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {streak.hasEntryToday ? t('streak.todayDone') : t('streak.todayNotDone')}
           </Text>
-          <Text className="text-[10px] text-gray-400">{t('streak.todayLabel')}</Text>
+          <Text className="text-[10px] text-gray-400 dark:text-gray-500">{t('streak.todayLabel')}</Text>
         </View>
       </View>
     </Card>

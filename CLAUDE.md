@@ -48,8 +48,9 @@
 
 ## 기술 스택
 - **Framework**: Expo (React Native) + Expo Router + TypeScript
-- **스타일링**: NativeWind (Tailwind CSS for RN)
+- **스타일링**: NativeWind (Tailwind CSS for RN), 다크 모드 지원 (`darkMode: 'class'`)
 - **i18n**: i18next + react-i18next + expo-localization (한국어/영어, 시스템 로케일 자동 감지)
+- **상태관리**: React Query (서버 상태) + Zustand (클라이언트: auth, chat, settings)
 - **Backend**: Supabase Edge Functions
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (이메일/소셜 간단히)
@@ -195,9 +196,18 @@ interface UserStats {
 - [x] 시스템 로케일 자동 감지 (ko → 한국어, 그 외 → 영어)
 - [x] TypeScript 타입 체크 통과, 잔여 하드코딩 한국어 0건 확인
 
+### Phase R3.7: 설정 + 다크 모드 + 개인정보 ✅ 완료
+- [x] 설정 스토어 (Zustand + AsyncStorage — 테마/언어/개인정보 동의)
+- [x] 설정 화면 (언어 전환, 테마 전환, 계정 정보, 개인정보 섹션)
+- [x] 설정 네비게이션 (사이드바 톱니바퀴 아이콘, 모바일 헤더 아이콘)
+- [x] 다크 모드 전체 적용 (NativeWind `dark:` 변형 ~30개 파일)
+- [x] React Navigation 헤더/탭바 다크 모드 (JS 레벨 조건부 스타일)
+- [x] 개인정보 고지 컴포넌트 (배너/인라인 모드)
+- [x] AI 출력 스키마 정형화 (ProcessedEntry 타입 + 정규화 함수)
+- [x] settings + privacy 번역 네임스페이스 추가 (ko/en)
+
 ### Phase R4: 폴리시 + 제출 준비
 - [ ] 온보딩 (2~3 화면)
-- [ ] 설정 (알림 시간)
 - [ ] 데모 데이터 시딩
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
@@ -254,6 +264,28 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 
 ---
 
+## 개발자 문서 (`docs/`)
+
+아래 문서들은 개발 시 참고용으로 작성된 기술 레퍼런스입니다. 새로운 기능 추가나 기존 코드 수정 시 반드시 참고하세요.
+
+| 문서 | 경로 | 참고 시점 |
+|------|------|----------|
+| **아키텍처 개요** | [`docs/architecture.md`](docs/architecture.md) | 프로젝트 구조, 라우팅, 상태관리 패턴을 파악할 때 |
+| **다크 모드 가이드** | [`docs/dark-mode.md`](docs/dark-mode.md) | UI 컴포넌트 추가/수정 시 `dark:` 변형 색상 매핑 참조 |
+| **i18n 가이드** | [`docs/i18n.md`](docs/i18n.md) | 번역 키 추가, 새 네임스페이스 생성, 컴포넌트/스토어에서 t() 사용법 |
+| **데이터 모델 & API** | [`docs/data-model.md`](docs/data-model.md) | DB 스키마, TypeScript 타입, API 함수, React Query 훅, Edge Functions |
+| **컴포넌트 가이드** | [`docs/components.md`](docs/components.md) | UI 프리미티브(Button/Card/Badge 등) 사용법, 새 컴포넌트 작성 규칙 |
+| **설정 & 개인정보** | [`docs/settings-and-privacy.md`](docs/settings-and-privacy.md) | settingsStore 구조, 설정 화면, 개인정보 고지 컴포넌트 |
+| **게이미피케이션** | [`docs/gamification.md`](docs/gamification.md) | 스트릭/XP/레벨/배지 시스템, 새 배지 추가 방법 |
+
+### 문서 활용 원칙
+1. **새 UI 컴포넌트 작성 시**: `components.md` (사용법) → `dark-mode.md` (색상 매핑) → `i18n.md` (번역 키)
+2. **새 데이터 기능 추가 시**: `data-model.md` (DB/API/훅 패턴) → `architecture.md` (feature 모듈 구조)
+3. **설정 항목 추가 시**: `settings-and-privacy.md` (스토어/화면 구조)
+4. **게이미피케이션 확장 시**: `gamification.md` (XP/배지/레벨 시스템)
+
+---
+
 ## 참고 자료
 - 실행 준비 문서: `/docs/실행_준비_문서.pdf`
 
@@ -298,6 +330,9 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-02 | Expo (React Native) 전환 | PC+iOS+Android 단일 코드베이스, 네이티브 푸시 알림, 진짜 앱 데모 가능 | Capacitor (기존 코드 활용), 반응형 웹 유지 |
 | 2026-02-02 | 화면 10개 → 8개로 축소 | 태그 확인/프로필을 다른 화면에 통합, 데모에 집중 | 10개 유지 |
 | 2026-02-03 | i18n (한국어+영어) 적용 | 글로벌 데모 대응, 투자 심사 시 영어 시연 가능 | 한국어 하드코딩 유지 |
+| 2026-02-03 | 설정 화면을 6번째 탭이 아닌 모달로 구현 | 탭 5개가 이미 충분, 설정은 자주 쓰지 않으므로 사이드바 톱니바퀴 아이콘 진입 | 6번째 탭 추가 |
+| 2026-02-03 | 다크 모드 전체 적용 (후순위 아닌 즉시) | 투자 심사 데모에서 완성도 인상 강화, NativeWind `dark:` 패턴으로 비용 낮음 | 다크 모드 나중에 |
+| 2026-02-03 | 개인정보 고지 + AI 출력 스키마 동시 도입 | 데이터 안전성 시각화 + AI 출력 정형화로 신뢰성 향상 | 고지만 / 스키마만 |
 | | | | |
 
 ---
@@ -316,6 +351,9 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 - Supabase Edge Functions: Deno 환경이므로 tsconfig.json에서 exclude 처리 필요
 - i18n: 상수 파일(gamification/constants.ts 등)에서 i18n.t()를 모듈 레벨에서 호출 시 import '@/i18n'이 먼저 실행되어야 함 → app/_layout.tsx 최상단에서 import
 - i18n: useTranslation() 훅은 React 컴포넌트 내에서만 사용, 순수 함수/store에서는 i18n.t() 직접 호출
+- Dark Mode: NativeWind dark: 클래스는 React Navigation style 객체(headerStyle, tabBarStyle)에 적용 안 됨
+  → useColorScheme()에서 colorScheme 읽어서 JS 조건부 스타일 사용 (isDark ? '#111827' : '#ffffff')
+- Dark Mode: 새 컴포넌트 추가 시 bg-white, text-gray-*, border-gray-* 에 반드시 dark: 변형 추가 → docs/dark-mode.md 색상 매핑 참조
 ```
 
 ---
@@ -326,6 +364,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 |------|------|----------|--------|
 | 2026-02-02 | v0.1 | 프로젝트 초기 셋업 — 문서 작성, MVP 범위 확정, Expo 전환, Phase R1~R2 완료 | Chris |
 | 2026-02-03 | v0.2 | i18n (한국어+영어) — 시스템 로케일 자동 감지, 전체 UI 문자열 다국어 전환 | Chris |
+| 2026-02-03 | v0.3 | 설정 + 다크 모드 + 개인정보 — 설정 화면, 전체 다크 모드, 개인정보 고지, AI 스키마, 개발자 문서 | Chris |
 | | | | |
 
 <details>
@@ -361,5 +400,23 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
    - 공유 컴포넌트: EntryCard(상대 시간), EntryDetail, EvidenceChip, SummaryDetailView, TodoItem
    - 상수/스토어: 게이미피케이션(8 레벨, 11 배지), 체크인 질문, 챗 완료 메시지
 4. **검증**: TypeScript 타입 체크 0 에러, 소스 파일 내 잔여 한국어 하드코딩 0건
+
+</details>
+
+<details>
+<summary>v0.3 상세 이력 (클릭하여 펼치기)</summary>
+
+1. **설정 기반**: settingsStore (Zustand + AsyncStorage) — 테마/언어/개인정보 동의 상태 관리
+2. **설정 화면** (`app/settings.tsx`): 언어 전환(시스템/한국어/영어), 테마 전환(시스템/라이트/다크), 계정 정보, 개인정보 섹션
+3. **설정 네비게이션**: 사이드바 톱니바퀴 아이콘 (desktop), 탭바 headerRight 아이콘 (mobile)
+4. **다크 모드 전체 적용** (~30 파일):
+   - NativeWind `darkMode: 'class'` + `setColorScheme()` 연동
+   - UI 프리미티브 5개, 레이아웃 3개, 대시보드 8개, 탭 화면 6개, 기록 2개, 인증 2개, 기타 3개
+   - React Navigation 헤더/탭바: JS 레벨 `isDark` 조건부 색상
+5. **개인정보 고지**: PrivacyNotice 컴포넌트 (배너/인라인 모드), 대시보드 첫 방문 시 표시
+6. **AI 출력 스키마**: ProcessedEntry 타입 + normalizeProcessedEntry() + processedEntryToTags()
+7. **i18n 확장**: settings + privacy 네임스페이스 추가 (4 JSON 파일)
+8. **개발자 문서**: `docs/` 폴더에 7개 기술 레퍼런스 문서 작성
+9. **검증**: TypeScript 0 에러, `bg-white` / `text-gray-900` 누락 검사 0건
 
 </details>

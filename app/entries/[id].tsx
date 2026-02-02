@@ -30,7 +30,7 @@ export default function EntryDetailScreen() {
 
   if (error || !entry) {
     return (
-      <View className="flex-1 justify-center items-center bg-white px-8">
+      <View className="flex-1 justify-center items-center bg-white dark:bg-gray-950 px-8">
         <Text className="text-red-500 text-center">
           {error?.message || t('detail.notFound')}
         </Text>
@@ -84,13 +84,13 @@ export default function EntryDetailScreen() {
   const dailySummary = dailySummaries?.[0]
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <ScrollView className="flex-1 bg-white dark:bg-gray-900">
       <View className="p-6">
         {/* Header with actions */}
         <View className="flex-row justify-between items-center mb-4">
           <View>
-            <Text className="text-sm font-medium text-gray-500">{entry.date}</Text>
-            <Text className="text-xs text-gray-400 mt-0.5">
+            <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">{entry.date}</Text>
+            <Text className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {new Date(entry.created_at).toLocaleString()}
             </Text>
           </View>
@@ -114,7 +114,7 @@ export default function EntryDetailScreen() {
         {isEditing ? (
           <View className="mb-6">
             <TextInput
-              className="border border-gray-200 rounded-xl p-4 text-base text-gray-900 leading-7 min-h-[120px]"
+              className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-base text-gray-900 dark:text-gray-100 leading-7 min-h-[120px] bg-white dark:bg-gray-800"
               value={editText}
               onChangeText={setEditText}
               multiline
@@ -130,7 +130,7 @@ export default function EntryDetailScreen() {
             </View>
           </View>
         ) : (
-          <Text className="text-base text-gray-900 leading-7 mb-6">
+          <Text className="text-base text-gray-900 dark:text-gray-100 leading-7 mb-6">
             {entry.raw_text}
           </Text>
         )}
@@ -138,7 +138,7 @@ export default function EntryDetailScreen() {
         {/* Tags */}
         {entry.tags.length > 0 && (
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">{tCommon('label.tags')}</Text>
+            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{tCommon('label.tags')}</Text>
             <View className="flex-row flex-wrap gap-2">
               {entry.tags.map((tag, i) => (
                 <Badge key={i} label={tag} variant="indigo" size="md" />
@@ -150,7 +150,7 @@ export default function EntryDetailScreen() {
         {/* Related Todos */}
         {relatedTodos && relatedTodos.length > 0 && (
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">
+            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('detail.extractedTodos')}
             </Text>
             {relatedTodos.map((todo) => (
@@ -164,8 +164,8 @@ export default function EntryDetailScreen() {
                   <Text
                     className={`ml-2.5 text-sm flex-1 ${
                       todo.status === 'done'
-                        ? 'text-gray-400 line-through'
-                        : 'text-gray-800'
+                        ? 'text-gray-400 dark:text-gray-500 line-through'
+                        : 'text-gray-800 dark:text-gray-200'
                     }`}
                   >
                     {todo.text}
@@ -179,16 +179,16 @@ export default function EntryDetailScreen() {
         {/* Related Daily Summary */}
         {dailySummary && (
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">
+            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('detail.dailySummary')}
             </Text>
             <Card
               onPress={() => router.push('/(tabs)/summary')}
-              className="bg-indigo-50 border-indigo-100"
+              className="bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-800"
             >
               <View className="flex-row items-center">
                 <FontAwesome name="file-text-o" size={16} color="#4f46e5" />
-                <Text className="ml-2 text-sm text-indigo-700 flex-1" numberOfLines={2}>
+                <Text className="ml-2 text-sm text-indigo-700 dark:text-indigo-300 flex-1" numberOfLines={2}>
                   {dailySummary.text}
                 </Text>
                 <FontAwesome name="chevron-right" size={12} color="#a5b4fc" />

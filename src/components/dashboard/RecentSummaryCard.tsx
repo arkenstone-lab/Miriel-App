@@ -17,9 +17,9 @@ export function RecentSummaryCard() {
     return (
       <Card>
         <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-sm font-semibold text-gray-900">{t('recentSummary.title')}</Text>
+          <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('recentSummary.title')}</Text>
         </View>
-        <Text className="text-sm text-gray-400">
+        <Text className="text-sm text-gray-400 dark:text-gray-500">
           {t('recentSummary.empty')}
         </Text>
       </Card>
@@ -29,21 +29,21 @@ export function RecentSummaryCard() {
   return (
     <Card>
       <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-sm font-semibold text-gray-900">{t('recentSummary.title')}</Text>
+        <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('recentSummary.title')}</Text>
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/summary')}
           activeOpacity={0.7}
         >
-          <Text className="text-xs text-indigo-600">{tCommon('action.seeMore')}</Text>
+          <Text className="text-xs text-indigo-600 dark:text-indigo-400">{tCommon('action.seeMore')}</Text>
         </TouchableOpacity>
       </View>
-      <Text className="text-xs text-gray-400 mb-1.5">{latest.period_start}</Text>
-      <Text className="text-sm text-gray-700 leading-5" numberOfLines={3}>
+      <Text className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">{latest.period_start}</Text>
+      <Text className="text-sm text-gray-700 dark:text-gray-300 leading-5" numberOfLines={3}>
         {latest.text}
       </Text>
       <View className="flex-row items-center mt-2">
         <FontAwesome name="link" size={10} color="#9ca3af" />
-        <Text className="text-[10px] text-gray-400 ml-1">
+        <Text className="text-[10px] text-gray-400 dark:text-gray-500 ml-1">
           {t('recentSummary.evidenceCount', { count: latest.entry_links?.length || 0 })}
         </Text>
       </View>

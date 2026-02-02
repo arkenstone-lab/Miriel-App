@@ -15,19 +15,19 @@ export function LevelProgressCard({ level }: LevelProgressCardProps) {
   return (
     <Card className="flex-1">
       <View className="items-center">
-        <View className="bg-indigo-100 w-10 h-10 rounded-full items-center justify-center mb-1">
-          <Text className="text-lg font-bold text-indigo-600">{level.level}</Text>
+        <View className="bg-indigo-100 dark:bg-indigo-800/40 w-10 h-10 rounded-full items-center justify-center mb-1">
+          <Text className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{level.level}</Text>
         </View>
-        <Text className="text-sm font-semibold text-gray-900">{level.title}</Text>
+        <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">{level.title}</Text>
       </View>
       <View className="mt-3">
-        <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <View className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <View
             className="h-full bg-indigo-500 rounded-full"
             style={{ width: `${progressPercent}%` }}
           />
         </View>
-        <Text className="text-[10px] text-gray-400 text-center mt-1">
+        <Text className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-1">
           {isMaxLevel
             ? t('level.maxXP', { xp: level.currentXP })
             : t('level.progressXP', { current: level.currentXP, next: level.xpForNextLevel })

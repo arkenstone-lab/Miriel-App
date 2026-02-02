@@ -15,7 +15,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <View className="flex-1 flex-row">
+    <View className="flex-1 flex-row bg-gray-50 dark:bg-gray-950">
       <SidebarNav />
       <View className="flex-1">{children}</View>
     </View>

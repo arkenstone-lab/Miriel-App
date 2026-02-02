@@ -28,10 +28,10 @@ export function EmptyState({
           <FontAwesome name={icon} size={40} color="#d1d5db" />
         </View>
       ) : null}
-      <Text className="text-lg font-semibold text-gray-700 mb-2 text-center">
+      <Text className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2 text-center">
         {title}
       </Text>
-      <Text className="text-gray-500 text-center mb-6 leading-5">{description}</Text>
+      <Text className="text-gray-500 dark:text-gray-400 text-center mb-6 leading-5">{description}</Text>
       {actionLabel && onAction && (
         <Button title={actionLabel} onPress={onAction} />
       )}
