@@ -2,8 +2,9 @@
 
 ## 프로젝트 개요
 - **한 줄 설명**: 내가 쓴 기록을 바탕으로, AI가 '근거 링크'가 있는 회고를 대신 정리해주는 저널
-- **목표**: 투자 심사용 MVP (D-Day: 2026-02-19)
-- **데모 시나리오**: "오늘 기록(3분) → 자동 정리 → 일간 요약 → 주간 회고" 3~5분 시연
+- **목표**: 투자 심사용 MVP (D-Day: 2026-02-19) — **완성도 높은 UI로 작동하는 데모 프로덕트**
+- **데모 시나리오**: "오늘 기록(3분) → 자동 정리 → 일간 요약 → 주간 회고 → 대시보드" 3~5분 시연
+- **핵심 방향**: 듀오링고처럼 지독하게 리텐션을 끌어올릴 수 있는 제품
 
 ## 핵심 문제 (해결하려는 것)
 1. 쓰는 행위 자체가 귀찮아서 기록이 끊김
@@ -26,6 +27,10 @@
 5. **주간 회고**: 핵심 3~5개 요약 + 근거 링크
 6. **근거 연결**: 요약 클릭 시 원문 Entry로 이동
 7. **To-do 제안**: 기록 기반 다음 액션 자동 추출 (간단 버전)
+8. **리텐션 시스템**: 연속 기록 스트릭 + 게이미피케이션 (레벨/배지/포인트)
+9. **반응형 UI**: PC 버전 + 모바일 버전 대응 (Tailwind 반응형)
+10. **유틸리티**: 알림(푸시/인앱), 팝업(확인/모달), 위젯(스트릭 표시 등)
+11. **대시보드**: 기록 통계, 스트릭 현황, 최근 활동 한눈에 보기
 
 ### ❌ 이번엔 안 함 (Don't)
 - 소셜/공유/팔로우
@@ -35,19 +40,21 @@
 - 백그라운드 활동 자동 수집 (금지)
 
 ### ⏳ 나중에 (Later)
-- 모바일 앱 + 음성 입력
-- To-do/다음 액션 제안
+- 네이티브 모바일 앱 + 음성 입력
 - 외부 연동 (캘린더, 슬랙, 노션)
+- 리더보드 / 소셜 스트릭 (친구와 비교)
 
 ---
 
 ## 기술 스택
-- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- **Backend**: Next.js API Routes (또는 Supabase Edge Functions)
+- **Framework**: Expo (React Native) + Expo Router + TypeScript
+- **스타일링**: NativeWind (Tailwind CSS for RN)
+- **Backend**: Supabase Edge Functions
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (이메일/소셜 간단히)
 - **AI**: OpenAI API (GPT-4o) - 요약/태깅용
-- **배포**: Vercel (웹) + 안드로이드 래퍼 (Capacitor 또는 TWA)
+- **배포**: EAS Build (iOS/Android) + Expo Web (PC)
+- **크로스플랫폼**: PC(웹) + iOS + Android 단일 코드베이스
 
 ---
 
@@ -85,18 +92,46 @@ interface Todo {
   due_date?: string;        // YYYY-MM-DD (선택)
   created_at: timestamp;
 }
+
+// Streak (연속 기록)
+interface Streak {
+  id: string;
+  user_id: string;
+  current_streak: number;    // 현재 연속 일수
+  longest_streak: number;    // 최장 연속 일수
+  last_entry_date: string;   // YYYY-MM-DD (마지막 기록일)
+  updated_at: timestamp;
+}
+
+// UserStats (게이미피케이션)
+interface UserStats {
+  id: string;
+  user_id: string;
+  level: number;             // 현재 레벨
+  xp: number;                // 경험치
+  badges: string[];          // 획득 배지 목록 ["first_entry", "7day_streak", ...]
+  total_entries: number;
+  updated_at: timestamp;
+}
 ```
 
 ---
 
-## 화면 구성 (6개)
+## 화면 구성 (8개) — PC + iOS + Android
 
-1. **기록 화면** - 챗봇 형태 질문 + 텍스트 입력
-2. **태그 확인** - 자동 태깅 결과 보여주기 (수정 가능)
-3. **일간 요약** - 오늘의 요약 + 근거 링크 목록
-4. **주간 회고** - 한 주 핵심 3~5개 + 근거 링크
-5. **To-do 리스트** - AI 추출 할 일 + 완료 체크 + 근거 Entry 링크
-6. **타임라인** - Entry 리스트 (날짜별)
+### 탭 화면 (하단 탭 네비게이션)
+1. **대시보드 (홈)** - 스트릭, 레벨/배지, 최근 요약, 빠른 기록 버튼
+2. **기록 화면** - 챗봇 형태 질문 + 텍스트 입력
+3. **타임라인** - Entry 리스트 (날짜별) + 일간/주간 요약 진입
+4. **To-do 리스트** - AI 추출 할 일 + 완료 체크 + 근거 Entry 링크
+
+### 상세/모달 화면
+5. **일간 요약** - 오늘의 요약 + 근거 링크 목록
+6. **주간 회고** - 한 주 핵심 3~5개 + 근거 링크
+
+### 부가 화면
+7. **온보딩** - 첫 사용자 가이드 (2~3 스텝)
+8. **설정** - 알림 시간, 체크인 시간대
 
 ---
 
@@ -105,6 +140,9 @@ interface Todo {
 1. **입력은 가볍게, 회고는 가치있게** - 3분 안에 기록 완료
 2. **근거 기반** - 모든 요약은 원문으로 돌아갈 수 있어야 함
 3. **거부감 최소화** - AI가 감시/관리하는 느낌 금지, 도우미 톤 유지
+4. **리텐션 퍼스트** - 듀오링고처럼 매일 돌아오게 만드는 구조 (스트릭, 보상, 알림)
+5. **완성도 높은 UI** - 데모 프로덕트로서 신뢰감 있는 비주얼 퀄리티
+6. **반응형 필수** - PC와 모바일 모두에서 자연스러운 UX
 
 ---
 
@@ -112,44 +150,45 @@ interface Todo {
 
 - 컴포넌트: `PascalCase`, 함수형 + hooks
 - 파일: feature 기반 폴더 (`/features/entry`, `/features/summary`)
-- API: `/api/entries`, `/api/summaries` RESTful
+- API: Supabase Edge Functions (`/functions/entries`, `/functions/summaries`)
 - 상태관리: React Query (서버 상태) + Zustand (클라이언트)
-- 에러 처리: 데모용이므로 happy path 우선, 최소한의 toast 에러
+- 스타일링: NativeWind (`className` 사용, Tailwind 문법)
+- 네비게이션: Expo Router (파일 기반 라우팅, `/app` 디렉토리)
+- 에러 처리: 데모용이므로 happy path 우선, 최소한의 toast/alert 에러
 
 ---
 
 ## 진행 상황 체크리스트
 
-### Phase 1: 기본 구조 (D3-D6)
-- [x] 프로젝트 초기 설정 (Next.js + Supabase)
-- [x] 인증 (이메일 로그인)
-- [x] Entry CRUD API
-- [x] Entry 작성 UI (챗봇 형태)
-- [x] Entry 리스트/상세 UI
-- [x] 자동 태깅 (AI 호출)
+> **참고**: Phase 1-3은 Next.js로 완료됨 (로직 재사용 가능, UI는 Expo로 재구현 필요)
 
-### Phase 2: 일간 요약 + To-do (D7-D9)
-- [x] 일간 요약 생성 API (AI)
-- [x] 근거 링크 저장 로직
-- [x] 일간 요약 화면 + 링크 클릭 → Entry 이동
-- [x] To-do 추출 API (Entry 저장 시 자동 실행)
-- [x] To-do 리스트 UI (완료 체크, 근거 Entry 링크)
+### Phase R1: Expo 프로젝트 셋업 ✅ 완료
+- [x] Expo 프로젝트 생성 (Expo Router + NativeWind + TypeScript)
+- [x] Supabase 연동 (클라이언트 설정, Auth)
+- [x] 공통 레이아웃 (탭 네비게이션, 헤더)
+- [x] 기존 비즈니스 로직 마이그레이션 (타입, Supabase 쿼리, AI 프롬프트)
+- [x] Supabase Edge Functions로 API 이전
 
-### Phase 3: 주간 회고 (D10-D12)
-- [x] 주간 회고 생성 API
-- [x] 주간 화면 UI
-- [x] 근거 링크 표시
+### Phase R2: 핵심 화면 재구현
+- [ ] 기록 화면 (챗봇 형태 입력)
+- [ ] 타임라인 (Entry 리스트)
+- [ ] 일간 요약 + 근거 링크
+- [ ] 주간 회고 + 근거 링크
+- [ ] To-do 리스트
 
-### Phase 4: 폴리시 (D13-D15)
-- [ ] 내보내기 (Markdown)
-- [ ] UX 다듬기
-- [ ] 에러/재생성 처리
+### Phase R3: 리텐션 + 대시보드
+- [ ] 대시보드 (홈) — 스트릭, 최근 요약, 빠른 기록 진입
+- [ ] 스트릭 시스템 (연속 기록 추적 + 시각 표시)
+- [ ] 게이미피케이션 (레벨/배지 — 간단 버전)
+- [ ] 푸시 알림 (체크인 리마인더)
 
-### Phase 5: 제출 준비 (D16-D18)
-- [ ] 안드로이드 래퍼
+### Phase R4: 폴리시 + 제출 준비
+- [ ] 온보딩 (2~3 화면)
+- [ ] 설정 (알림 시간)
 - [ ] 데모 데이터 시딩
+- [ ] EAS Build (iOS TestFlight + Android APK)
+- [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
-- [ ] 제출 패키지
 
 ---
 
@@ -187,14 +226,18 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 
 - 데모용이므로 완벽한 에러 처리보다 **핵심 플로우 우선**
 - 하드코딩 허용 (데모 데이터, 프롬프트 등)
-- UI는 심플하지만 **신뢰감 있게** (깔끔한 타이포, 여백)
+- UI는 **완성도 높게** — 투자 심사에서 "진짜 제품처럼 보이는" 수준 목표
 - "AI가 감시한다" 느낌 절대 금지 → 친근한 도우미 톤
+- 모든 화면은 PC(1200px+)와 모바일(375px~)에서 동작해야 함
+- 리텐션 요소는 자연스럽게 — 강제적이지 않고 "하고 싶게" 만드는 톤
 
 ---
 
 ## 와우 포인트 (데모 핵심)
 > "3분 기록 → 주간 회고가 '읽을 가치'로 변환되는 순간"
 > 근거 링크를 클릭하면 원문이 바로 보이는 신뢰감
+> 스트릭이 쌓이면서 "오늘도 기록해야지" 하는 자연스러운 습관 형성
+> 대시보드에서 내 성장이 한눈에 보이는 만족감
 
 ---
 
@@ -235,6 +278,12 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 날짜 | 결정 사항 | 이유 | 대안 (기각) |
 |------|----------|------|-------------|
 | 2026-02-02 | To-do 기능 MVP 포함 | 데모 임팩트 강화, 실용성 어필 | 후순위로 미루기 |
+| 2026-02-02 | 리텐션 시스템 (스트릭+게이미피케이션) MVP 포함 | 듀오링고식 리텐션으로 제품 차별화, 투자 심사 어필 | 리텐션 기능 없이 출시 |
+| 2026-02-02 | PC+모바일 반응형 웹 우선 | 안드로이드 래퍼 대신 반응형 웹으로 양쪽 커버 | 안드로이드 래퍼 (Capacitor/TWA) |
+| 2026-02-02 | 화면 6개 → 10개로 확장 | 대시보드/온보딩/프로필/설정 추가로 완성도 높은 데모 | 기존 6개 유지 |
+| 2026-02-02 | UI 완성도 최우선 | 투자 심사용 데모에서 "진짜 제품" 인상 필요 | 기능 우선, UI 나중에 |
+| 2026-02-02 | Expo (React Native) 전환 | PC+iOS+Android 단일 코드베이스, 네이티브 푸시 알림, 진짜 앱 데모 가능 | Capacitor (기존 코드 활용), 반응형 웹 유지 |
+| 2026-02-02 | 화면 10개 → 8개로 축소 | 태그 확인/프로필을 다른 화면에 통합, 데모에 집중 | 10개 유지 |
 | | | | |
 
 ---
@@ -244,10 +293,13 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 개발 중 발견한 이슈와 해결책을 기록합니다.
 
 ```
-[예시]
 - Supabase RLS: 테이블 생성 후 RLS 정책 반드시 설정할 것
-- Next.js App Router: 'use client' 빠뜨리면 hooks 에러
 - OpenAI API: 응답 형식 JSON 강제하려면 response_format 설정 필요
+- AsyncStorage + Expo Web: expo export 시 window is not defined 에러 발생
+  → Platform.OS !== 'web' 일 때만 AsyncStorage를 storage로 전달
+  → 웹에서는 Supabase 기본 localStorage 사용
+- NativeWind v4: babel.config.js에 jsxImportSource: 'nativewind' 필수
+- Supabase Edge Functions: Deno 환경이므로 tsconfig.json에서 exclude 처리 필요
 ```
 
 ---
@@ -259,4 +311,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-02 | v0.1 | 초기 문서 작성 | Claude |
 | 2026-02-02 | v0.2 | To-do 기능 MVP 범위 추가 | Claude |
 | 2026-02-02 | v0.3 | 피드백 가이드, 결정 로그, 삽질 노트 섹션 추가 | Claude |
+| 2026-02-02 | v0.4 | 미팅 반영: 리텐션 시스템, 반응형 UI, 화면 확장, 게이미피케이션 추가 | Claude |
+| 2026-02-02 | v0.5 | Expo(React Native) 전환 결정, Phase 재구성(R1-R4), 화면 8개로 축소, 항목 정리 | Claude |
+| 2026-02-02 | v0.6 | Phase R1 완료: Expo 프로젝트 셋업, Supabase 연동, 탭 네비게이션, 비즈니스 로직 마이그레이션, Edge Functions 생성 | Claude |
 | | | | |

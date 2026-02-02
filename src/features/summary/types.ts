@@ -7,3 +7,8 @@ export interface Summary {
   entry_links: string[]
   created_at: string
 }
+
+export interface SummarySentence {
+  text: string
+  entry_ids: string[]
+}

@@ -1,42 +1,44 @@
-import type { Summary } from './types'
-import type { SummarySentence } from '@/lib/openai'
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || `Request failed: ${res.status}`)
-  }
-  return res.json()
-}
+import { supabase } from '@/lib/supabase'
+import type { Summary, SummarySentence } from './types'
 
 export async function fetchSummaries(
   period: 'daily' | 'weekly' = 'daily',
   date?: string
 ): Promise<Summary[]> {
-  const params = new URLSearchParams({ period })
-  if (date) params.set('date', date)
-  const res = await fetch(`/api/summaries?${params}`)
-  return handleResponse<Summary[]>(res)
+  let query = supabase
+    .from('summaries')
+    .select('*')
+    .eq('period', period)
+    .order('period_start', { ascending: false })
+
+  if (date) {
+    query = query.eq('period_start', date)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw new Error(error.message)
+  return data as Summary[]
 }
 
 export async function generateSummary(
   date?: string
 ): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
-  const res = await fetch('/api/summaries/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ date }),
+  const { data, error } = await supabase.functions.invoke('generate-summary', {
+    body: { date },
   })
-  return handleResponse<{ summary: Summary; sentences: SummarySentence[] }>(res)
+
+  if (error) throw new Error(error.message)
+  return data as { summary: Summary; sentences: SummarySentence[] }
 }
 
 export async function generateWeeklySummary(
   weekStart?: string
 ): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
-  const res = await fetch('/api/summaries/generate-weekly', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ week_start: weekStart }),
+  const { data, error } = await supabase.functions.invoke('generate-weekly', {
+    body: { week_start: weekStart },
   })
-  return handleResponse<{ summary: Summary; sentences: SummarySentence[] }>(res)
+
+  if (error) throw new Error(error.message)
+  return data as { summary: Summary; sentences: SummarySentence[] }
 }
