@@ -1,7 +1,9 @@
+import '@/i18n'
 import { useEffect } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { AppShell } from '@/components/layout/AppShell'
 import '../global.css'
@@ -14,6 +16,7 @@ export default function RootLayout() {
   const { initialized, user, initialize } = useAuthStore()
   const segments = useSegments()
   const router = useRouter()
+  const { t } = useTranslation('common')
 
   useEffect(() => {
     initialize()
@@ -47,7 +50,7 @@ export default function RootLayout() {
         name="entries/new"
         options={{
           headerShown: true,
-          title: '새 기록',
+          title: t('screen.newEntry'),
           presentation: 'modal',
         }}
       />
@@ -55,7 +58,7 @@ export default function RootLayout() {
         name="entries/[id]"
         options={{
           headerShown: true,
-          title: '기록 상세',
+          title: t('screen.entryDetail'),
         }}
       />
       <Stack.Screen name="+not-found" />

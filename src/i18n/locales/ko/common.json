@@ -1,0 +1,56 @@
+{
+  "screen": {
+    "newEntry": "새 기록",
+    "entryDetail": "기록 상세"
+  },
+  "tab": {
+    "home": "홈",
+    "timeline": "타임라인",
+    "dailySummary": "일간 요약",
+    "weeklyReview": "주간 회고",
+    "todos": "할 일"
+  },
+  "sidebar": {
+    "brand": "ReflectLog",
+    "tagline": "AI 회고 저널",
+    "newEntry": "새 기록",
+    "signOut": "로그아웃"
+  },
+  "action": {
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "수정",
+    "send": "전송",
+    "backToList": "목록으로",
+    "seeMore": "더 보기"
+  },
+  "date": {
+    "today": "오늘",
+    "yesterday": "어제",
+    "thisWeek": "이번 주",
+    "earlier": "이전",
+    "justNow": "방금 전",
+    "minutesAgo": "{{count}}분 전",
+    "hoursAgo": "{{count}}시간 전",
+    "daysAgo": "{{count}}일 전",
+    "dayNames": ["일", "월", "화", "수", "목", "금", "토"],
+    "monthDay": "{{month}}월 {{day}}일 ({{dayName}})"
+  },
+  "placeholder": {
+    "selectItem": "항목을 선택해주세요",
+    "selectEntry": "기록을 선택해주세요",
+    "selectSummary": "요약을 선택해주세요",
+    "selectWeekly": "주간 회고를 선택해주세요",
+    "selectTodoEvidence": "할 일을 선택하면 근거 기록이 표시됩니다"
+  },
+  "notFound": {
+    "title": "페이지를 찾을 수 없습니다",
+    "goHome": "홈으로 돌아가기"
+  },
+  "label": {
+    "tags": "태그",
+    "evidence": "근거 기록",
+    "evidenceCount": "근거 {{count}}개"
+  }
+}

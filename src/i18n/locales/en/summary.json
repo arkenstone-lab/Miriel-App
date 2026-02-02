@@ -1,0 +1,22 @@
+{
+  "daily": {
+    "generateButton": "Generate Today's Summary",
+    "generating": "Generating summary...",
+    "emptyTitle": "No daily summaries yet",
+    "emptyDescription": "Write some entries first,\nthen generate a summary!",
+    "summaryCount": "{{count}} points",
+    "label": "Daily Summary",
+    "periodLabel": "{{date}} Daily Summary"
+  },
+  "weekly": {
+    "generateButton": "Generate This Week's Review",
+    "generating": "Generating review...",
+    "emptyTitle": "No weekly reviews yet",
+    "emptyDescription": "Build up entries over the week,\nthen generate a review!",
+    "pointCount": "{{count}} points",
+    "label": "Weekly Review",
+    "periodLabel": "{{range}} Weekly Review"
+  },
+  "evidenceBadge": "{{count}} source entries",
+  "loadingEntry": "Loading entry..."
+}

@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { useUpdateTodo, useDeleteTodo } from '@/features/todo/hooks'
 import { Card } from '@/components/ui/Card'
 import type { Todo } from '@/features/todo/types'
@@ -21,6 +22,7 @@ export function TodoItem({
   const router = useRouter()
   const updateMutation = useUpdateTodo()
   const deleteMutation = useDeleteTodo()
+  const { t } = useTranslation('todos')
 
   const toggleStatus = () => {
     updateMutation.mutate({
@@ -63,7 +65,7 @@ export function TodoItem({
                 onPress={() => router.push(`/entries/${todo.source_entry_id}`)}
               >
                 <FontAwesome name="link" size={9} color="#6366f1" />
-                <Text className="text-xs text-indigo-600 ml-1">근거 기록</Text>
+                <Text className="text-xs text-indigo-600 ml-1">{t('evidence.link')}</Text>
               </TouchableOpacity>
             )}
           </View>

@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { useEntry } from '@/features/entry/hooks'
 
 interface EvidenceChipProps {
@@ -10,12 +11,13 @@ interface EvidenceChipProps {
 export function EvidenceChip({ entryId }: EvidenceChipProps) {
   const router = useRouter()
   const { data: entry } = useEntry(entryId)
+  const { t } = useTranslation('summary')
 
   const preview = entry
     ? entry.raw_text.length > 30
       ? entry.raw_text.slice(0, 30) + '...'
       : entry.raw_text
-    : '기록 로딩 중...'
+    : t('loadingEntry')
 
   return (
     <TouchableOpacity

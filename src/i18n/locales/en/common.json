@@ -1,0 +1,56 @@
+{
+  "screen": {
+    "newEntry": "New Entry",
+    "entryDetail": "Entry Detail"
+  },
+  "tab": {
+    "home": "Home",
+    "timeline": "Timeline",
+    "dailySummary": "Daily Summary",
+    "weeklyReview": "Weekly Review",
+    "todos": "To-dos"
+  },
+  "sidebar": {
+    "brand": "ReflectLog",
+    "tagline": "AI Reflection Journal",
+    "newEntry": "New Entry",
+    "signOut": "Sign Out"
+  },
+  "action": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "send": "Send",
+    "backToList": "Back to list",
+    "seeMore": "See more"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "earlier": "Earlier",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "dayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "monthDay": "{{month}}/{{day}} ({{dayName}})"
+  },
+  "placeholder": {
+    "selectItem": "Select an item",
+    "selectEntry": "Select an entry",
+    "selectSummary": "Select a summary",
+    "selectWeekly": "Select a weekly review",
+    "selectTodoEvidence": "Select a to-do to see its source entry"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "goHome": "Go to Home"
+  },
+  "label": {
+    "tags": "Tags",
+    "evidence": "Source Entry",
+    "evidenceCount": "{{count}} sources"
+  }
+}

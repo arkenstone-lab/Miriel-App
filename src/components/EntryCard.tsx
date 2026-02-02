@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import type { Entry } from '@/features/entry/types'
@@ -9,22 +10,29 @@ interface EntryCardProps {
   isSelected?: boolean
 }
 
-function getRelativeTime(dateStr: string): string {
-  const now = new Date()
-  const date = new Date(dateStr)
-  const diffMs = now.getTime() - date.getTime()
-  const diffMin = Math.floor(diffMs / 60000)
-  const diffHr = Math.floor(diffMs / 3600000)
-  const diffDay = Math.floor(diffMs / 86400000)
+/** Formats a date string into a localized relative time (e.g. "3m ago", "2h ago"). */
+function useRelativeTime() {
+  const { t } = useTranslation('common')
 
-  if (diffMin < 1) return '방금 전'
-  if (diffMin < 60) return `${diffMin}분 전`
-  if (diffHr < 24) return `${diffHr}시간 전`
-  if (diffDay < 7) return `${diffDay}일 전`
-  return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  return (dateStr: string): string => {
+    const now = new Date()
+    const date = new Date(dateStr)
+    const diffMs = now.getTime() - date.getTime()
+    const diffMin = Math.floor(diffMs / 60000)
+    const diffHr = Math.floor(diffMs / 3600000)
+    const diffDay = Math.floor(diffMs / 86400000)
+
+    if (diffMin < 1) return t('date.justNow')
+    if (diffMin < 60) return t('date.minutesAgo', { count: diffMin })
+    if (diffHr < 24) return t('date.hoursAgo', { count: diffHr })
+    if (diffDay < 7) return t('date.daysAgo', { count: diffDay })
+    return date.toLocaleDateString()
+  }
 }
 
 export function EntryCard({ entry, onPress, isSelected = false }: EntryCardProps) {
+  const getRelativeTime = useRelativeTime()
+
   return (
     <Card
       onPress={onPress}

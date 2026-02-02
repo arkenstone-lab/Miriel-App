@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import i18n from '@/i18n'
 import { getCheckinQuestions } from '@/lib/constants'
 
 export interface ChatMessage {
@@ -66,7 +67,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const doneMsg: ChatMessage = {
         id: 'done',
         role: 'assistant',
-        text: '기록이 완성됐어요! 아래 버튼을 눌러 저장하세요.',
+        text: i18n.t('entry:create.chatCompletion'),
       }
       set({
         messages: [...state.messages, userMsg, doneMsg],

@@ -1,0 +1,45 @@
+{
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "streak": {
+    "consecutiveDays": "Day Streak",
+    "longestRecord": "Longest",
+    "todayLabel": "Today",
+    "todayDone": "Done",
+    "todayNotDone": "Not yet"
+  },
+  "level": {
+    "maxXP": "{{xp}} XP (MAX)",
+    "progressXP": "{{current}} / {{next}} XP"
+  },
+  "badges": {
+    "title": "Badges",
+    "earned": "{{earned}}/{{total}} earned"
+  },
+  "quickActions": {
+    "writeToday": "Write Today",
+    "viewDailySummary": "Daily Summary",
+    "checkTodos": "Check To-dos"
+  },
+  "reminder": {
+    "streakMessage": "{{count}}-day streak! Keep it going 🔥",
+    "startMessage": "Start recording today!",
+    "tapToStart": "Tap to start"
+  },
+  "recentSummary": {
+    "title": "Recent Summary",
+    "empty": "No summaries yet. Write entries and AI will summarize for you.",
+    "evidenceCount": "{{count}} sources"
+  },
+  "stats": {
+    "totalEntries": "Entries",
+    "todosCompleted": "Done",
+    "summaries": "Summaries"
+  },
+  "weeklyActivity": {
+    "title": "This Week"
+  }
+}

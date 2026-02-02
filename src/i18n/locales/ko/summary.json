@@ -1,0 +1,22 @@
+{
+  "daily": {
+    "generateButton": "오늘 요약 생성",
+    "generating": "요약 생성 중...",
+    "emptyTitle": "아직 일간 요약이 없어요",
+    "emptyDescription": "기록을 작성한 후\n요약을 생성해보세요!",
+    "summaryCount": "{{count}}개 요약",
+    "label": "일간 요약",
+    "periodLabel": "{{date}} 일간 요약"
+  },
+  "weekly": {
+    "generateButton": "이번 주 회고 생성",
+    "generating": "회고 생성 중...",
+    "emptyTitle": "아직 주간 회고가 없어요",
+    "emptyDescription": "한 주간 기록을 쌓은 후\n주간 회고를 생성해보세요!",
+    "pointCount": "{{count}}개 포인트",
+    "label": "주간 회고",
+    "periodLabel": "{{range}} 주간 회고"
+  },
+  "evidenceBadge": "근거 기록 {{count}}개",
+  "loadingEntry": "기록 로딩 중..."
+}

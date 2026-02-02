@@ -1,129 +1,106 @@
-import { useState, useMemo } from 'react'
-import { View, Text, SectionList } from 'react-native'
-import { useRouter } from 'expo-router'
-import { useEntries, useEntry } from '@/features/entry/hooks'
+import { View, Text, ScrollView } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { useEntries } from '@/features/entry/hooks'
+import { useGamificationStats } from '@/features/gamification/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
-import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
-import { EntryCard } from '@/components/EntryCard'
-import { EntryDetail } from '@/components/EntryDetail'
 import { LoadingState } from '@/components/ui/LoadingState'
-import { EmptyState } from '@/components/ui/EmptyState'
-import type { Entry } from '@/features/entry/types'
+import { StreakCard } from '@/components/dashboard/StreakCard'
+import { LevelProgressCard } from '@/components/dashboard/LevelProgressCard'
+import { BadgeGrid } from '@/components/dashboard/BadgeGrid'
+import { RecentSummaryCard } from '@/components/dashboard/RecentSummaryCard'
+import { QuickActions } from '@/components/dashboard/QuickActions'
+import { TodayReminderBanner } from '@/components/dashboard/TodayReminderBanner'
+import { WeeklyActivityChart } from '@/components/dashboard/WeeklyActivityChart'
+import { StatsRow } from '@/components/dashboard/StatsRow'
 
-function getDateGroup(dateStr: string): string {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const date = new Date(dateStr + 'T00:00:00')
-
-  const diffMs = today.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffDays === 0) return '오늘'
-  if (diffDays === 1) return '어제'
-  if (diffDays < 7) return '이번 주'
-  return '이전'
-}
-
-interface Section {
-  title: string
-  data: Entry[]
-}
-
-function groupEntries(entries: Entry[]): Section[] {
-  const groups: Record<string, Entry[]> = {}
-  const order = ['오늘', '어제', '이번 주', '이전']
-
-  for (const entry of entries) {
-    const group = getDateGroup(entry.date)
-    if (!groups[group]) groups[group] = []
-    groups[group].push(entry)
-  }
-
-  return order.filter((key) => groups[key]).map((key) => ({
-    title: key,
-    data: groups[key],
-  }))
-}
-
-export default function TimelineScreen() {
-  const { data: entries, isLoading, error } = useEntries()
-  const router = useRouter()
+export default function DashboardScreen() {
+  const { data: entries } = useEntries()
+  const { data: stats, isLoading } = useGamificationStats()
   const { isDesktop } = useResponsiveLayout()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { data: selectedEntry } = useEntry(selectedId || '')
+  const { t } = useTranslation('dashboard')
+  const { t: tCommon } = useTranslation('common')
 
-  const sections = useMemo(() => {
-    if (!entries) return []
-    return groupEntries(entries)
-  }, [entries])
+  if (isLoading || !stats) return <LoadingState />
 
-  if (isLoading) return <LoadingState />
+  const hour = new Date().getHours()
+  const greeting =
+    hour < 12
+      ? t('greeting.morning')
+      : hour < 18
+      ? t('greeting.afternoon')
+      : t('greeting.evening')
 
-  if (error) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50 px-8">
-        <Text className="text-red-500 text-center">{error.message}</Text>
-      </View>
-    )
-  }
+  const d = new Date()
+  const dayNames = tCommon('date.dayNames', { returnObjects: true }) as string[]
+  const dateStr = tCommon('date.monthDay', {
+    month: d.getMonth() + 1,
+    day: d.getDate(),
+    dayName: dayNames[d.getDay()],
+  })
 
-  if (!entries || entries.length === 0) {
-    return (
-      <View className="flex-1 bg-gray-50">
-        <EmptyState
-          emoji="📝"
-          title="아직 기록이 없어요"
-          description={`${isDesktop ? '좌측 사이드바의' : '오른쪽 상단'} + 버튼을 눌러\n첫 번째 기록을 시작해보세요!`}
-          actionLabel="새 기록 작성"
-          onAction={() => router.push('/entries/new')}
-        />
-      </View>
-    )
-  }
-
-  const handlePress = (entry: Entry) => {
-    if (isDesktop) {
-      setSelectedId(entry.id)
-    } else {
-      router.push(`/entries/${entry.id}`)
-    }
-  }
-
-  const master = (
-    <View className="flex-1 bg-gray-50">
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderSectionHeader={({ section }) => (
-          <View className="px-4 pt-4 pb-2 bg-gray-50">
-            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              {section.title}
-            </Text>
-          </View>
-        )}
-        renderItem={({ item }) => (
-          <View className="px-4">
-            <EntryCard
-              entry={item}
-              onPress={() => handlePress(item)}
-              isSelected={isDesktop && selectedId === item.id}
-            />
-          </View>
-        )}
-        stickySectionHeadersEnabled={false}
-      />
+  const header = (
+    <View className="mb-4">
+      <Text className="text-2xl font-bold text-gray-900">{greeting} 👋</Text>
+      <Text className="text-sm text-gray-400 mt-0.5">{dateStr}</Text>
     </View>
   )
 
   if (isDesktop) {
     return (
-      <MasterDetailLayout
-        master={master}
-        detail={selectedEntry ? <EntryDetail entry={selectedEntry} /> : null}
-        detailPlaceholder="기록을 선택해주세요"
-      />
+      <ScrollView className="flex-1 bg-gray-50">
+        <View className="max-w-5xl w-full mx-auto px-6 py-8">
+          {header}
+
+          <View className="flex-row" style={{ gap: 24 }}>
+            {/* Left column */}
+            <View className="flex-1" style={{ gap: 16 }}>
+              <TodayReminderBanner streak={stats.streak} />
+              <QuickActions />
+              <WeeklyActivityChart entries={entries || []} />
+              <RecentSummaryCard />
+            </View>
+
+            {/* Right column */}
+            <View style={{ width: 320, gap: 16 }}>
+              <View className="flex-row" style={{ gap: 12 }}>
+                <StreakCard streak={stats.streak} />
+                <LevelProgressCard level={stats.level} />
+              </View>
+              <StatsRow
+                totalEntries={stats.totalEntries}
+                todosCompleted={stats.todosCompleted}
+                totalSummaries={stats.totalSummaries}
+              />
+              <BadgeGrid badges={stats.badges} />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
     )
   }
 
-  return master
+  // Mobile layout
+  return (
+    <ScrollView className="flex-1 bg-gray-50">
+      <View className="px-4 pt-6 pb-8" style={{ gap: 12 }}>
+        {header}
+        <TodayReminderBanner streak={stats.streak} />
+
+        <View className="flex-row" style={{ gap: 8 }}>
+          <StreakCard streak={stats.streak} />
+          <LevelProgressCard level={stats.level} />
+        </View>
+
+        <QuickActions />
+        <WeeklyActivityChart entries={entries || []} />
+        <RecentSummaryCard />
+        <StatsRow
+          totalEntries={stats.totalEntries}
+          todosCompleted={stats.todosCompleted}
+          totalSummaries={stats.totalSummaries}
+        />
+        <BadgeGrid badges={stats.badges} />
+      </View>
+    </ScrollView>
+  )
 }

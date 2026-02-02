@@ -1,20 +1,15 @@
+import i18n from '@/i18n'
+
 export const CHECKIN_QUESTIONS = {
-  morning: [
-    '좋은 아침이에요! 오늘 가장 중요한 일은 뭔가요?',
-    '오늘 집중하고 싶은 프로젝트가 있나요?',
-    '어제 마무리 못한 일이 있다면 알려주세요.',
-  ],
-  evening: [
-    '오늘 하루 수고했어요! 어떤 일이 있었나요?',
-    '오늘 잘된 것과 아쉬운 것이 있다면 알려주세요.',
-    '내일 꼭 해야 할 일이 있나요?',
-  ],
+  morning: () => i18n.t('gamification:checkin.morning', { returnObjects: true }) as string[],
+  evening: () => i18n.t('gamification:checkin.evening', { returnObjects: true }) as string[],
 } as const
 
+/** Returns check-in questions based on time of day (morning before 2 PM, evening after). */
 export function getCheckinQuestions(): string[] {
   const hour = new Date().getHours()
   if (hour < 14) {
-    return [...CHECKIN_QUESTIONS.morning]
+    return [...CHECKIN_QUESTIONS.morning()]
   }
-  return [...CHECKIN_QUESTIONS.evening]
+  return [...CHECKIN_QUESTIONS.evening()]
 }

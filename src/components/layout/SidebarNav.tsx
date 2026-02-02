@@ -1,25 +1,28 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useRouter, usePathname } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 
 interface NavItem {
-  label: string
+  labelKey: string
   icon: React.ComponentProps<typeof FontAwesome>['name']
   path: string
 }
 
 const navItems: NavItem[] = [
-  { label: '타임라인', icon: 'list', path: '/(tabs)' },
-  { label: '일간 요약', icon: 'file-text-o', path: '/(tabs)/summary' },
-  { label: '주간 회고', icon: 'calendar', path: '/(tabs)/weekly' },
-  { label: '할 일', icon: 'check-square-o', path: '/(tabs)/todos' },
+  { labelKey: 'tab.home', icon: 'home', path: '/(tabs)' },
+  { labelKey: 'tab.timeline', icon: 'list', path: '/(tabs)/timeline' },
+  { labelKey: 'tab.dailySummary', icon: 'file-text-o', path: '/(tabs)/summary' },
+  { labelKey: 'tab.weeklyReview', icon: 'calendar', path: '/(tabs)/weekly' },
+  { labelKey: 'tab.todos', icon: 'check-square-o', path: '/(tabs)/todos' },
 ]
 
 export function SidebarNav() {
   const router = useRouter()
   const pathname = usePathname()
   const { signOut } = useAuthStore()
+  const { t } = useTranslation('common')
 
   const isActive = (path: string) => {
     if (path === '/(tabs)') {
@@ -32,8 +35,8 @@ export function SidebarNav() {
     <View className="w-60 bg-white border-r border-gray-200 h-full">
       {/* Logo */}
       <View className="px-5 py-6 border-b border-gray-100">
-        <Text className="text-xl font-bold text-indigo-600">ReflectLog</Text>
-        <Text className="text-xs text-gray-400 mt-0.5">AI 회고 저널</Text>
+        <Text className="text-xl font-bold text-indigo-600">{t('sidebar.brand')}</Text>
+        <Text className="text-xs text-gray-400 mt-0.5">{t('sidebar.tagline')}</Text>
       </View>
 
       {/* New Entry Button */}
@@ -44,7 +47,7 @@ export function SidebarNav() {
           activeOpacity={0.7}
         >
           <FontAwesome name="plus" size={14} color="#ffffff" />
-          <Text className="text-white font-semibold ml-2">새 기록</Text>
+          <Text className="text-white font-semibold ml-2">{t('sidebar.newEntry')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -71,7 +74,7 @@ export function SidebarNav() {
                   active ? 'text-indigo-700' : 'text-gray-600'
                 }`}
               >
-                {item.label}
+                {t(item.labelKey)}
               </Text>
             </TouchableOpacity>
           )
@@ -86,7 +89,7 @@ export function SidebarNav() {
           activeOpacity={0.7}
         >
           <FontAwesome name="sign-out" size={18} color="#9ca3af" />
-          <Text className="ml-3 text-sm font-medium text-gray-500">로그아웃</Text>
+          <Text className="ml-3 text-sm font-medium text-gray-500">{t('sidebar.signOut')}</Text>
         </TouchableOpacity>
       </View>
     </View>
