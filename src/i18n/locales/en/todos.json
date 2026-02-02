@@ -1,0 +1,19 @@
+{
+  "filter": {
+    "all": "All",
+    "pending": "In Progress",
+    "done": "Done"
+  },
+  "stats": "{{pending}} in progress · {{done}} done",
+  "empty": {
+    "title": "No to-dos",
+    "description": "Write entries and\nAI will extract to-dos automatically!",
+    "pendingEmpty": "No to-dos in progress",
+    "doneEmpty": "No completed to-dos",
+    "allEmpty": "No to-dos"
+  },
+  "evidence": {
+    "header": "Source Entry",
+    "link": "Source"
+  }
+}

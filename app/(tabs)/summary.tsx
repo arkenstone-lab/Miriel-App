@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, FlatList } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useSummaries, useGenerateSummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
@@ -20,6 +21,8 @@ function SummaryCard({
   onPress: () => void
   isSelected: boolean
 }) {
+  const { t } = useTranslation('summary')
+  const { t: tCommon } = useTranslation('common')
   const sentenceCount = summary.sentences_data?.length || summary.text.split('\n').filter(Boolean).length
   return (
     <Card
@@ -33,9 +36,9 @@ function SummaryCard({
         {summary.text}
       </Text>
       <View className="flex-row gap-2 mt-2.5">
-        <Badge label={`${sentenceCount}개 요약`} variant="gray" />
+        <Badge label={t('daily.summaryCount', { count: sentenceCount })} variant="gray" />
         {summary.entry_links.length > 0 && (
-          <Badge label={`근거 ${summary.entry_links.length}개`} variant="indigo" />
+          <Badge label={tCommon('label.evidenceCount', { count: summary.entry_links.length })} variant="indigo" />
         )}
       </View>
     </Card>
@@ -47,6 +50,8 @@ export default function SummaryScreen() {
   const generateMutation = useGenerateSummary()
   const { isDesktop } = useResponsiveLayout()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { t } = useTranslation('summary')
+  const { t: tCommon } = useTranslation('common')
 
   const selectedSummary = summaries?.find((s) => s.id === selectedId)
 
@@ -85,7 +90,7 @@ export default function SummaryScreen() {
         ListHeaderComponent={
           <View className="px-4 pt-4 pb-1">
             <Button
-              title={generateMutation.isPending ? '요약 생성 중...' : '오늘 요약 생성'}
+              title={generateMutation.isPending ? t('daily.generating') : t('daily.generateButton')}
               onPress={handleGenerate}
               loading={generateMutation.isPending}
               size="lg"
@@ -96,8 +101,8 @@ export default function SummaryScreen() {
         ListEmptyComponent={
           <EmptyState
             emoji="📊"
-            title="아직 일간 요약이 없어요"
-            description={'기록을 작성한 후\n요약을 생성해보세요!'}
+            title={t('daily.emptyTitle')}
+            description={t('daily.emptyDescription')}
           />
         }
       />
@@ -109,7 +114,7 @@ export default function SummaryScreen() {
       <MasterDetailLayout
         master={master}
         detail={selectedSummary ? <SummaryDetailView summary={selectedSummary} /> : null}
-        detailPlaceholder="요약을 선택해주세요"
+        detailPlaceholder={tCommon('placeholder.selectSummary')}
       />
     )
   }
@@ -120,7 +125,7 @@ export default function SummaryScreen() {
       <View className="flex-1">
         <View className="bg-white border-b border-gray-100 px-4 py-3">
           <Button
-            title="목록으로"
+            title={tCommon('action.backToList')}
             variant="ghost"
             size="sm"
             onPress={() => setSelectedId(null)}

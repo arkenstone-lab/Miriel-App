@@ -1,0 +1,25 @@
+{
+  "create": {
+    "switchToChat": "챗봇 모드로 전환",
+    "switchToQuick": "빠른 입력 모드로 전환",
+    "placeholder": "오늘 있었던 일을 자유롭게 적어보세요...",
+    "inputPlaceholder": "여기에 입력하세요...",
+    "saving": "저장 중...",
+    "saveEntry": "기록 저장하기",
+    "savedTitle": "기록이 저장됐어요!",
+    "tagCount": "태그 {{count}}개",
+    "todoCount": "할일 {{count}}개 추출",
+    "saveFailed": "저장 실패",
+    "chatCompletion": "기록이 완성됐어요! 아래 버튼을 눌러 저장하세요."
+  },
+  "detail": {
+    "notFound": "기록을 찾을 수 없습니다.",
+    "deleteTitle": "기록 삭제",
+    "deleteMessage": "이 기록을 삭제할까요?",
+    "deleteFailed": "삭제 실패",
+    "editFailed": "수정 실패",
+    "extractedTodos": "추출된 할 일",
+    "dailySummary": "일간 요약",
+    "retryMessage": "다시 시도해주세요."
+  }
+}

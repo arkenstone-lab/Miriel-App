@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { Link } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 
 export default function LoginScreen() {
@@ -8,10 +9,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const signIn = useAuthStore((s) => s.signIn)
+  const { t } = useTranslation('auth')
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('알림', '이메일과 비밀번호를 입력해주세요.')
+      Alert.alert(t('login.alertTitle'), t('login.alertFillFields'))
       return
     }
 
@@ -19,7 +21,7 @@ export default function LoginScreen() {
     try {
       await signIn(email, password)
     } catch (error: any) {
-      Alert.alert('로그인 실패', error.message || '다시 시도해주세요.')
+      Alert.alert(t('login.failedTitle'), error.message || t('login.failedMessage'))
     } finally {
       setLoading(false)
     }
@@ -35,11 +37,11 @@ export default function LoginScreen() {
           ReflectLog
         </Text>
         <Text className="text-base text-center text-gray-500 mb-10">
-          AI가 정리해주는 나만의 회고 저널
+          {t('login.tagline')}
         </Text>
 
         <View className="mb-4">
-          <Text className="text-sm font-medium text-gray-700 mb-1">이메일</Text>
+          <Text className="text-sm font-medium text-gray-700 mb-1">{t('login.email')}</Text>
           <TextInput
             className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
             placeholder="email@example.com"
@@ -52,10 +54,10 @@ export default function LoginScreen() {
         </View>
 
         <View className="mb-6">
-          <Text className="text-sm font-medium text-gray-700 mb-1">비밀번호</Text>
+          <Text className="text-sm font-medium text-gray-700 mb-1">{t('login.password')}</Text>
           <TextInput
             className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
-            placeholder="비밀번호"
+            placeholder={t('login.passwordPlaceholder')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -69,15 +71,15 @@ export default function LoginScreen() {
           disabled={loading}
         >
           <Text className="text-white text-center font-semibold text-base">
-            {loading ? '로그인 중...' : '로그인'}
+            {loading ? t('login.loading') : t('login.button')}
           </Text>
         </TouchableOpacity>
 
         <View className="flex-row justify-center mt-6">
-          <Text className="text-gray-500">계정이 없으신가요? </Text>
+          <Text className="text-gray-500">{t('login.noAccount')}</Text>
           <Link href="/(auth)/signup" asChild>
             <TouchableOpacity>
-              <Text className="text-indigo-600 font-semibold">회원가입</Text>
+              <Text className="text-indigo-600 font-semibold">{t('login.signUpLink')}</Text>
             </TouchableOpacity>
           </Link>
         </View>

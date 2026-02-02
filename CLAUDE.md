@@ -49,6 +49,7 @@
 ## 기술 스택
 - **Framework**: Expo (React Native) + Expo Router + TypeScript
 - **스타일링**: NativeWind (Tailwind CSS for RN)
+- **i18n**: i18next + react-i18next + expo-localization (한국어/영어, 시스템 로케일 자동 감지)
 - **Backend**: Supabase Edge Functions
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (이메일/소셜 간단히)
@@ -155,6 +156,7 @@ interface UserStats {
 - 스타일링: NativeWind (`className` 사용, Tailwind 문법)
 - 네비게이션: Expo Router (파일 기반 라우팅, `/app` 디렉토리)
 - 에러 처리: 데모용이므로 happy path 우선, 최소한의 toast/alert 에러
+- i18n: 모든 UI 문자열은 `src/i18n/locales/{ko,en}/` JSON에서 관리, 컴포넌트에서 `useTranslation()` 사용, 하드코딩 금지
 
 ---
 
@@ -180,11 +182,18 @@ interface UserStats {
 - [x] DB 마이그레이션 (sentences_data JSONB 컬럼)
 - [x] 기록 상세 (편집/삭제 + 관련 할일/요약 표시)
 
-### Phase R3: 리텐션 + 대시보드
-- [ ] 대시보드 (홈) — 스트릭, 최근 요약, 빠른 기록 진입
-- [ ] 스트릭 시스템 (연속 기록 추적 + 시각 표시)
-- [ ] 게이미피케이션 (레벨/배지 — 간단 버전)
-- [ ] 푸시 알림 (체크인 리마인더)
+### Phase R3: 리텐션 + 대시보드 ✅ 완료
+- [x] 대시보드 (홈) — 스트릭, 최근 요약, 빠른 기록 진입
+- [x] 스트릭 시스템 (연속 기록 추적 + 시각 표시)
+- [x] 게이미피케이션 (레벨/배지 — 간단 버전)
+- [x] 인앱 리마인더 배너 (미기록 시 CTA 표시)
+
+### Phase R3.5: 다국어 (i18n) ✅ 완료
+- [x] i18next + react-i18next + expo-localization 설치
+- [x] 번역 인프라 구축 (src/i18n/index.ts + 8 네임스페이스 × 2 언어 = 16 JSON)
+- [x] 전체 화면/컴포넌트 한국어 하드코딩 → t() 함수로 전환 (~30 파일)
+- [x] 시스템 로케일 자동 감지 (ko → 한국어, 그 외 → 영어)
+- [x] TypeScript 타입 체크 통과, 잔여 하드코딩 한국어 0건 확인
 
 ### Phase R4: 폴리시 + 제출 준비
 - [ ] 온보딩 (2~3 화면)
@@ -288,6 +297,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-02 | UI 완성도 최우선 | 투자 심사용 데모에서 "진짜 제품" 인상 필요 | 기능 우선, UI 나중에 |
 | 2026-02-02 | Expo (React Native) 전환 | PC+iOS+Android 단일 코드베이스, 네이티브 푸시 알림, 진짜 앱 데모 가능 | Capacitor (기존 코드 활용), 반응형 웹 유지 |
 | 2026-02-02 | 화면 10개 → 8개로 축소 | 태그 확인/프로필을 다른 화면에 통합, 데모에 집중 | 10개 유지 |
+| 2026-02-03 | i18n (한국어+영어) 적용 | 글로벌 데모 대응, 투자 심사 시 영어 시연 가능 | 한국어 하드코딩 유지 |
 | | | | |
 
 ---
@@ -304,6 +314,8 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
   → 웹에서는 Supabase 기본 localStorage 사용
 - NativeWind v4: babel.config.js에 jsxImportSource: 'nativewind' 필수
 - Supabase Edge Functions: Deno 환경이므로 tsconfig.json에서 exclude 처리 필요
+- i18n: 상수 파일(gamification/constants.ts 등)에서 i18n.t()를 모듈 레벨에서 호출 시 import '@/i18n'이 먼저 실행되어야 함 → app/_layout.tsx 최상단에서 import
+- i18n: useTranslation() 훅은 React 컴포넌트 내에서만 사용, 순수 함수/store에서는 i18n.t() 직접 호출
 ```
 
 ---
@@ -313,6 +325,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 날짜 | 버전 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
 | 2026-02-02 | v0.1 | 프로젝트 초기 셋업 — 문서 작성, MVP 범위 확정, Expo 전환, Phase R1~R2 완료 | Chris |
+| 2026-02-03 | v0.2 | i18n (한국어+영어) — 시스템 로케일 자동 감지, 전체 UI 문자열 다국어 전환 | Chris |
 | | | | |
 
 <details>
@@ -330,5 +343,23 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
    - 일간 요약 + 주간 회고: 문장별 근거 링크(EvidenceChip), SummaryDetailView 공유
    - 할 일 리스트: 전체/진행중/완료 필터 탭, 근거 Entry 링크
    - DB 마이그레이션: summaries 테이블에 sentences_data JSONB 컬럼 추가
+
+</details>
+
+<details>
+<summary>v0.2 상세 이력 (클릭하여 펼치기)</summary>
+
+1. **i18n 인프라 구축**: i18next + react-i18next + expo-localization 설치, `src/i18n/index.ts` 초기화 (시스템 로케일 자동 감지)
+2. **번역 파일 생성**: 8개 네임스페이스 × 2개 언어(ko/en) = 16 JSON 파일 (`src/i18n/locales/`)
+   - common, dashboard, timeline, entry, summary, todos, auth, gamification
+3. **전체 UI 문자열 전환 (~30 파일)**:
+   - 앱 레이아웃: 루트 레이아웃, 탭 레이아웃, 사이드바, MasterDetail 플레이스홀더
+   - 인증: 로그인/회원가입 폼 라벨, 알림, 유효성 메시지
+   - 대시보드: 인사말, 스트릭, 레벨, 배지, 퀵액션, 리마인더, 통계, 주간활동
+   - 핵심 화면: 타임라인(날짜 그룹), 일간 요약, 주간 회고, 할 일 목록
+   - 기록: 생성(챗봇/빠른입력), 상세(편집/삭제), 저장 피드백
+   - 공유 컴포넌트: EntryCard(상대 시간), EntryDetail, EvidenceChip, SummaryDetailView, TodoItem
+   - 상수/스토어: 게이미피케이션(8 레벨, 11 배지), 체크인 질문, 챗 완료 메시지
+4. **검증**: TypeScript 타입 체크 0 에러, 소스 파일 내 잔여 한국어 하드코딩 0건
 
 </details>

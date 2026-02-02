@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, FlatList } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useSummaries, useGenerateWeeklySummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
@@ -28,6 +29,8 @@ function WeeklySummaryCard({
   onPress: () => void
   isSelected: boolean
 }) {
+  const { t } = useTranslation('summary')
+  const { t: tCommon } = useTranslation('common')
   const sentenceCount = summary.sentences_data?.length || summary.text.split('\n').filter(Boolean).length
   return (
     <Card
@@ -41,9 +44,9 @@ function WeeklySummaryCard({
         {summary.text}
       </Text>
       <View className="flex-row gap-2 mt-2.5">
-        <Badge label={`${sentenceCount}개 포인트`} variant="gray" />
+        <Badge label={t('weekly.pointCount', { count: sentenceCount })} variant="gray" />
         {summary.entry_links.length > 0 && (
-          <Badge label={`근거 ${summary.entry_links.length}개`} variant="indigo" />
+          <Badge label={tCommon('label.evidenceCount', { count: summary.entry_links.length })} variant="indigo" />
         )}
       </View>
     </Card>
@@ -55,6 +58,8 @@ export default function WeeklyScreen() {
   const generateMutation = useGenerateWeeklySummary()
   const { isDesktop } = useResponsiveLayout()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { t } = useTranslation('summary')
+  const { t: tCommon } = useTranslation('common')
 
   const selectedSummary = summaries?.find((s) => s.id === selectedId)
 
@@ -94,7 +99,7 @@ export default function WeeklyScreen() {
           <View className="px-4 pt-4 pb-1">
             <Button
               title={
-                generateMutation.isPending ? '회고 생성 중...' : '이번 주 회고 생성'
+                generateMutation.isPending ? t('weekly.generating') : t('weekly.generateButton')
               }
               onPress={handleGenerate}
               loading={generateMutation.isPending}
@@ -106,8 +111,8 @@ export default function WeeklyScreen() {
         ListEmptyComponent={
           <EmptyState
             emoji="📅"
-            title="아직 주간 회고가 없어요"
-            description={'한 주간 기록을 쌓은 후\n주간 회고를 생성해보세요!'}
+            title={t('weekly.emptyTitle')}
+            description={t('weekly.emptyDescription')}
           />
         }
       />
@@ -119,7 +124,7 @@ export default function WeeklyScreen() {
       <MasterDetailLayout
         master={master}
         detail={selectedSummary ? <SummaryDetailView summary={selectedSummary} /> : null}
-        detailPlaceholder="주간 회고를 선택해주세요"
+        detailPlaceholder={tCommon('placeholder.selectWeekly')}
       />
     )
   }
@@ -130,7 +135,7 @@ export default function WeeklyScreen() {
       <View className="flex-1">
         <View className="bg-white border-b border-gray-100 px-4 py-3">
           <Button
-            title="목록으로"
+            title={tCommon('action.backToList')}
             variant="ghost"
             size="sm"
             onPress={() => setSelectedId(null)}

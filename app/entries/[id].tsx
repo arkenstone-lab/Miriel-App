@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { View, Text, ScrollView, TextInput, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useTranslation } from 'react-i18next'
 import { useEntry, useUpdateEntry, useDeleteEntry } from '@/features/entry/hooks'
 import { useTodosByEntry, useUpdateTodo } from '@/features/todo/hooks'
 import { useSummaries } from '@/features/summary/hooks'
@@ -19,6 +20,8 @@ export default function EntryDetailScreen() {
   const updateEntry = useUpdateEntry()
   const deleteEntry = useDeleteEntry()
   const updateTodo = useUpdateTodo()
+  const { t } = useTranslation('entry')
+  const { t: tCommon } = useTranslation('common')
 
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
@@ -29,24 +32,24 @@ export default function EntryDetailScreen() {
     return (
       <View className="flex-1 justify-center items-center bg-white px-8">
         <Text className="text-red-500 text-center">
-          {error?.message || '기록을 찾을 수 없습니다.'}
+          {error?.message || t('detail.notFound')}
         </Text>
       </View>
     )
   }
 
   const handleDelete = () => {
-    Alert.alert('기록 삭제', '이 기록을 삭제할까요?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('detail.deleteTitle'), t('detail.deleteMessage'), [
+      { text: tCommon('action.cancel'), style: 'cancel' },
       {
-        text: '삭제',
+        text: tCommon('action.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteEntry.mutateAsync(entry.id)
             router.back()
           } catch (e: any) {
-            Alert.alert('삭제 실패', e.message)
+            Alert.alert(t('detail.deleteFailed'), e.message)
           }
         },
       },
@@ -67,7 +70,7 @@ export default function EntryDetailScreen() {
       })
       setIsEditing(false)
     } catch (e: any) {
-      Alert.alert('수정 실패', e.message)
+      Alert.alert(t('detail.editFailed'), e.message)
     }
   }
 
@@ -88,18 +91,18 @@ export default function EntryDetailScreen() {
           <View>
             <Text className="text-sm font-medium text-gray-500">{entry.date}</Text>
             <Text className="text-xs text-gray-400 mt-0.5">
-              {new Date(entry.created_at).toLocaleString('ko-KR')}
+              {new Date(entry.created_at).toLocaleString()}
             </Text>
           </View>
           <View className="flex-row gap-2">
             <Button
-              title={isEditing ? '취소' : '수정'}
+              title={isEditing ? tCommon('action.cancel') : tCommon('action.edit')}
               variant="ghost"
               size="sm"
               onPress={isEditing ? () => setIsEditing(false) : handleEdit}
             />
             <Button
-              title="삭제"
+              title={tCommon('action.delete')}
               variant="ghost"
               size="sm"
               onPress={handleDelete}
@@ -120,7 +123,7 @@ export default function EntryDetailScreen() {
             />
             <View className="mt-3">
               <Button
-                title="저장"
+                title={tCommon('action.save')}
                 onPress={handleSaveEdit}
                 loading={updateEntry.isPending}
               />
@@ -135,7 +138,7 @@ export default function EntryDetailScreen() {
         {/* Tags */}
         {entry.tags.length > 0 && (
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">태그</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">{tCommon('label.tags')}</Text>
             <View className="flex-row flex-wrap gap-2">
               {entry.tags.map((tag, i) => (
                 <Badge key={i} label={tag} variant="indigo" size="md" />
@@ -148,7 +151,7 @@ export default function EntryDetailScreen() {
         {relatedTodos && relatedTodos.length > 0 && (
           <View className="mb-6">
             <Text className="text-sm font-medium text-gray-700 mb-2">
-              추출된 할 일
+              {t('detail.extractedTodos')}
             </Text>
             {relatedTodos.map((todo) => (
               <Card key={todo.id} className="mb-2" onPress={() => toggleTodo(todo.id, todo.status)}>
@@ -177,7 +180,7 @@ export default function EntryDetailScreen() {
         {dailySummary && (
           <View className="mb-6">
             <Text className="text-sm font-medium text-gray-700 mb-2">
-              일간 요약
+              {t('detail.dailySummary')}
             </Text>
             <Card
               onPress={() => router.push('/(tabs)/summary')}
