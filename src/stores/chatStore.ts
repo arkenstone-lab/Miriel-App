@@ -7,14 +7,18 @@ export interface ChatMessage {
   text: string
 }
 
+type InputMode = 'chat' | 'quick'
+
 interface ChatState {
   messages: ChatMessage[]
   questions: string[]
   currentQuestionIndex: number
   isComplete: boolean
+  mode: InputMode
   addUserMessage: (text: string) => void
   reset: () => void
   getFullText: () => string
+  setMode: (mode: InputMode) => void
 }
 
 function createInitialState() {
@@ -30,6 +34,7 @@ function createInitialState() {
     questions,
     currentQuestionIndex: 0,
     isComplete: false,
+    mode: 'chat' as InputMode,
   }
 }
 
@@ -78,4 +83,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       .map((m) => m.text)
       .join('\n\n')
   },
+
+  setMode: (mode: InputMode) => set({ mode }),
 }))

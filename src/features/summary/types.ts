@@ -5,6 +5,7 @@ export interface Summary {
   period_start: string
   text: string
   entry_links: string[]
+  sentences_data?: SummarySentence[]
   created_at: string
 }
 
