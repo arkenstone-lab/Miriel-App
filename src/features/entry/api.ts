@@ -1,55 +1,84 @@
+import { supabase } from '@/lib/supabase'
 import type { Entry, CreateEntryInput, UpdateEntryInput } from './types'
 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || `Request failed: ${res.status}`)
-  }
-  return res.json()
-}
-
 export async function fetchEntries(date?: string): Promise<Entry[]> {
-  const params = date ? `?date=${date}` : ''
-  const res = await fetch(`/api/entries${params}`)
-  return handleResponse<Entry[]>(res)
+  let query = supabase
+    .from('entries')
+    .select('*')
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (date) {
+    query = query.eq('date', date)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw new Error(error.message)
+  return data as Entry[]
 }
 
 export async function fetchEntry(id: string): Promise<Entry> {
-  const res = await fetch(`/api/entries/${id}`)
-  return handleResponse<Entry>(res)
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as Entry
 }
 
 export async function createEntry(input: CreateEntryInput): Promise<Entry> {
-  const res = await fetch('/api/entries', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  })
-  return handleResponse<Entry>(res)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data, error } = await supabase
+    .from('entries')
+    .insert({
+      user_id: user.id,
+      raw_text: input.raw_text,
+      date: input.date || new Date().toISOString().split('T')[0],
+      tags: input.tags || [],
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as Entry
 }
 
 export async function updateEntry(id: string, input: UpdateEntryInput): Promise<Entry> {
-  const res = await fetch(`/api/entries/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  })
-  return handleResponse<Entry>(res)
+  const updates: Record<string, unknown> = {}
+  if (input.raw_text !== undefined) updates.raw_text = input.raw_text
+  if (input.tags !== undefined) updates.tags = input.tags
+  if (input.date !== undefined) updates.date = input.date
+
+  const { data, error } = await supabase
+    .from('entries')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as Entry
 }
 
 export async function deleteEntry(id: string): Promise<void> {
-  const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || 'Delete failed')
-  }
+  const { error } = await supabase
+    .from('entries')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
 }
 
 export async function requestTagging(text: string): Promise<{ tags: string[] }> {
-  const res = await fetch('/api/tagging', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+  const { data, error } = await supabase.functions.invoke('tagging', {
+    body: { text },
   })
-  return handleResponse<{ tags: string[] }>(res)
+
+  if (error) throw new Error(error.message)
+  return data as { tags: string[] }
 }

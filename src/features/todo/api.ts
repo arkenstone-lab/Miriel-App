@@ -1,35 +1,54 @@
+import { supabase } from '@/lib/supabase'
 import type { Todo } from './types'
 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || `Request failed: ${res.status}`)
-  }
-  return res.json()
-}
-
 export async function fetchTodos(status?: string): Promise<Todo[]> {
-  const params = status ? `?status=${status}` : ''
-  const res = await fetch(`/api/todos${params}`)
-  return handleResponse<Todo[]>(res)
+  let query = supabase
+    .from('todos')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (status) {
+    query = query.eq('status', status)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw new Error(error.message)
+  return data as Todo[]
 }
 
 export async function updateTodo(
   id: string,
   updates: { status?: string; text?: string }
 ): Promise<Todo> {
-  const res = await fetch(`/api/todos/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
-  })
-  return handleResponse<Todo>(res)
+  const { data, error } = await supabase
+    .from('todos')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as Todo
 }
 
 export async function deleteTodo(id: string): Promise<void> {
-  const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || 'Delete failed')
-  }
+  const { error } = await supabase
+    .from('todos')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function extractTodos(
+  text: string,
+  entryId?: string
+): Promise<{ todos: Todo[] }> {
+  const { data, error } = await supabase.functions.invoke('extract-todos', {
+    body: { text, entry_id: entryId },
+  })
+
+  if (error) throw new Error(error.message)
+  return data as { todos: Todo[] }
 }
