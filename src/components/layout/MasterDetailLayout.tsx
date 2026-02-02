@@ -1,5 +1,6 @@
 import { View, Text } from 'react-native'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 
 interface MasterDetailLayoutProps {
@@ -11,9 +12,10 @@ interface MasterDetailLayoutProps {
 export function MasterDetailLayout({
   master,
   detail,
-  detailPlaceholder = '항목을 선택해주세요',
+  detailPlaceholder,
 }: MasterDetailLayoutProps) {
   const { isDesktop } = useResponsiveLayout()
+  const { t } = useTranslation('common')
 
   if (!isDesktop) {
     return <>{master}</>
@@ -27,7 +29,9 @@ export function MasterDetailLayout({
       <View className="flex-1">
         {detail || (
           <View className="flex-1 justify-center items-center">
-            <Text className="text-gray-400 text-base">{detailPlaceholder}</Text>
+            <Text className="text-gray-400 text-base">
+              {detailPlaceholder ?? t('placeholder.selectItem')}
+            </Text>
           </View>
         )}
       </View>

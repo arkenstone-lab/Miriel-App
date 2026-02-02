@@ -1,5 +1,6 @@
 import { View, Text, ScrollView } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useTranslation } from 'react-i18next'
 import { EvidenceChip } from './EvidenceChip'
 import { Badge } from '@/components/ui/Badge'
 import type { Summary, SummarySentence } from '@/features/summary/types'
@@ -8,19 +9,26 @@ interface SummaryDetailViewProps {
   summary: Summary
 }
 
-function formatPeriodLabel(summary: Summary): string {
-  if (summary.period === 'weekly') {
-    const start = new Date(summary.period_start + 'T00:00:00')
-    const end = new Date(start)
-    end.setDate(end.getDate() + 6)
-    const fmt = (d: Date) =>
-      `${d.getMonth() + 1}/${d.getDate()}`
-    return `${fmt(start)} ~ ${fmt(end)} 주간 회고`
+/** Builds a human-readable period label like "2/1 ~ 2/7 Weekly Review". */
+function useFormatPeriodLabel() {
+  const { t } = useTranslation('summary')
+
+  return (summary: Summary): string => {
+    if (summary.period === 'weekly') {
+      const start = new Date(summary.period_start + 'T00:00:00')
+      const end = new Date(start)
+      end.setDate(end.getDate() + 6)
+      const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`
+      return t('weekly.periodLabel', { range: `${fmt(start)} ~ ${fmt(end)}` })
+    }
+    return t('daily.periodLabel', { date: summary.period_start })
   }
-  return `${summary.period_start} 일간 요약`
 }
 
 export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
+  const { t } = useTranslation('summary')
+  const formatPeriodLabel = useFormatPeriodLabel()
+
   const sentences: SummarySentence[] = summary.sentences_data || []
 
   // Fallback: if no sentences_data, split text by newlines and use entry_links
@@ -43,7 +51,7 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
             color="#4f46e5"
           />
           <Text className="ml-2 text-xs font-medium text-indigo-600 uppercase tracking-wider">
-            {summary.period === 'weekly' ? '주간 회고' : '일간 요약'}
+            {summary.period === 'weekly' ? t('weekly.label') : t('daily.label')}
           </Text>
         </View>
         <Text className="text-lg font-semibold text-gray-900 mb-1">
@@ -51,7 +59,7 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
         </Text>
         <View className="flex-row items-center mb-6">
           <Badge
-            label={`근거 기록 ${summary.entry_links.length}개`}
+            label={t('evidenceBadge', { count: summary.entry_links.length })}
             variant="indigo"
           />
         </View>

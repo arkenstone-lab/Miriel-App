@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 
-type BadgeVariant = 'indigo' | 'gray' | 'green' | 'red' | 'amber'
+type BadgeVariant = 'indigo' | 'gray' | 'green' | 'red' | 'amber' | 'gold'
 
 interface BadgeProps {
   label: string
@@ -15,6 +15,7 @@ const variantClasses: Record<BadgeVariant, { bg: string; text: string }> = {
   green: { bg: 'bg-green-50', text: 'text-green-700' },
   red: { bg: 'bg-red-50', text: 'text-red-700' },
   amber: { bg: 'bg-amber-50', text: 'text-amber-700' },
+  gold: { bg: 'bg-yellow-50', text: 'text-yellow-700' },
 }
 
 export function Badge({ label, variant = 'indigo', onPress, size = 'sm' }: BadgeProps) {

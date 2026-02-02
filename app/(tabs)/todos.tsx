@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, FlatList, TouchableOpacity } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useTodos } from '@/features/todo/hooks'
 import { useEntry } from '@/features/entry/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
@@ -12,19 +13,21 @@ import type { Todo } from '@/features/todo/types'
 
 type FilterTab = 'all' | 'pending' | 'done'
 
-const filterTabs: { key: FilterTab; label: string }[] = [
-  { key: 'all', label: '전체' },
-  { key: 'pending', label: '진행 중' },
-  { key: 'done', label: '완료' },
-]
-
 export default function TodosScreen() {
   const { data: todos, isLoading, error } = useTodos()
   const { isDesktop } = useResponsiveLayout()
   const [filter, setFilter] = useState<FilterTab>('all')
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
+  const { t } = useTranslation('todos')
+  const { t: tCommon } = useTranslation('common')
 
-  const selectedTodo = todos?.find((t) => t.id === selectedTodoId)
+  const filterTabs: { key: FilterTab; label: string }[] = [
+    { key: 'all', label: t('filter.all') },
+    { key: 'pending', label: t('filter.pending') },
+    { key: 'done', label: t('filter.done') },
+  ]
+
+  const selectedTodo = todos?.find((td) => td.id === selectedTodoId)
   const { data: sourceEntry } = useEntry(selectedTodo?.source_entry_id || '')
 
   if (isLoading) return <LoadingState />
@@ -42,20 +45,20 @@ export default function TodosScreen() {
       <View className="flex-1 bg-gray-50">
         <EmptyState
           emoji="✅"
-          title="할 일이 없어요"
-          description={'기록을 작성하면\nAI가 자동으로 할 일을 추출해줘요!'}
+          title={t('empty.title')}
+          description={t('empty.description')}
         />
       </View>
     )
   }
 
-  const filteredTodos = todos.filter((t) => {
+  const filteredTodos = todos.filter((td) => {
     if (filter === 'all') return true
-    return t.status === filter
+    return td.status === filter
   })
 
-  const pendingCount = todos.filter((t) => t.status === 'pending').length
-  const doneCount = todos.filter((t) => t.status === 'done').length
+  const pendingCount = todos.filter((td) => td.status === 'pending').length
+  const doneCount = todos.filter((td) => td.status === 'done').length
 
   // Sort: pending first, then done
   const sortedTodos = [...filteredTodos].sort((a, b) => {
@@ -86,7 +89,7 @@ export default function TodosScreen() {
           <View className="px-4 pt-4">
             {/* Stats */}
             <Text className="text-sm text-gray-500 mb-3">
-              {pendingCount}개 진행 중 · {doneCount}개 완료
+              {t('stats', { pending: pendingCount, done: doneCount })}
             </Text>
 
             {/* Filter Tabs */}
@@ -115,10 +118,10 @@ export default function TodosScreen() {
           <View className="items-center pt-12">
             <Text className="text-gray-400 text-sm">
               {filter === 'pending'
-                ? '진행 중인 할 일이 없어요'
+                ? t('empty.pendingEmpty')
                 : filter === 'done'
-                ? '완료된 할 일이 없어요'
-                : '할 일이 없어요'}
+                ? t('empty.doneEmpty')
+                : t('empty.allEmpty')}
             </Text>
           </View>
         }
@@ -135,14 +138,14 @@ export default function TodosScreen() {
             <View className="flex-1">
               <View className="px-6 pt-4 pb-2 border-b border-gray-100">
                 <Text className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  근거 기록
+                  {t('evidence.header')}
                 </Text>
               </View>
               <EntryDetail entry={sourceEntry} />
             </View>
           ) : null
         }
-        detailPlaceholder="할 일을 선택하면 근거 기록이 표시됩니다"
+        detailPlaceholder={tCommon('placeholder.selectTodoEvidence')}
       />
     )
   }

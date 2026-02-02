@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useTranslation } from 'react-i18next'
 import { useChatStore, type ChatMessage } from '@/stores/chatStore'
 import { useCreateEntry, useUpdateEntry } from '@/features/entry/hooks'
 import { requestTagging } from '@/features/entry/api'
@@ -52,6 +53,8 @@ export default function NewEntryScreen() {
   const updateEntry = useUpdateEntry()
   const router = useRouter()
   const flatListRef = useRef<FlatList>(null)
+  const { t } = useTranslation('entry')
+  const { t: tCommon } = useTranslation('common')
 
   useEffect(() => {
     reset()
@@ -106,7 +109,7 @@ export default function NewEntryScreen() {
       }, 2000)
     } catch (error: any) {
       setIsSaving(false)
-      Alert.alert('저장 실패', error.message || '다시 시도해주세요.')
+      Alert.alert(t('create.saveFailed'), error.message || t('detail.retryMessage'))
     }
   }
 
@@ -118,14 +121,14 @@ export default function NewEntryScreen() {
           <FontAwesome name="check" size={28} color="#22c55e" />
         </View>
         <Text className="text-lg font-semibold text-gray-900 mb-2">
-          기록이 저장됐어요!
+          {t('create.savedTitle')}
         </Text>
         <View className="flex-row gap-3 mt-2">
           {saveFeedback.tags > 0 && (
-            <Badge label={`태그 ${saveFeedback.tags}개`} variant="indigo" size="md" />
+            <Badge label={t('create.tagCount', { count: saveFeedback.tags })} variant="indigo" size="md" />
           )}
           {saveFeedback.todos > 0 && (
-            <Badge label={`할일 ${saveFeedback.todos}개 추출`} variant="green" size="md" />
+            <Badge label={t('create.todoCount', { count: saveFeedback.todos })} variant="green" size="md" />
           )}
         </View>
       </View>
@@ -147,14 +150,14 @@ export default function NewEntryScreen() {
             onPress={() => setMode('chat')}
           >
             <FontAwesome name="comments" size={16} color="#9ca3af" />
-            <Text className="text-sm text-gray-400 ml-1.5">챗봇 모드로 전환</Text>
+            <Text className="text-sm text-gray-400 ml-1.5">{t('create.switchToChat')}</Text>
           </TouchableOpacity>
         </View>
 
         <View className="flex-1 px-4 pt-2">
           <TextInput
             className="flex-1 text-base text-gray-900 leading-7 border border-gray-200 rounded-xl p-4"
-            placeholder="오늘 있었던 일을 자유롭게 적어보세요..."
+            placeholder={t('create.placeholder')}
             value={quickText}
             onChangeText={setQuickText}
             multiline
@@ -165,7 +168,7 @@ export default function NewEntryScreen() {
 
         <View className="p-4 border-t border-gray-100">
           <Button
-            title={isSaving ? '저장 중...' : '기록 저장하기'}
+            title={isSaving ? t('create.saving') : t('create.saveEntry')}
             onPress={handleSave}
             loading={isSaving}
             disabled={!quickText.trim()}
@@ -190,7 +193,7 @@ export default function NewEntryScreen() {
           onPress={() => setMode('quick')}
         >
           <FontAwesome name="pencil-square-o" size={16} color="#9ca3af" />
-          <Text className="text-sm text-gray-400 ml-1.5">빠른 입력 모드로 전환</Text>
+          <Text className="text-sm text-gray-400 ml-1.5">{t('create.switchToQuick')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -206,7 +209,7 @@ export default function NewEntryScreen() {
       {isComplete ? (
         <View className="p-4 border-t border-gray-100">
           <Button
-            title={isSaving ? '저장 중...' : '기록 저장하기'}
+            title={isSaving ? t('create.saving') : t('create.saveEntry')}
             onPress={handleSave}
             loading={isSaving}
             size="lg"
@@ -216,7 +219,7 @@ export default function NewEntryScreen() {
         <View className="flex-row items-end p-4 border-t border-gray-100">
           <TextInput
             className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-base mr-3 max-h-24 text-gray-900"
-            placeholder="여기에 입력하세요..."
+            placeholder={t('create.inputPlaceholder')}
             value={input}
             onChangeText={setInput}
             multiline
@@ -230,7 +233,7 @@ export default function NewEntryScreen() {
             onPress={handleSend}
             disabled={!input.trim()}
           >
-            <Text className="text-white font-semibold">전송</Text>
+            <Text className="text-white font-semibold">{tCommon('action.send')}</Text>
           </TouchableOpacity>
         </View>
       )}

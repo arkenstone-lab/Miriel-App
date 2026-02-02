@@ -1,0 +1,45 @@
+{
+  "greeting": {
+    "morning": "좋은 아침이에요",
+    "afternoon": "좋은 오후예요",
+    "evening": "좋은 저녁이에요"
+  },
+  "streak": {
+    "consecutiveDays": "연속 기록일",
+    "longestRecord": "최장 기록",
+    "todayLabel": "오늘",
+    "todayDone": "완료",
+    "todayNotDone": "미작성"
+  },
+  "level": {
+    "maxXP": "{{xp}} XP (MAX)",
+    "progressXP": "{{current}} / {{next}} XP"
+  },
+  "badges": {
+    "title": "배지",
+    "earned": "{{earned}}/{{total}} 획득"
+  },
+  "quickActions": {
+    "writeToday": "오늘 기록하기",
+    "viewDailySummary": "일간 요약 보기",
+    "checkTodos": "할 일 확인"
+  },
+  "reminder": {
+    "streakMessage": "{{count}}일 연속 기록 중! 오늘도 이어가세요 🔥",
+    "startMessage": "오늘의 기록을 시작해보세요!",
+    "tapToStart": "탭하여 기록 시작"
+  },
+  "recentSummary": {
+    "title": "최근 요약",
+    "empty": "아직 요약이 없어요. 기록을 작성하면 AI가 자동으로 요약해줘요.",
+    "evidenceCount": "근거 {{count}}개"
+  },
+  "stats": {
+    "totalEntries": "총 기록",
+    "todosCompleted": "완료 할일",
+    "summaries": "요약"
+  },
+  "weeklyActivity": {
+    "title": "이번 주 활동"
+  }
+}

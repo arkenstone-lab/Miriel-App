@@ -1,0 +1,19 @@
+{
+  "filter": {
+    "all": "전체",
+    "pending": "진행 중",
+    "done": "완료"
+  },
+  "stats": "{{pending}}개 진행 중 · {{done}}개 완료",
+  "empty": {
+    "title": "할 일이 없어요",
+    "description": "기록을 작성하면\nAI가 자동으로 할 일을 추출해줘요!",
+    "pendingEmpty": "진행 중인 할 일이 없어요",
+    "doneEmpty": "완료된 할 일이 없어요",
+    "allEmpty": "할 일이 없어요"
+  },
+  "evidence": {
+    "header": "근거 기록",
+    "link": "근거 기록"
+  }
+}

@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { Tabs, useRouter } from 'expo-router'
 import { Pressable } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 
 function TabBarIcon(props: {
@@ -13,6 +14,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const router = useRouter()
   const { isDesktop } = useResponsiveLayout()
+  const { t } = useTranslation('common')
 
   return (
     <Tabs
@@ -27,7 +29,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '타임라인',
+          title: t('tab.home'),
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="timeline"
+        options={{
+          title: t('tab.timeline'),
           tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
           headerRight: () => (
             <Pressable
@@ -42,21 +51,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="summary"
         options={{
-          title: '일간 요약',
+          title: t('tab.dailySummary'),
           tabBarIcon: ({ color }) => <TabBarIcon name="file-text-o" color={color} />,
         }}
       />
       <Tabs.Screen
         name="weekly"
         options={{
-          title: '주간 회고',
+          title: t('tab.weeklyReview'),
           tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
         }}
       />
       <Tabs.Screen
         name="todos"
         options={{
-          title: '할 일',
+          title: t('tab.todos'),
           tabBarIcon: ({ color }) => <TabBarIcon name="check-square-o" color={color} />,
         }}
       />
