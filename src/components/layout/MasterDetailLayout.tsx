@@ -26,9 +26,9 @@ export function MasterDetailLayout({
       <View className="border-r border-gray-200 dark:border-gray-700" style={{ width: 380 }}>
         {master}
       </View>
-      <View className="flex-1">
+      <View className="flex-1 bg-gray-50 dark:bg-gray-950">
         {detail || (
-          <View className="flex-1 justify-center items-center">
+          <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-950">
             <Text className="text-gray-400 dark:text-gray-500 text-base">
               {detailPlaceholder ?? t('placeholder.selectItem')}
             </Text>

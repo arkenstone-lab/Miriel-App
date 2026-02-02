@@ -14,6 +14,8 @@
   },
   "account": {
     "title": "Account",
+    "nickname": "Nickname",
+    "nicknamePlaceholder": "What should we call you?",
     "email": "Email",
     "signOut": "Sign Out",
     "signOutConfirmTitle": "Sign Out",
@@ -21,6 +23,16 @@
   },
   "privacy": {
     "title": "Privacy & Data"
+  },
+  "modal": {
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "profile": {
+    "title": "My Profile",
+    "activity": "Activity",
+    "settings": "Settings",
+    "privacyData": "Privacy & Data"
   },
   "version": "Version"
 }

@@ -1,4 +1,8 @@
 {
+  "tab": {
+    "daily": "Daily",
+    "weekly": "Weekly"
+  },
   "daily": {
     "generateButton": "Generate Today's Summary",
     "generating": "Generating summary...",
