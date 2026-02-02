@@ -169,12 +169,16 @@ interface UserStats {
 - [x] 기존 비즈니스 로직 마이그레이션 (타입, Supabase 쿼리, AI 프롬프트)
 - [x] Supabase Edge Functions로 API 이전
 
-### Phase R2: 핵심 화면 재구현
-- [ ] 기록 화면 (챗봇 형태 입력)
-- [ ] 타임라인 (Entry 리스트)
-- [ ] 일간 요약 + 근거 링크
-- [ ] 주간 회고 + 근거 링크
-- [ ] To-do 리스트
+### Phase R2: 핵심 화면 재구현 ✅ 완료
+- [x] 기록 화면 (챗봇 형태 입력 + 빠른 입력 모드 + 자동 태깅/할일 추출)
+- [x] 타임라인 (Entry 리스트 + 날짜 그룹핑 + Desktop 2패널)
+- [x] 일간 요약 + 근거 링크 (문장별 Evidence Chip)
+- [x] 주간 회고 + 근거 링크 (SummaryDetailView 공유)
+- [x] To-do 리스트 (필터 탭 + 근거 Entry 링크 + Desktop 2패널)
+- [x] 공통 UI 컴포넌트 라이브러리 (Button, Card, Badge, EmptyState, LoadingState)
+- [x] 반응형 레이아웃 (Sidebar + MasterDetail + 하단 탭 자동 전환)
+- [x] DB 마이그레이션 (sentences_data JSONB 컬럼)
+- [x] 기록 상세 (편집/삭제 + 관련 할일/요약 표시)
 
 ### Phase R3: 리텐션 + 대시보드
 - [ ] 대시보드 (홈) — 스트릭, 최근 요약, 빠른 기록 진입
@@ -308,10 +312,23 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 
 | 날짜 | 버전 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
-| 2026-02-02 | v0.1 | 초기 문서 작성 | Claude |
-| 2026-02-02 | v0.2 | To-do 기능 MVP 범위 추가 | Claude |
-| 2026-02-02 | v0.3 | 피드백 가이드, 결정 로그, 삽질 노트 섹션 추가 | Claude |
-| 2026-02-02 | v0.4 | 미팅 반영: 리텐션 시스템, 반응형 UI, 화면 확장, 게이미피케이션 추가 | Claude |
-| 2026-02-02 | v0.5 | Expo(React Native) 전환 결정, Phase 재구성(R1-R4), 화면 8개로 축소, 항목 정리 | Claude |
-| 2026-02-02 | v0.6 | Phase R1 완료: Expo 프로젝트 셋업, Supabase 연동, 탭 네비게이션, 비즈니스 로직 마이그레이션, Edge Functions 생성 | Claude |
+| 2026-02-02 | v0.1 | 프로젝트 초기 셋업 — 문서 작성, MVP 범위 확정, Expo 전환, Phase R1~R2 완료 | Chris |
 | | | | |
+
+<details>
+<summary>v0.1 상세 이력 (클릭하여 펼치기)</summary>
+
+1. **문서 & 설계**: CLAUDE.md 초기 작성, MVP 범위(Do/Don't) 확정, To-do 기능 포함 결정
+2. **기술 결정**: Expo(React Native) 전환, 반응형 웹 → 크로스플랫폼 단일 코드베이스, 화면 10개→8개 축소
+3. **Phase R1 — 프로젝트 셋업**: Expo Router + NativeWind + TypeScript 구성, Supabase 연동(Auth/DB), 탭 네비게이션, 비즈니스 로직 마이그레이션, Edge Functions 4개 생성
+4. **Phase R2 — 핵심 화면 재구현**:
+   - 반응형 레이아웃 시스템 (Desktop 사이드바 + 2패널 / Mobile 하단 탭)
+   - 공통 UI 컴포넌트 (Button, Card, Badge, EmptyState, LoadingState)
+   - 타임라인: 날짜 그룹핑(SectionList) + Desktop MasterDetail
+   - 기록 화면: 챗봇/빠른입력 모드 전환, 자동 태깅, 자동 할일 추출, 저장 피드백
+   - 기록 상세: 편집/삭제, 관련 할일·요약 표시
+   - 일간 요약 + 주간 회고: 문장별 근거 링크(EvidenceChip), SummaryDetailView 공유
+   - 할 일 리스트: 전체/진행중/완료 필터 탭, 근거 Entry 링크
+   - DB 마이그레이션: summaries 테이블에 sentences_data JSONB 컬럼 추가
+
+</details>

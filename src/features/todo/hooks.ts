@@ -1,10 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchTodos, updateTodo, deleteTodo } from './api'
+import { fetchTodos, fetchTodosByEntry, updateTodo, deleteTodo } from './api'
 
 export function useTodos(status?: string) {
   return useQuery({
     queryKey: ['todos', status],
     queryFn: () => fetchTodos(status),
+  })
+}
+
+export function useTodosByEntry(entryId: string) {
+  return useQuery({
+    queryKey: ['todos', 'entry', entryId],
+    queryFn: () => fetchTodosByEntry(entryId),
+    enabled: !!entryId,
   })
 }
 

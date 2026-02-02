@@ -1,32 +1,56 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { useState } from 'react'
+import { View, Text, FlatList } from 'react-native'
 import { useSummaries, useGenerateSummary } from '@/features/summary/hooks'
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
+import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
+import { SummaryDetailView } from '@/components/SummaryDetailView'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
 import type { Summary } from '@/features/summary/types'
 
-function SummaryCard({ summary }: { summary: Summary }) {
+function SummaryCard({
+  summary,
+  onPress,
+  isSelected,
+}: {
+  summary: Summary
+  onPress: () => void
+  isSelected: boolean
+}) {
+  const sentenceCount = summary.sentences_data?.length || summary.text.split('\n').filter(Boolean).length
   return (
-    <View className="bg-white rounded-xl p-4 mb-3 border border-gray-100">
-      <Text className="text-sm text-gray-500 mb-2">{summary.period_start}</Text>
-      <Text className="text-base text-gray-900 leading-6">{summary.text}</Text>
-      {summary.entry_links.length > 0 && (
-        <Text className="text-xs text-indigo-500 mt-2">
-          근거 기록 {summary.entry_links.length}개
-        </Text>
-      )}
-    </View>
+    <Card
+      onPress={onPress}
+      className={`mb-3 ${isSelected ? 'border-indigo-300 bg-indigo-50' : ''}`}
+    >
+      <Text className="text-sm font-medium text-gray-500 mb-2">
+        {summary.period_start}
+      </Text>
+      <Text className="text-base text-gray-900 leading-6" numberOfLines={3}>
+        {summary.text}
+      </Text>
+      <View className="flex-row gap-2 mt-2.5">
+        <Badge label={`${sentenceCount}개 요약`} variant="gray" />
+        {summary.entry_links.length > 0 && (
+          <Badge label={`근거 ${summary.entry_links.length}개`} variant="indigo" />
+        )}
+      </View>
+    </Card>
   )
 }
 
 export default function SummaryScreen() {
   const { data: summaries, isLoading, error } = useSummaries('daily')
   const generateMutation = useGenerateSummary()
+  const { isDesktop } = useResponsiveLayout()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </View>
-    )
-  }
+  const selectedSummary = summaries?.find((s) => s.id === selectedId)
+
+  if (isLoading) return <LoadingState />
 
   if (error) {
     return (
@@ -36,35 +60,76 @@ export default function SummaryScreen() {
     )
   }
 
-  return (
-    <View className="flex-1 bg-gray-50">
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <TouchableOpacity
-          className={`rounded-lg py-3 mb-4 ${
-            generateMutation.isPending ? 'bg-indigo-400' : 'bg-indigo-600'
-          }`}
-          onPress={() => generateMutation.mutate(undefined)}
-          disabled={generateMutation.isPending}
-        >
-          <Text className="text-white text-center font-semibold">
-            {generateMutation.isPending ? '요약 생성 중...' : '오늘 요약 생성'}
-          </Text>
-        </TouchableOpacity>
+  const handleGenerate = () => {
+    generateMutation.mutate(undefined)
+  }
 
-        {(!summaries || summaries.length === 0) ? (
-          <View className="items-center pt-16">
-            <Text className="text-4xl mb-4">📊</Text>
-            <Text className="text-lg font-semibold text-gray-700 mb-2">
-              아직 일간 요약이 없어요
-            </Text>
-            <Text className="text-gray-500 text-center">
-              기록을 작성한 후{'\n'}요약을 생성해보세요!
-            </Text>
+  const handleSelect = (summary: Summary) => {
+    setSelectedId(summary.id)
+  }
+
+  const master = (
+    <View className="flex-1 bg-gray-50">
+      <FlatList
+        data={summaries || []}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View className="px-4">
+            <SummaryCard
+              summary={item}
+              onPress={() => handleSelect(item)}
+              isSelected={isDesktop && selectedId === item.id}
+            />
           </View>
-        ) : (
-          summaries.map((s) => <SummaryCard key={s.id} summary={s} />)
         )}
-      </ScrollView>
+        ListHeaderComponent={
+          <View className="px-4 pt-4 pb-1">
+            <Button
+              title={generateMutation.isPending ? '요약 생성 중...' : '오늘 요약 생성'}
+              onPress={handleGenerate}
+              loading={generateMutation.isPending}
+              size="lg"
+            />
+            <View className="h-4" />
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            emoji="📊"
+            title="아직 일간 요약이 없어요"
+            description={'기록을 작성한 후\n요약을 생성해보세요!'}
+          />
+        }
+      />
     </View>
   )
+
+  if (isDesktop) {
+    return (
+      <MasterDetailLayout
+        master={master}
+        detail={selectedSummary ? <SummaryDetailView summary={selectedSummary} /> : null}
+        detailPlaceholder="요약을 선택해주세요"
+      />
+    )
+  }
+
+  // Mobile: tap opens inline detail
+  if (selectedSummary) {
+    return (
+      <View className="flex-1">
+        <View className="bg-white border-b border-gray-100 px-4 py-3">
+          <Button
+            title="목록으로"
+            variant="ghost"
+            size="sm"
+            onPress={() => setSelectedId(null)}
+          />
+        </View>
+        <SummaryDetailView summary={selectedSummary} />
+      </View>
+    )
+  }
+
+  return master
 }
