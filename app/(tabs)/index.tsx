@@ -12,6 +12,7 @@ import { QuickActions } from '@/components/dashboard/QuickActions'
 import { TodayReminderBanner } from '@/components/dashboard/TodayReminderBanner'
 import { WeeklyActivityChart } from '@/components/dashboard/WeeklyActivityChart'
 import { StatsRow } from '@/components/dashboard/StatsRow'
+import { PrivacyNotice } from '@/components/PrivacyNotice'
 
 export default function DashboardScreen() {
   const { data: entries } = useEntries()
@@ -40,15 +41,16 @@ export default function DashboardScreen() {
 
   const header = (
     <View className="mb-4">
-      <Text className="text-2xl font-bold text-gray-900">{greeting} 👋</Text>
-      <Text className="text-sm text-gray-400 mt-0.5">{dateStr}</Text>
+      <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100">{greeting} 👋</Text>
+      <Text className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{dateStr}</Text>
     </View>
   )
 
   if (isDesktop) {
     return (
-      <ScrollView className="flex-1 bg-gray-50">
+      <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-950">
         <View className="max-w-5xl w-full mx-auto px-6 py-8">
+          <PrivacyNotice mode="banner" />
           {header}
 
           <View className="flex-row" style={{ gap: 24 }}>
@@ -83,6 +85,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-50">
       <View className="px-4 pt-6 pb-8" style={{ gap: 12 }}>
+        <PrivacyNotice mode="banner" />
         {header}
         <TodayReminderBanner streak={stats.streak} />
 

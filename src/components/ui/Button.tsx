@@ -19,12 +19,12 @@ const variantClasses: Record<ButtonVariant, { container: string; text: string }>
     text: 'text-white',
   },
   secondary: {
-    container: 'bg-white border border-gray-200',
-    text: 'text-gray-700',
+    container: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+    text: 'text-gray-700 dark:text-gray-300',
   },
   ghost: {
     container: 'bg-transparent',
-    text: 'text-indigo-600',
+    text: 'text-indigo-600 dark:text-indigo-400',
   },
 }
 

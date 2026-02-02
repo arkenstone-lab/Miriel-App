@@ -34,7 +34,7 @@ export default function TodosScreen() {
 
   if (error) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50 px-8">
+      <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-950 px-8">
         <Text className="text-red-500 text-center">{error.message}</Text>
       </View>
     )
@@ -42,7 +42,7 @@ export default function TodosScreen() {
 
   if (!todos || todos.length === 0) {
     return (
-      <View className="flex-1 bg-gray-50">
+      <View className="flex-1 bg-gray-50 dark:bg-gray-950">
         <EmptyState
           emoji="✅"
           title={t('empty.title')}
@@ -68,7 +68,7 @@ export default function TodosScreen() {
   })
 
   const master = (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
       <FlatList
         data={sortedTodos}
         keyExtractor={(item) => item.id}
@@ -88,23 +88,23 @@ export default function TodosScreen() {
         ListHeaderComponent={
           <View className="px-4 pt-4">
             {/* Stats */}
-            <Text className="text-sm text-gray-500 mb-3">
+            <Text className="text-sm text-gray-500 dark:text-gray-400 mb-3">
               {t('stats', { pending: pendingCount, done: doneCount })}
             </Text>
 
             {/* Filter Tabs */}
-            <View className="flex-row bg-gray-100 rounded-xl p-1 mb-4">
+            <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-4">
               {filterTabs.map((tab) => (
                 <TouchableOpacity
                   key={tab.key}
                   className={`flex-1 py-2 rounded-lg items-center ${
-                    filter === tab.key ? 'bg-white' : ''
+                    filter === tab.key ? 'bg-white dark:bg-gray-700' : ''
                   }`}
                   onPress={() => setFilter(tab.key)}
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      filter === tab.key ? 'text-gray-900' : 'text-gray-500'
+                      filter === tab.key ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {tab.label}
@@ -116,7 +116,7 @@ export default function TodosScreen() {
         }
         ListEmptyComponent={
           <View className="items-center pt-12">
-            <Text className="text-gray-400 text-sm">
+            <Text className="text-gray-400 dark:text-gray-500 text-sm">
               {filter === 'pending'
                 ? t('empty.pendingEmpty')
                 : filter === 'done'
@@ -136,8 +136,8 @@ export default function TodosScreen() {
         detail={
           sourceEntry ? (
             <View className="flex-1">
-              <View className="px-6 pt-4 pb-2 border-b border-gray-100">
-                <Text className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <View className="px-6 pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   {t('evidence.header')}
                 </Text>
               </View>

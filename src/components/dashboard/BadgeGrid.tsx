@@ -15,8 +15,8 @@ export function BadgeGrid({ badges }: BadgeGridProps) {
   return (
     <Card>
       <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-sm font-semibold text-gray-900">{t('badges.title')}</Text>
-        <Text className="text-xs text-gray-400">
+        <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('badges.title')}</Text>
+        <Text className="text-xs text-gray-400 dark:text-gray-500">
           {t('badges.earned', { earned: earned.length, total })}
         </Text>
       </View>
@@ -25,7 +25,7 @@ export function BadgeGrid({ badges }: BadgeGridProps) {
           <View
             key={badge.id}
             className={`items-center justify-center w-14 h-14 rounded-xl ${
-              badge.earned ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'
+              badge.earned ? 'bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700' : 'bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700'
             }`}
           >
             <Text className={`text-xl ${badge.earned ? '' : 'opacity-30'}`}>
@@ -33,7 +33,7 @@ export function BadgeGrid({ badges }: BadgeGridProps) {
             </Text>
             <Text
               className={`text-[8px] mt-0.5 ${
-                badge.earned ? 'text-amber-700' : 'text-gray-400'
+                badge.earned ? 'text-amber-700 dark:text-amber-300' : 'text-gray-400 dark:text-gray-500'
               }`}
               numberOfLines={1}
             >

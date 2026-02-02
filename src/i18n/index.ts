@@ -10,6 +10,8 @@ import koSummary from './locales/ko/summary.json'
 import koTodos from './locales/ko/todos.json'
 import koAuth from './locales/ko/auth.json'
 import koGamification from './locales/ko/gamification.json'
+import koSettings from './locales/ko/settings.json'
+import koPrivacy from './locales/ko/privacy.json'
 
 import enCommon from './locales/en/common.json'
 import enDashboard from './locales/en/dashboard.json'
@@ -19,6 +21,8 @@ import enSummary from './locales/en/summary.json'
 import enTodos from './locales/en/todos.json'
 import enAuth from './locales/en/auth.json'
 import enGamification from './locales/en/gamification.json'
+import enSettings from './locales/en/settings.json'
+import enPrivacy from './locales/en/privacy.json'
 
 const deviceLanguage = getLocales()[0]?.languageCode ?? 'en'
 const lng = deviceLanguage === 'ko' ? 'ko' : 'en'
@@ -26,7 +30,7 @@ const lng = deviceLanguage === 'ko' ? 'ko' : 'en'
 i18n.use(initReactI18next).init({
   lng,
   fallbackLng: 'en',
-  ns: ['common', 'dashboard', 'timeline', 'entry', 'summary', 'todos', 'auth', 'gamification'],
+  ns: ['common', 'dashboard', 'timeline', 'entry', 'summary', 'todos', 'auth', 'gamification', 'settings', 'privacy'],
   defaultNS: 'common',
   resources: {
     ko: {
@@ -38,6 +42,8 @@ i18n.use(initReactI18next).init({
       todos: koTodos,
       auth: koAuth,
       gamification: koGamification,
+      settings: koSettings,
+      privacy: koPrivacy,
     },
     en: {
       common: enCommon,
@@ -48,6 +54,8 @@ i18n.use(initReactI18next).init({
       todos: enTodos,
       auth: enAuth,
       gamification: enGamification,
+      settings: enSettings,
+      privacy: enPrivacy,
     },
   },
   interpolation: {

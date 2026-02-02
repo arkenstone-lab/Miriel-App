@@ -10,12 +10,12 @@ interface BadgeProps {
 }
 
 const variantClasses: Record<BadgeVariant, { bg: string; text: string }> = {
-  indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700' },
-  gray: { bg: 'bg-gray-100', text: 'text-gray-600' },
-  green: { bg: 'bg-green-50', text: 'text-green-700' },
-  red: { bg: 'bg-red-50', text: 'text-red-700' },
-  amber: { bg: 'bg-amber-50', text: 'text-amber-700' },
-  gold: { bg: 'bg-yellow-50', text: 'text-yellow-700' },
+  indigo: { bg: 'bg-indigo-50 dark:bg-indigo-900/30', text: 'text-indigo-700 dark:text-indigo-300' },
+  gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400' },
+  green: { bg: 'bg-green-50 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300' },
+  red: { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300' },
+  amber: { bg: 'bg-amber-50 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300' },
+  gold: { bg: 'bg-yellow-50 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-300' },
 }
 
 export function Badge({ label, variant = 'indigo', onPress, size = 'sm' }: BadgeProps) {
