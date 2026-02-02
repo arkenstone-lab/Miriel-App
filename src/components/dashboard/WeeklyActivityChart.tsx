@@ -34,7 +34,7 @@ export function WeeklyActivityChart({ entries }: WeeklyActivityChartProps) {
 
   return (
     <Card>
-      <Text className="text-sm font-semibold text-gray-900 mb-3">{t('weeklyActivity.title')}</Text>
+      <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('weeklyActivity.title')}</Text>
       <View className="flex-row justify-between">
         {last7Days.map(({ date, dayLabel }) => {
           const hasEntry = entryDates.has(date)
@@ -42,7 +42,7 @@ export function WeeklyActivityChart({ entries }: WeeklyActivityChartProps) {
 
           return (
             <View key={date} className="items-center" style={{ gap: 4 }}>
-              <Text className={`text-[10px] ${isToday ? 'font-bold text-indigo-600' : 'text-gray-400'}`}>
+              <Text className={`text-[10px] ${isToday ? 'font-bold text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`}>
                 {dayLabel}
               </Text>
               <View
@@ -50,8 +50,8 @@ export function WeeklyActivityChart({ entries }: WeeklyActivityChartProps) {
                   hasEntry
                     ? 'bg-indigo-500'
                     : isToday
-                    ? 'bg-indigo-100 border-2 border-indigo-300'
-                    : 'bg-gray-100'
+                    ? 'bg-indigo-100 dark:bg-indigo-800/40 border-2 border-indigo-300 dark:border-indigo-600'
+                    : 'bg-gray-100 dark:bg-gray-800'
                 }`}
               >
                 {hasEntry && (

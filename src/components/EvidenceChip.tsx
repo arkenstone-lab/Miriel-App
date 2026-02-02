@@ -21,12 +21,12 @@ export function EvidenceChip({ entryId }: EvidenceChipProps) {
 
   return (
     <TouchableOpacity
-      className="flex-row items-center bg-indigo-50 rounded-lg px-3 py-2 mr-2 mb-2"
+      className="flex-row items-center bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2 mr-2 mb-2"
       onPress={() => router.push(`/entries/${entryId}`)}
       activeOpacity={0.7}
     >
       <FontAwesome name="link" size={10} color="#6366f1" />
-      <Text className="text-xs text-indigo-600 ml-1.5 flex-shrink" numberOfLines={1}>
+      <Text className="text-xs text-indigo-600 dark:text-indigo-400 ml-1.5 flex-shrink" numberOfLines={1}>
         {preview}
       </Text>
       <FontAwesome

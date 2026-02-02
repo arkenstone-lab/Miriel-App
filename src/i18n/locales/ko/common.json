@@ -1,7 +1,8 @@
 {
   "screen": {
     "newEntry": "새 기록",
-    "entryDetail": "기록 상세"
+    "entryDetail": "기록 상세",
+    "settings": "설정"
   },
   "tab": {
     "home": "홈",
@@ -14,7 +15,8 @@
     "brand": "ReflectLog",
     "tagline": "AI 회고 저널",
     "newEntry": "새 기록",
-    "signOut": "로그아웃"
+    "signOut": "로그아웃",
+    "settings": "설정"
   },
   "action": {
     "save": "저장",

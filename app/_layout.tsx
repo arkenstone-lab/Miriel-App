@@ -3,8 +3,10 @@ import { useEffect } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { AppShell } from '@/components/layout/AppShell'
 import '../global.css'
 
@@ -14,13 +16,23 @@ SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   const { initialized, user, initialize } = useAuthStore()
+  const { theme, initialized: settingsReady, initialize: initSettings } = useSettingsStore()
+  const { colorScheme, setColorScheme } = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const segments = useSegments()
   const router = useRouter()
   const { t } = useTranslation('common')
 
   useEffect(() => {
     initialize()
+    initSettings()
   }, [])
+
+  useEffect(() => {
+    if (settingsReady) {
+      setColorScheme(theme)
+    }
+  }, [theme, settingsReady])
 
   useEffect(() => {
     if (!initialized) return
@@ -43,7 +55,12 @@ export default function RootLayout() {
   const inAuthGroup = segments[0] === '(auth)'
 
   const stack = (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{
+      headerShown: false,
+      headerStyle: { backgroundColor: isDark ? '#111827' : '#ffffff' },
+      headerTintColor: isDark ? '#f3f4f6' : '#111827',
+      contentStyle: { backgroundColor: isDark ? '#030712' : '#f9fafb' },
+    }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
@@ -59,6 +76,14 @@ export default function RootLayout() {
         options={{
           headerShown: true,
           title: t('screen.entryDetail'),
+        }}
+      />
+      <Stack.Screen
+        name="settings"
+        options={{
+          headerShown: true,
+          title: t('screen.settings'),
+          presentation: 'modal',
         }}
       />
       <Stack.Screen name="+not-found" />

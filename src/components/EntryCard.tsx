@@ -36,13 +36,13 @@ export function EntryCard({ entry, onPress, isSelected = false }: EntryCardProps
   return (
     <Card
       onPress={onPress}
-      className={`mb-3 ${isSelected ? 'border-indigo-300 bg-indigo-50' : ''}`}
+      className={`mb-3 ${isSelected ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : ''}`}
     >
       <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-sm font-medium text-gray-500">{entry.date}</Text>
-        <Text className="text-xs text-gray-400">{getRelativeTime(entry.created_at)}</Text>
+        <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">{entry.date}</Text>
+        <Text className="text-xs text-gray-400 dark:text-gray-500">{getRelativeTime(entry.created_at)}</Text>
       </View>
-      <Text className="text-base text-gray-900 leading-6" numberOfLines={3}>
+      <Text className="text-base text-gray-900 dark:text-gray-100 leading-6" numberOfLines={3}>
         {entry.raw_text}
       </Text>
       {entry.tags.length > 0 && (
@@ -51,7 +51,7 @@ export function EntryCard({ entry, onPress, isSelected = false }: EntryCardProps
             <Badge key={i} label={tag} variant="indigo" />
           ))}
           {entry.tags.length > 3 && (
-            <Text className="text-xs text-gray-400 self-center ml-1">
+            <Text className="text-xs text-gray-400 dark:text-gray-500 self-center ml-1">
               +{entry.tags.length - 3}
             </Text>
           )}

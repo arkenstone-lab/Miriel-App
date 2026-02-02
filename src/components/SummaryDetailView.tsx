@@ -41,7 +41,7 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
         }))
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <ScrollView className="flex-1 bg-white dark:bg-gray-900">
       <View className="p-6">
         {/* Header */}
         <View className="flex-row items-center mb-1">
@@ -50,11 +50,11 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
             size={16}
             color="#4f46e5"
           />
-          <Text className="ml-2 text-xs font-medium text-indigo-600 uppercase tracking-wider">
+          <Text className="ml-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
             {summary.period === 'weekly' ? t('weekly.label') : t('daily.label')}
           </Text>
         </View>
-        <Text className="text-lg font-semibold text-gray-900 mb-1">
+        <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
           {formatPeriodLabel(summary)}
         </Text>
         <View className="flex-row items-center mb-6">
@@ -68,10 +68,10 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
         {displaySentences.map((sentence, index) => (
           <View key={index} className="mb-5">
             <View className="flex-row mb-2">
-              <View className="w-6 h-6 rounded-full bg-indigo-100 items-center justify-center mr-3 mt-0.5">
-                <Text className="text-xs font-bold text-indigo-600">{index + 1}</Text>
+              <View className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-800/40 items-center justify-center mr-3 mt-0.5">
+                <Text className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{index + 1}</Text>
               </View>
-              <Text className="text-base text-gray-900 leading-6 flex-1">
+              <Text className="text-base text-gray-900 dark:text-gray-100 leading-6 flex-1">
                 {sentence.text}
               </Text>
             </View>

@@ -32,11 +32,11 @@ export function SidebarNav() {
   }
 
   return (
-    <View className="w-60 bg-white border-r border-gray-200 h-full">
+    <View className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full">
       {/* Logo */}
-      <View className="px-5 py-6 border-b border-gray-100">
-        <Text className="text-xl font-bold text-indigo-600">{t('sidebar.brand')}</Text>
-        <Text className="text-xs text-gray-400 mt-0.5">{t('sidebar.tagline')}</Text>
+      <View className="px-5 py-6 border-b border-gray-100 dark:border-gray-800">
+        <Text className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{t('sidebar.brand')}</Text>
+        <Text className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('sidebar.tagline')}</Text>
       </View>
 
       {/* New Entry Button */}
@@ -59,7 +59,7 @@ export function SidebarNav() {
             <TouchableOpacity
               key={item.path}
               className={`flex-row items-center px-3 py-2.5 rounded-lg mb-1 ${
-                active ? 'bg-indigo-50' : ''
+                active ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''
               }`}
               onPress={() => router.push(item.path as any)}
               activeOpacity={0.7}
@@ -71,7 +71,7 @@ export function SidebarNav() {
               />
               <Text
                 className={`ml-3 text-sm font-medium ${
-                  active ? 'text-indigo-700' : 'text-gray-600'
+                  active ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 {t(item.labelKey)}
@@ -81,15 +81,23 @@ export function SidebarNav() {
         })}
       </View>
 
-      {/* Sign Out */}
-      <View className="px-3 pb-4 border-t border-gray-100 pt-3">
+      {/* Settings & Sign Out */}
+      <View className="px-3 pb-4 border-t border-gray-100 dark:border-gray-800 pt-3">
+        <TouchableOpacity
+          className="flex-row items-center px-3 py-2.5 rounded-lg mb-1"
+          onPress={() => router.push('/settings' as any)}
+          activeOpacity={0.7}
+        >
+          <FontAwesome name="cog" size={18} color="#9ca3af" />
+          <Text className="ml-3 text-sm font-medium text-gray-500 dark:text-gray-400">{t('sidebar.settings')}</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           className="flex-row items-center px-3 py-2.5 rounded-lg"
           onPress={signOut}
           activeOpacity={0.7}
         >
           <FontAwesome name="sign-out" size={18} color="#9ca3af" />
-          <Text className="ml-3 text-sm font-medium text-gray-500">{t('sidebar.signOut')}</Text>
+          <Text className="ml-3 text-sm font-medium text-gray-500 dark:text-gray-400">{t('sidebar.signOut')}</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,0 +1,26 @@
+{
+  "title": "Settings",
+  "language": {
+    "title": "Language",
+    "system": "System",
+    "ko": "한국어",
+    "en": "English"
+  },
+  "theme": {
+    "title": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "account": {
+    "title": "Account",
+    "email": "Email",
+    "signOut": "Sign Out",
+    "signOutConfirmTitle": "Sign Out",
+    "signOutConfirmMessage": "Are you sure you want to sign out?"
+  },
+  "privacy": {
+    "title": "Privacy & Data"
+  },
+  "version": "Version"
+}

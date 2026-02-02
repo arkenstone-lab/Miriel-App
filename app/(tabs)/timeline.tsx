@@ -71,7 +71,7 @@ export default function TimelineScreen() {
 
   if (error) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50 px-8">
+      <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-950 px-8">
         <Text className="text-red-500 text-center">{error.message}</Text>
       </View>
     )
@@ -79,7 +79,7 @@ export default function TimelineScreen() {
 
   if (!entries || entries.length === 0) {
     return (
-      <View className="flex-1 bg-gray-50">
+      <View className="flex-1 bg-gray-50 dark:bg-gray-950">
         <EmptyState
           emoji="📝"
           title={t('empty.title')}
@@ -100,13 +100,13 @@ export default function TimelineScreen() {
   }
 
   const master = (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
         renderSectionHeader={({ section }) => (
-          <View className="px-4 pt-4 pb-2 bg-gray-50">
-            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <View className="px-4 pt-4 pb-2 bg-gray-50 dark:bg-gray-950">
+            <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               {section.title}
             </Text>
           </View>

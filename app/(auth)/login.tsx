@@ -30,20 +30,20 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1 bg-white dark:bg-gray-950"
     >
       <View className="flex-1 justify-center px-8">
-        <Text className="text-3xl font-bold text-center mb-2 text-gray-900">
+        <Text className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
           ReflectLog
         </Text>
-        <Text className="text-base text-center text-gray-500 mb-10">
+        <Text className="text-base text-center text-gray-500 dark:text-gray-400 mb-10">
           {t('login.tagline')}
         </Text>
 
         <View className="mb-4">
-          <Text className="text-sm font-medium text-gray-700 mb-1">{t('login.email')}</Text>
+          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.email')}</Text>
           <TextInput
-            className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder="email@example.com"
             value={email}
             onChangeText={setEmail}
@@ -54,9 +54,9 @@ export default function LoginScreen() {
         </View>
 
         <View className="mb-6">
-          <Text className="text-sm font-medium text-gray-700 mb-1">{t('login.password')}</Text>
+          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.password')}</Text>
           <TextInput
-            className="border border-gray-300 rounded-lg px-4 py-3 text-base text-gray-900"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder={t('login.passwordPlaceholder')}
             value={password}
             onChangeText={setPassword}
@@ -76,10 +76,10 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <View className="flex-row justify-center mt-6">
-          <Text className="text-gray-500">{t('login.noAccount')}</Text>
+          <Text className="text-gray-500 dark:text-gray-400">{t('login.noAccount')}</Text>
           <Link href="/(auth)/signup" asChild>
             <TouchableOpacity>
-              <Text className="text-indigo-600 font-semibold">{t('login.signUpLink')}</Text>
+              <Text className="text-indigo-600 dark:text-indigo-400 font-semibold">{t('login.signUpLink')}</Text>
             </TouchableOpacity>
           </Link>
         </View>

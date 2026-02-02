@@ -27,12 +27,12 @@ function SummaryCard({
   return (
     <Card
       onPress={onPress}
-      className={`mb-3 ${isSelected ? 'border-indigo-300 bg-indigo-50' : ''}`}
+      className={`mb-3 ${isSelected ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : ''}`}
     >
-      <Text className="text-sm font-medium text-gray-500 mb-2">
+      <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
         {summary.period_start}
       </Text>
-      <Text className="text-base text-gray-900 leading-6" numberOfLines={3}>
+      <Text className="text-base text-gray-900 dark:text-gray-100 leading-6" numberOfLines={3}>
         {summary.text}
       </Text>
       <View className="flex-row gap-2 mt-2.5">
@@ -59,7 +59,7 @@ export default function SummaryScreen() {
 
   if (error) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50 px-8">
+      <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-950 px-8">
         <Text className="text-red-500 text-center">{error.message}</Text>
       </View>
     )
@@ -74,7 +74,7 @@ export default function SummaryScreen() {
   }
 
   const master = (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
       <FlatList
         data={summaries || []}
         keyExtractor={(item) => item.id}
@@ -123,7 +123,7 @@ export default function SummaryScreen() {
   if (selectedSummary) {
     return (
       <View className="flex-1">
-        <View className="bg-white border-b border-gray-100 px-4 py-3">
+        <View className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-3">
           <Button
             title={tCommon('action.backToList')}
             variant="ghost"

@@ -1,0 +1,26 @@
+{
+  "title": "설정",
+  "language": {
+    "title": "언어",
+    "system": "시스템",
+    "ko": "한국어",
+    "en": "English"
+  },
+  "theme": {
+    "title": "화면 모드",
+    "light": "라이트",
+    "dark": "다크",
+    "system": "시스템"
+  },
+  "account": {
+    "title": "계정",
+    "email": "이메일",
+    "signOut": "로그아웃",
+    "signOutConfirmTitle": "로그아웃",
+    "signOutConfirmMessage": "정말 로그아웃하시겠습니까?"
+  },
+  "privacy": {
+    "title": "개인정보 및 데이터"
+  },
+  "version": "버전"
+}
