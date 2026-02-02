@@ -3,6 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
+import { AppShell } from '@/components/layout/AppShell'
 import '../global.css'
 
 const queryClient = new QueryClient()
@@ -36,28 +37,34 @@ export default function RootLayout() {
     return null
   }
 
+  const inAuthGroup = segments[0] === '(auth)'
+
+  const stack = (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="entries/new"
+        options={{
+          headerShown: true,
+          title: '새 기록',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="entries/[id]"
+        options={{
+          headerShown: true,
+          title: '기록 상세',
+        }}
+      />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  )
+
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="entries/new"
-          options={{
-            headerShown: true,
-            title: '새 기록',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="entries/[id]"
-          options={{
-            headerShown: true,
-            title: '기록 상세',
-          }}
-        />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      {user && !inAuthGroup ? <AppShell>{stack}</AppShell> : stack}
     </QueryClientProvider>
   )
 }

@@ -1,18 +1,29 @@
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native'
-import { useLocalSearchParams } from 'expo-router'
-import { useEntry } from '@/features/entry/hooks'
+import { useState } from 'react'
+import { View, Text, ScrollView, TextInput, Alert } from 'react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useEntry, useUpdateEntry, useDeleteEntry } from '@/features/entry/hooks'
+import { useTodosByEntry, useUpdateTodo } from '@/features/todo/hooks'
+import { useSummaries } from '@/features/summary/hooks'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const router = useRouter()
   const { data: entry, isLoading, error } = useEntry(id!)
+  const { data: relatedTodos } = useTodosByEntry(id!)
+  const { data: dailySummaries } = useSummaries('daily', entry?.date)
+  const updateEntry = useUpdateEntry()
+  const deleteEntry = useDeleteEntry()
+  const updateTodo = useUpdateTodo()
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </View>
-    )
-  }
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState('')
+
+  if (isLoading) return <LoadingState />
 
   if (error || !entry) {
     return (
@@ -24,30 +35,162 @@ export default function EntryDetailScreen() {
     )
   }
 
+  const handleDelete = () => {
+    Alert.alert('기록 삭제', '이 기록을 삭제할까요?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteEntry.mutateAsync(entry.id)
+            router.back()
+          } catch (e: any) {
+            Alert.alert('삭제 실패', e.message)
+          }
+        },
+      },
+    ])
+  }
+
+  const handleEdit = () => {
+    setEditText(entry.raw_text)
+    setIsEditing(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editText.trim()) return
+    try {
+      await updateEntry.mutateAsync({
+        id: entry.id,
+        input: { raw_text: editText },
+      })
+      setIsEditing(false)
+    } catch (e: any) {
+      Alert.alert('수정 실패', e.message)
+    }
+  }
+
+  const toggleTodo = (todoId: string, currentStatus: string) => {
+    updateTodo.mutate({
+      id: todoId,
+      updates: { status: currentStatus === 'pending' ? 'done' : 'pending' },
+    })
+  }
+
+  const dailySummary = dailySummaries?.[0]
+
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="p-6">
+        {/* Header with actions */}
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-sm text-gray-500">{entry.date}</Text>
-          <Text className="text-xs text-gray-400">
-            {new Date(entry.created_at).toLocaleString('ko-KR')}
-          </Text>
+          <View>
+            <Text className="text-sm font-medium text-gray-500">{entry.date}</Text>
+            <Text className="text-xs text-gray-400 mt-0.5">
+              {new Date(entry.created_at).toLocaleString('ko-KR')}
+            </Text>
+          </View>
+          <View className="flex-row gap-2">
+            <Button
+              title={isEditing ? '취소' : '수정'}
+              variant="ghost"
+              size="sm"
+              onPress={isEditing ? () => setIsEditing(false) : handleEdit}
+            />
+            <Button
+              title="삭제"
+              variant="ghost"
+              size="sm"
+              onPress={handleDelete}
+            />
+          </View>
         </View>
 
-        <Text className="text-base text-gray-900 leading-7 mb-6">
-          {entry.raw_text}
-        </Text>
+        {/* Content */}
+        {isEditing ? (
+          <View className="mb-6">
+            <TextInput
+              className="border border-gray-200 rounded-xl p-4 text-base text-gray-900 leading-7 min-h-[120px]"
+              value={editText}
+              onChangeText={setEditText}
+              multiline
+              textAlignVertical="top"
+              autoFocus
+            />
+            <View className="mt-3">
+              <Button
+                title="저장"
+                onPress={handleSaveEdit}
+                loading={updateEntry.isPending}
+              />
+            </View>
+          </View>
+        ) : (
+          <Text className="text-base text-gray-900 leading-7 mb-6">
+            {entry.raw_text}
+          </Text>
+        )}
 
+        {/* Tags */}
         {entry.tags.length > 0 && (
-          <View>
+          <View className="mb-6">
             <Text className="text-sm font-medium text-gray-700 mb-2">태그</Text>
             <View className="flex-row flex-wrap gap-2">
               {entry.tags.map((tag, i) => (
-                <View key={i} className="bg-indigo-50 rounded-full px-3 py-1">
-                  <Text className="text-sm text-indigo-700">{tag}</Text>
-                </View>
+                <Badge key={i} label={tag} variant="indigo" size="md" />
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Related Todos */}
+        {relatedTodos && relatedTodos.length > 0 && (
+          <View className="mb-6">
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              추출된 할 일
+            </Text>
+            {relatedTodos.map((todo) => (
+              <Card key={todo.id} className="mb-2" onPress={() => toggleTodo(todo.id, todo.status)}>
+                <View className="flex-row items-center">
+                  <FontAwesome
+                    name={todo.status === 'done' ? 'check-circle' : 'circle-o'}
+                    size={18}
+                    color={todo.status === 'done' ? '#22c55e' : '#d1d5db'}
+                  />
+                  <Text
+                    className={`ml-2.5 text-sm flex-1 ${
+                      todo.status === 'done'
+                        ? 'text-gray-400 line-through'
+                        : 'text-gray-800'
+                    }`}
+                  >
+                    {todo.text}
+                  </Text>
+                </View>
+              </Card>
+            ))}
+          </View>
+        )}
+
+        {/* Related Daily Summary */}
+        {dailySummary && (
+          <View className="mb-6">
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              일간 요약
+            </Text>
+            <Card
+              onPress={() => router.push('/(tabs)/summary')}
+              className="bg-indigo-50 border-indigo-100"
+            >
+              <View className="flex-row items-center">
+                <FontAwesome name="file-text-o" size={16} color="#4f46e5" />
+                <Text className="ml-2 text-sm text-indigo-700 flex-1" numberOfLines={2}>
+                  {dailySummary.text}
+                </Text>
+                <FontAwesome name="chevron-right" size={12} color="#a5b4fc" />
+              </View>
+            </Card>
           </View>
         )}
       </View>

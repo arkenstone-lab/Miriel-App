@@ -17,6 +17,17 @@ export async function fetchTodos(status?: string): Promise<Todo[]> {
   return data as Todo[]
 }
 
+export async function fetchTodosByEntry(entryId: string): Promise<Todo[]> {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .eq('source_entry_id', entryId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return data as Todo[]
+}
+
 export async function updateTodo(
   id: string,
   updates: { status?: string; text?: string }

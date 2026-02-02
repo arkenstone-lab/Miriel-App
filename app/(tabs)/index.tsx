@@ -1,55 +1,63 @@
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { useState, useMemo } from 'react'
+import { View, Text, SectionList } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useEntries } from '@/features/entry/hooks'
+import { useEntries, useEntry } from '@/features/entry/hooks'
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
+import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
+import { EntryCard } from '@/components/EntryCard'
+import { EntryDetail } from '@/components/EntryDetail'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { Entry } from '@/features/entry/types'
 
-function EntryCard({ entry, onPress }: { entry: Entry; onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      className="bg-white rounded-xl p-4 mb-3 border border-gray-100"
-      onPress={onPress}
-    >
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-sm text-gray-500">{entry.date}</Text>
-        <Text className="text-xs text-gray-400">
-          {new Date(entry.created_at).toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Text>
-      </View>
-      <Text className="text-base text-gray-900 leading-6" numberOfLines={3}>
-        {entry.raw_text}
-      </Text>
-      {entry.tags.length > 0 && (
-        <View className="flex-row flex-wrap mt-2 gap-1">
-          {entry.tags.slice(0, 3).map((tag, i) => (
-            <View key={i} className="bg-indigo-50 rounded-full px-2.5 py-0.5">
-              <Text className="text-xs text-indigo-700">{tag}</Text>
-            </View>
-          ))}
-          {entry.tags.length > 3 && (
-            <Text className="text-xs text-gray-400 self-center">
-              +{entry.tags.length - 3}
-            </Text>
-          )}
-        </View>
-      )}
-    </TouchableOpacity>
-  )
+function getDateGroup(dateStr: string): string {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const date = new Date(dateStr + 'T00:00:00')
+
+  const diffMs = today.getTime() - date.getTime()
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffDays === 0) return '오늘'
+  if (diffDays === 1) return '어제'
+  if (diffDays < 7) return '이번 주'
+  return '이전'
+}
+
+interface Section {
+  title: string
+  data: Entry[]
+}
+
+function groupEntries(entries: Entry[]): Section[] {
+  const groups: Record<string, Entry[]> = {}
+  const order = ['오늘', '어제', '이번 주', '이전']
+
+  for (const entry of entries) {
+    const group = getDateGroup(entry.date)
+    if (!groups[group]) groups[group] = []
+    groups[group].push(entry)
+  }
+
+  return order.filter((key) => groups[key]).map((key) => ({
+    title: key,
+    data: groups[key],
+  }))
 }
 
 export default function TimelineScreen() {
   const { data: entries, isLoading, error } = useEntries()
   const router = useRouter()
+  const { isDesktop } = useResponsiveLayout()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { data: selectedEntry } = useEntry(selectedId || '')
 
-  if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </View>
-    )
-  }
+  const sections = useMemo(() => {
+    if (!entries) return []
+    return groupEntries(entries)
+  }, [entries])
+
+  if (isLoading) return <LoadingState />
 
   if (error) {
     return (
@@ -61,37 +69,61 @@ export default function TimelineScreen() {
 
   if (!entries || entries.length === 0) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50 px-8">
-        <Text className="text-4xl mb-4">📝</Text>
-        <Text className="text-lg font-semibold text-gray-700 mb-2">
-          아직 기록이 없어요
-        </Text>
-        <Text className="text-gray-500 text-center mb-6">
-          오른쪽 상단 + 버튼을 눌러{'\n'}첫 번째 기록을 시작해보세요!
-        </Text>
-        <TouchableOpacity
-          className="bg-indigo-600 rounded-lg px-6 py-3"
-          onPress={() => router.push('/entries/new')}
-        >
-          <Text className="text-white font-semibold">새 기록 작성</Text>
-        </TouchableOpacity>
+      <View className="flex-1 bg-gray-50">
+        <EmptyState
+          emoji="📝"
+          title="아직 기록이 없어요"
+          description={`${isDesktop ? '좌측 사이드바의' : '오른쪽 상단'} + 버튼을 눌러\n첫 번째 기록을 시작해보세요!`}
+          actionLabel="새 기록 작성"
+          onAction={() => router.push('/entries/new')}
+        />
       </View>
     )
   }
 
-  return (
+  const handlePress = (entry: Entry) => {
+    if (isDesktop) {
+      setSelectedId(entry.id)
+    } else {
+      router.push(`/entries/${entry.id}`)
+    }
+  }
+
+  const master = (
     <View className="flex-1 bg-gray-50">
-      <FlatList
-        data={entries}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <EntryCard
-            entry={item}
-            onPress={() => router.push(`/entries/${item.id}`)}
-          />
+        renderSectionHeader={({ section }) => (
+          <View className="px-4 pt-4 pb-2 bg-gray-50">
+            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              {section.title}
+            </Text>
+          </View>
         )}
-        contentContainerStyle={{ padding: 16 }}
+        renderItem={({ item }) => (
+          <View className="px-4">
+            <EntryCard
+              entry={item}
+              onPress={() => handlePress(item)}
+              isSelected={isDesktop && selectedId === item.id}
+            />
+          </View>
+        )}
+        stickySectionHeadersEnabled={false}
       />
     </View>
   )
+
+  if (isDesktop) {
+    return (
+      <MasterDetailLayout
+        master={master}
+        detail={selectedEntry ? <EntryDetail entry={selectedEntry} /> : null}
+        detailPlaceholder="기록을 선택해주세요"
+      />
+    )
+  }
+
+  return master
 }

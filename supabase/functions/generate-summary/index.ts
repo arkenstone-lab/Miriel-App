@@ -142,6 +142,7 @@ serve(async (req) => {
         period_start: targetDate,
         text: summaryText,
         entry_links: entryLinks,
+        sentences_data: result.sentences,
       })
       .select()
       .single()

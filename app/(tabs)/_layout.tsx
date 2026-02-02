@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { Tabs, useRouter } from 'expo-router'
 import { Pressable } from 'react-native'
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name']
@@ -11,6 +12,7 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const router = useRouter()
+  const { isDesktop } = useResponsiveLayout()
 
   return (
     <Tabs
@@ -19,6 +21,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#9ca3af',
         headerStyle: { backgroundColor: '#ffffff' },
         headerTitleStyle: { fontWeight: '600' },
+        ...(isDesktop ? { tabBarStyle: { display: 'none' }, headerShown: false } : {}),
       }}
     >
       <Tabs.Screen
