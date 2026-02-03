@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore } from '@/stores/authStore'
 import { pickAndUploadAvatar, deleteAvatar } from '@/lib/avatar'
+import { AppError, showErrorAlert } from '@/lib/errors'
 
 const GENDER_OPTIONS = ['male', 'female'] as const
 
@@ -51,8 +52,8 @@ export default function EditProfileScreen() {
         setLocalAvatarUrl(url)
         await setAvatarUrl(url)
       }
-    } catch {
-      Alert.alert('Error', 'Failed to upload image.')
+    } catch (error: unknown) {
+      showErrorAlert('', error)
     } finally {
       setUploading(false)
     }
@@ -83,8 +84,8 @@ export default function EditProfileScreen() {
         interests: localInterests,
       })
       router.back()
-    } catch {
-      Alert.alert('Error', 'Failed to save.')
+    } catch (error: unknown) {
+      showErrorAlert('', new AppError('PROFILE_002', error))
     } finally {
       setSaving(false)
     }

@@ -4,7 +4,7 @@
 
 ## 개요
 
-ReflectLog의 AI 파이프라인은 사용자가 기록을 저장하면 자동으로 **태깅 → 할일 추출 → 요약 생성**을 수행합니다.
+Miriel의 AI 파이프라인은 사용자가 기록을 저장하면 자동으로 **태깅 → 할일 추출 → 요약 생성**을 수행합니다.
 모든 AI 호출은 Supabase Edge Functions (Deno) → OpenAI GPT-4o API 경로로 처리됩니다.
 
 ---

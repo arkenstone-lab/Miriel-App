@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ReflectLog",
-    "slug": "reflectlog",
+    "name": "Miriel",
+    "slug": "miriel",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "reflectlog",
+    "scheme": "miriel",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {

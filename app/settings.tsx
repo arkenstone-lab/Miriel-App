@@ -13,16 +13,17 @@ import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore } from '@/stores/authStore'
+import { AppError, showErrorAlert } from '@/lib/errors'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { EditModal } from '@/components/ui/EditModal'
 import { TimePickerModal } from '@/components/ui/TimePickerModal'
 import { LegalModal } from '@/components/ui/LegalModal'
 
 const SUPPORT_LINKS = {
-  homepage: 'https://reflectlog.app',
-  telegram: 'https://t.me/reflectlog',
-  discord: 'https://discord.gg/reflectlog',
-  x: 'https://x.com/reflectlog',
+  homepage: 'https://miriel.app',
+  telegram: 'https://t.me/mirielapp',
+  discord: 'https://discord.gg/mirielapp',
+  x: 'https://x.com/mirielapp',
 } as const
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -87,8 +88,8 @@ export default function SettingsScreen() {
     try {
       await setEmail(newEmail.trim())
       Alert.alert('', t('account.emailChanged'))
-    } catch (error: any) {
-      Alert.alert('Error', error.message)
+    } catch (error: unknown) {
+      showErrorAlert(t('account.title'), error)
       throw error // Keep modal open on error
     }
   }
@@ -97,22 +98,23 @@ export default function SettingsScreen() {
     try {
       await setPhone(newPhone)
       Alert.alert('', t('account.phoneChanged'))
-    } catch (error: any) {
-      Alert.alert('Error', error.message)
+    } catch (error: unknown) {
+      showErrorAlert(t('account.title'), error)
       throw error
     }
   }
 
   const handlePasswordSave = async (newPassword: string) => {
     if (newPassword.length < 6) {
-      Alert.alert('', t('account.passwordTooShort'))
-      throw new Error('Too short')
+      const err = new AppError('SETTINGS_003')
+      showErrorAlert(t('account.title'), err)
+      throw err
     }
     try {
       await changePassword(newPassword)
       Alert.alert('', t('account.passwordChanged'))
-    } catch (error: any) {
-      Alert.alert('Error', error.message)
+    } catch (error: unknown) {
+      showErrorAlert(t('account.title'), error)
       throw error
     }
   }

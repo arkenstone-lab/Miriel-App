@@ -168,7 +168,7 @@ Helper functions:
 Tags use a `prefix:value` format:
 
 ```
-project:ReflectLog
+project:Miriel
 person:Kim
 issue:login-bug
 ```

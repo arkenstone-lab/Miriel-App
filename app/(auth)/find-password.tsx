@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
+import { AppError, showErrorAlert } from '@/lib/errors'
 
 function maskEmail(email: string): string {
   const [local, domain] = email.split('@')
@@ -35,7 +36,7 @@ export default function FindPasswordScreen() {
         const { data, error } = await supabase.rpc('get_email_by_username', {
           p_username: input,
         })
-        if (error) throw error
+        if (error) throw new AppError('AUTH_012', error)
         if (!data) {
           Alert.alert(t('findPassword.resultTitle'), t('findPassword.notFound'))
           return
@@ -44,14 +45,14 @@ export default function FindPasswordScreen() {
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(email)
-      if (error) throw error
+      if (error) throw new AppError('AUTH_013', error)
 
       Alert.alert(
         t('findPassword.resultTitle'),
         t('findPassword.success', { email: maskEmail(email) }),
       )
-    } catch {
-      Alert.alert(t('findPassword.resultTitle'), t('findPassword.notFound'))
+    } catch (error: unknown) {
+      showErrorAlert(t('findPassword.resultTitle'), error)
     } finally {
       setLoading(false)
     }

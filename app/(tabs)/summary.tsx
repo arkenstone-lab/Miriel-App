@@ -7,6 +7,7 @@ import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { SummaryDetailView } from '@/components/SummaryDetailView'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -89,11 +90,7 @@ export default function SummaryScreen() {
   if (isLoading) return <LoadingState />
 
   if (error) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-950 px-8">
-        <Text className="text-red-500 text-center">{error.message}</Text>
-      </View>
-    )
+    return <ErrorDisplay error={error} />
   }
 
   const handleGenerate = () => {
