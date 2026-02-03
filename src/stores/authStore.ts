@@ -2,13 +2,20 @@ import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
 import type { Session, User } from '@supabase/supabase-js'
 
+interface SignUpParams {
+  username: string
+  email: string
+  phone?: string
+  password: string
+}
+
 interface AuthState {
   session: Session | null
   user: User | null
   initialized: boolean
   initialize: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signIn: (username: string, password: string) => Promise<void>
+  signUp: (params: SignUpParams) => Promise<{ needsEmailVerification: boolean }>
   signOut: () => Promise<void>
 }
 
@@ -33,14 +40,63 @@ export const useAuthStore = create<AuthState>((set) => ({
     })
   },
 
-  signIn: async (email: string, password: string) => {
+  signIn: async (username: string, password: string) => {
+    // Resolve username → email via RPC (needs auth.users access)
+    const { data: email, error: rpcError } = await supabase.rpc('get_email_by_username', {
+      p_username: username,
+    })
+    if (rpcError) throw rpcError
+    if (!email) throw new Error('Username not found')
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
   },
 
-  signUp: async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password })
+  signUp: async ({ username, email, phone, password }: SignUpParams) => {
+    // Check username availability via direct query (SELECT RLS = true, no RPC needed)
+    const { data: existing, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username.toLowerCase())
+      .maybeSingle()
+
+    if (checkError) throw checkError
+    if (existing) throw new Error('Username already taken')
+
+    // Create auth user — store username/phone in user_metadata for deferred profile creation
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          pendingUsername: username.toLowerCase(),
+          pendingPhone: phone || null,
+        },
+      },
+    })
     if (error) throw error
+
+    const userId = data.user?.id
+    if (!userId) throw new Error('Sign up failed')
+
+    // Detect fake response for already-registered-but-unconfirmed email
+    if (data.user?.identities && data.user.identities.length === 0) {
+      throw new Error('This email is already registered. Please log in or use a different email.')
+    }
+
+    // If session exists (email confirmation OFF), insert profile immediately
+    if (data.session) {
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: userId,
+        username: username.toLowerCase(),
+        phone: phone || null,
+      })
+      if (profileError) throw profileError
+      return { needsEmailVerification: false }
+    }
+
+    // No session (email confirmation ON) — profile created on first login via loadUserData
+    return { needsEmailVerification: true }
   },
 
   signOut: async () => {

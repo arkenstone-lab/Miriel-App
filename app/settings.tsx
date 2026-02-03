@@ -4,7 +4,9 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  Switch,
   Alert,
+  Linking,
 } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
@@ -13,6 +15,15 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore } from '@/stores/authStore'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { EditModal } from '@/components/ui/EditModal'
+import { TimePickerModal } from '@/components/ui/TimePickerModal'
+import { LegalModal } from '@/components/ui/LegalModal'
+
+const SUPPORT_LINKS = {
+  homepage: 'https://reflectlog.app',
+  telegram: 'https://t.me/reflectlog',
+  discord: 'https://discord.gg/reflectlog',
+  x: 'https://x.com/reflectlog',
+} as const
 
 type ThemeMode = 'light' | 'dark' | 'system'
 type Language = 'ko' | 'en'
@@ -20,12 +31,23 @@ type Language = 'ko' | 'en'
 export default function SettingsScreen() {
   const { t } = useTranslation('settings')
   const { t: tPrivacy } = useTranslation('privacy')
-  const { theme, language, nickname, setTheme, setLanguage, setNickname } = useSettingsStore()
+  const {
+    theme, language, nickname, username, phone,
+    setTheme, setLanguage, setNickname, setPhone, setEmail, changePassword,
+    notificationsEnabled, morningNotificationTime, eveningNotificationTime,
+    setNotificationsEnabled, setMorningNotificationTime, setEveningNotificationTime,
+  } = useSettingsStore()
   const { user, signOut } = useAuthStore()
   const { colorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
 
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false)
+  const [emailModalVisible, setEmailModalVisible] = useState(false)
+  const [phoneModalVisible, setPhoneModalVisible] = useState(false)
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false)
+  const [morningPickerVisible, setMorningPickerVisible] = useState(false)
+  const [eveningPickerVisible, setEveningPickerVisible] = useState(false)
+  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null)
 
   const languageOptions: { label: string; value: 'system' | Language }[] = [
     { label: t('language.system'), value: 'system' },
@@ -44,6 +66,55 @@ export default function SettingsScreen() {
       { text: t('modal.cancel'), style: 'cancel' },
       { text: t('account.signOut'), style: 'destructive', onPress: signOut },
     ])
+  }
+
+  const formatTimeDisplay = (time: string) => {
+    const [h, m] = time.split(':').map(Number)
+    const period = h >= 12 ? 'PM' : 'AM'
+    const h12 = h % 12 || 12
+    return `${h12}:${m.toString().padStart(2, '0')} ${period}`
+  }
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    await setNotificationsEnabled(enabled)
+    const current = useSettingsStore.getState().notificationsEnabled
+    if (enabled && !current) {
+      Alert.alert(t('notifications.title'), t('notifications.permissionDenied'))
+    }
+  }
+
+  const handleEmailSave = async (newEmail: string) => {
+    try {
+      await setEmail(newEmail.trim())
+      Alert.alert('', t('account.emailChanged'))
+    } catch (error: any) {
+      Alert.alert('Error', error.message)
+      throw error // Keep modal open on error
+    }
+  }
+
+  const handlePhoneSave = async (newPhone: string) => {
+    try {
+      await setPhone(newPhone)
+      Alert.alert('', t('account.phoneChanged'))
+    } catch (error: any) {
+      Alert.alert('Error', error.message)
+      throw error
+    }
+  }
+
+  const handlePasswordSave = async (newPassword: string) => {
+    if (newPassword.length < 6) {
+      Alert.alert('', t('account.passwordTooShort'))
+      throw new Error('Too short')
+    }
+    try {
+      await changePassword(newPassword)
+      Alert.alert('', t('account.passwordChanged'))
+    } catch (error: any) {
+      Alert.alert('Error', error.message)
+      throw error
+    }
   }
 
   return (
@@ -77,12 +148,79 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Notifications */}
+        <View className="mb-6">
+          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            {t('notifications.title')}
+          </Text>
+          <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+            {/* Toggle */}
+            <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <FontAwesome name="bell-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">
+                {t('notifications.enable')}
+              </Text>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleNotificationToggle}
+                trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#818cf8' }}
+                thumbColor={notificationsEnabled ? '#4f46e5' : '#f4f3f4'}
+              />
+            </View>
+            {/* Morning */}
+            <TouchableOpacity
+              className={`flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 ${
+                !notificationsEnabled ? 'opacity-40' : ''
+              }`}
+              disabled={!notificationsEnabled}
+              onPress={() => setMorningPickerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="sun-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                {t('notifications.morning')}
+              </Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {formatTimeDisplay(morningNotificationTime)}
+              </Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {/* Evening */}
+            <TouchableOpacity
+              className={`flex-row items-center px-4 py-3.5 ${
+                !notificationsEnabled ? 'opacity-40' : ''
+              }`}
+              disabled={!notificationsEnabled}
+              onPress={() => setEveningPickerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="moon-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                {t('notifications.evening')}
+              </Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {formatTimeDisplay(eveningNotificationTime)}
+              </Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Account */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
             {t('account.title')}
           </Text>
           <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+            {/* Username (read-only) */}
+            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+              <FontAwesome name="id-badge" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.username')}</Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {username ? `@${username}` : '—'}
+              </Text>
+            </View>
+            {/* Nickname */}
             <TouchableOpacity
               className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
               onPress={() => setNicknameModalVisible(true)}
@@ -95,11 +233,42 @@ export default function SettingsScreen() {
               </Text>
               <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
             </TouchableOpacity>
-            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+            {/* Email */}
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => setEmailModalVisible(true)}
+              activeOpacity={0.7}
+            >
               <FontAwesome name="envelope-o" size={16} color="#9ca3af" />
               <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.email')}</Text>
               <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">{user?.email ?? '—'}</Text>
-            </View>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {/* Phone */}
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => setPhoneModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="phone" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.phone')}</Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {phone || t('account.phonePlaceholder')}
+              </Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {/* Password */}
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => setPasswordModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="lock" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.password')}</Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">••••••</Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {/* Sign Out */}
             <TouchableOpacity
               className="flex-row items-center px-4 py-3.5"
               onPress={handleSignOut}
@@ -129,6 +298,78 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Support */}
+        <View className="mb-6">
+          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            {t('support.title')}
+          </Text>
+          <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => Linking.openURL(SUPPORT_LINKS.homepage)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="globe" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.homepage')}</Text>
+              <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => Linking.openURL(SUPPORT_LINKS.telegram)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="paper-plane" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.telegram')}</Text>
+              <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => Linking.openURL(SUPPORT_LINKS.discord)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="comments-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.discord')}</Text>
+              <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5"
+              onPress={() => Linking.openURL(SUPPORT_LINKS.x)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="twitter" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.x')}</Text>
+              <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Legal */}
+        <View className="mb-6">
+          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            {t('legal.title')}
+          </Text>
+          <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => setLegalModalType('terms')}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="file-text-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('legal.terms')}</Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5"
+              onPress={() => setLegalModalType('privacy')}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="lock" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('legal.privacy')}</Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Version */}
         <Text className="text-center text-xs text-gray-400 dark:text-gray-500 mt-4 mb-8">
           {t('version')} 0.1.0
@@ -144,6 +385,60 @@ export default function SettingsScreen() {
         maxLength={20}
         onSave={setNickname}
         onClose={() => setNicknameModalVisible(false)}
+      />
+
+      {/* Email Edit Modal */}
+      <EditModal
+        visible={emailModalVisible}
+        title={t('account.email')}
+        value={user?.email ?? ''}
+        placeholder={t('account.emailPlaceholder')}
+        onSave={handleEmailSave}
+        onClose={() => setEmailModalVisible(false)}
+      />
+
+      {/* Phone Edit Modal */}
+      <EditModal
+        visible={phoneModalVisible}
+        title={t('account.phone')}
+        value={phone}
+        placeholder={t('account.phonePlaceholder')}
+        onSave={handlePhoneSave}
+        onClose={() => setPhoneModalVisible(false)}
+      />
+
+      {/* Password Edit Modal */}
+      <EditModal
+        visible={passwordModalVisible}
+        title={t('account.password')}
+        value=""
+        placeholder={t('account.newPasswordPlaceholder')}
+        secureTextEntry
+        onSave={handlePasswordSave}
+        onClose={() => setPasswordModalVisible(false)}
+      />
+
+      {/* Legal Modal */}
+      <LegalModal
+        visible={legalModalType !== null}
+        type={legalModalType ?? 'terms'}
+        onClose={() => setLegalModalType(null)}
+      />
+
+      {/* Time Picker Modals */}
+      <TimePickerModal
+        visible={morningPickerVisible}
+        title={t('notifications.morningPickerTitle')}
+        value={morningNotificationTime}
+        onSave={setMorningNotificationTime}
+        onClose={() => setMorningPickerVisible(false)}
+      />
+      <TimePickerModal
+        visible={eveningPickerVisible}
+        title={t('notifications.eveningPickerTitle')}
+        value={eveningNotificationTime}
+        onSave={setEveningNotificationTime}
+        onClose={() => setEveningPickerVisible(false)}
       />
     </ScrollView>
   )

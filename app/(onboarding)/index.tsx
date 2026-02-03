@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
-import { useSettingsStore } from '@/stores/settingsStore'
 
 const STEPS = [
   { emoji: '✏️', ns: 'step1' },
@@ -15,40 +14,26 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(0)
   const router = useRouter()
   const { t } = useTranslation('onboarding')
-  const { acknowledgeOnboarding } = useSettingsStore()
   const { width } = useWindowDimensions()
   const isDesktop = width >= 768
 
-  const finish = async () => {
-    await acknowledgeOnboarding()
-    router.replace('/(tabs)')
+  const goToPersona = () => {
+    router.push('/(onboarding)/persona' as any)
   }
 
   const next = () => {
     if (step < STEPS.length - 1) {
       setStep(step + 1)
     } else {
-      finish()
+      goToPersona()
     }
   }
 
   const current = STEPS[step]
+  const isLastStep = step === STEPS.length - 1
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-950">
-      {/* Skip button — fixed top-right, always visible */}
-      <View className="w-full flex-row justify-end px-6 pt-2">
-        <TouchableOpacity
-          onPress={finish}
-          activeOpacity={0.7}
-          className="px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800"
-        >
-          <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            {t('skip')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Centered content */}
       <View className="flex-1 items-center justify-center px-6">
         <View className={`w-full items-center ${isDesktop ? 'max-w-md bg-gray-50 dark:bg-gray-900 rounded-3xl p-10 border border-gray-100 dark:border-gray-800' : ''}`}>
@@ -91,9 +76,22 @@ export default function OnboardingScreen() {
             activeOpacity={0.8}
           >
             <Text className="text-base font-semibold text-white">
-              {step < STEPS.length - 1 ? t('next') : t('getStarted')}
+              {isLastStep ? t('getStarted') : t('next')}
             </Text>
           </TouchableOpacity>
+
+          {/* Skip — below action button, hidden on last step */}
+          {!isLastStep && (
+            <TouchableOpacity
+              onPress={goToPersona}
+              activeOpacity={0.7}
+              className="mt-4"
+            >
+              <Text className="text-sm text-gray-400 dark:text-gray-500">
+                {t('skip')}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>

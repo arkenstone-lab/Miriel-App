@@ -19,14 +19,16 @@ export function EditModal({
   onClose,
   placeholder,
   maxLength,
+  secureTextEntry,
 }: {
   visible: boolean
   title: string
   value: string
-  onSave: (v: string) => void
+  onSave: (v: string) => void | Promise<void>
   onClose: () => void
   placeholder?: string
   maxLength?: number
+  secureTextEntry?: boolean
 }) {
   const [draft, setDraft] = useState(value)
   const { t } = useTranslation('settings')
@@ -35,6 +37,15 @@ export function EditModal({
 
   // Sync draft when modal opens
   const handleShow = () => setDraft(value)
+
+  const handleSave = async () => {
+    try {
+      await onSave(draft.trim())
+      onClose()
+    } catch {
+      // Keep modal open on error (caller should show Alert)
+    }
+  }
 
   return (
     <Modal
@@ -73,11 +84,9 @@ export function EditModal({
               onChangeText={setDraft}
               autoFocus
               maxLength={maxLength}
+              secureTextEntry={secureTextEntry}
               returnKeyType="done"
-              onSubmitEditing={() => {
-                onSave(draft.trim())
-                onClose()
-              }}
+              onSubmitEditing={handleSave}
             />
 
             {/* Buttons */}
@@ -93,10 +102,7 @@ export function EditModal({
               </TouchableOpacity>
               <TouchableOpacity
                 className="flex-1 py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 items-center"
-                onPress={() => {
-                  onSave(draft.trim())
-                  onClose()
-                }}
+                onPress={handleSave}
                 activeOpacity={0.8}
               >
                 <Text className="text-sm font-semibold text-white">

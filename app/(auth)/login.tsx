@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const passwordRef = useRef<TextInput>(null)
@@ -13,14 +13,14 @@ export default function LoginScreen() {
   const { t } = useTranslation('auth')
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!username || !password) {
       Alert.alert(t('login.alertTitle'), t('login.alertFillFields'))
       return
     }
 
     setLoading(true)
     try {
-      await signIn(email, password)
+      await signIn(username, password)
     } catch (error: any) {
       Alert.alert(t('login.failedTitle'), error.message || t('login.failedMessage'))
     } finally {
@@ -42,15 +42,14 @@ export default function LoginScreen() {
         </Text>
 
         <View className="mb-4">
-          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.email')}</Text>
+          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.username')}</Text>
           <TextInput
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
-            placeholder="email@example.com"
-            value={email}
-            onChangeText={setEmail}
+            placeholder={t('login.usernamePlaceholder')}
+            value={username}
+            onChangeText={setUsername}
             autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
+            autoComplete="username"
             returnKeyType="next"
             onSubmitEditing={() => passwordRef.current?.focus()}
             blurOnSubmit={false}
@@ -81,6 +80,21 @@ export default function LoginScreen() {
             {loading ? t('login.loading') : t('login.button')}
           </Text>
         </TouchableOpacity>
+
+        {/* Find ID / Find Password links */}
+        <View className="flex-row justify-center mt-4" style={{ gap: 16 }}>
+          <Link href="/(auth)/find-id" asChild>
+            <TouchableOpacity>
+              <Text className="text-sm text-gray-500 dark:text-gray-400">{t('login.findId')}</Text>
+            </TouchableOpacity>
+          </Link>
+          <Text className="text-sm text-gray-300 dark:text-gray-600">|</Text>
+          <Link href="/(auth)/find-password" asChild>
+            <TouchableOpacity>
+              <Text className="text-sm text-gray-500 dark:text-gray-400">{t('login.findPassword')}</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
 
         <View className="flex-row justify-center mt-6">
           <Text className="text-gray-500 dark:text-gray-400">{t('login.noAccount')}</Text>

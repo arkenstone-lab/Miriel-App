@@ -1,20 +1,33 @@
 import { useState, useRef } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native'
-import { Link } from 'expo-router'
+import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { Link, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/
+
 export default function SignupScreen() {
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const emailRef = useRef<TextInput>(null)
+  const phoneRef = useRef<TextInput>(null)
   const passwordRef = useRef<TextInput>(null)
+
+  const router = useRouter()
   const signUp = useAuthStore((s) => s.signUp)
   const { t } = useTranslation('auth')
 
   const handleSignup = async () => {
-    if (!email || !password) {
+    if (!username || !email || !password) {
       Alert.alert(t('signup.alertTitle'), t('signup.alertFillFields'))
+      return
+    }
+    if (!USERNAME_REGEX.test(username)) {
+      Alert.alert(t('signup.alertTitle'), t('signup.alertUsernameFormat'))
       return
     }
     if (password.length < 6) {
@@ -24,8 +37,11 @@ export default function SignupScreen() {
 
     setLoading(true)
     try {
-      await signUp(email, password)
-      Alert.alert(t('signup.successTitle'), t('signup.successMessage'))
+      const result = await signUp({ username, email, phone: phone || undefined, password })
+      if (result.needsEmailVerification) {
+        router.replace({ pathname: '/(auth)/verify-email', params: { email } })
+      }
+      // else: session created → onAuthStateChange routes to onboarding
     } catch (error: any) {
       Alert.alert(t('signup.failedTitle'), error.message || t('signup.failedMessage'))
     } finally {
@@ -38,7 +54,10 @@ export default function SignupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-white dark:bg-gray-950"
     >
-      <View className="flex-1 justify-center px-8">
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
           {t('signup.title')}
         </Text>
@@ -46,9 +65,30 @@ export default function SignupScreen() {
           {t('signup.tagline')}
         </Text>
 
+        {/* Username */}
+        <View className="mb-4">
+          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('signup.username')}</Text>
+          <TextInput
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
+            placeholder={t('signup.usernamePlaceholder')}
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            autoComplete="username"
+            returnKeyType="next"
+            onSubmitEditing={() => emailRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+          <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            {t('signup.usernameHint')}
+          </Text>
+        </View>
+
+        {/* Email */}
         <View className="mb-4">
           <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('signup.email')}</Text>
           <TextInput
+            ref={emailRef}
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder="email@example.com"
             value={email}
@@ -57,17 +97,37 @@ export default function SignupScreen() {
             keyboardType="email-address"
             autoComplete="email"
             returnKeyType="next"
+            onSubmitEditing={() => phoneRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+        </View>
+
+        {/* Phone (optional) */}
+        <View className="mb-4">
+          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('signup.phone')} <Text className="text-gray-400 dark:text-gray-500">({t('signup.optional')})</Text>
+          </Text>
+          <TextInput
+            ref={phoneRef}
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
+            placeholder={t('signup.phonePlaceholder')}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            returnKeyType="next"
             onSubmitEditing={() => passwordRef.current?.focus()}
             blurOnSubmit={false}
           />
         </View>
 
+        {/* Password */}
         <View className="mb-6">
           <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('signup.password')}</Text>
           <TextInput
+            ref={passwordRef}
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder={t('signup.passwordPlaceholder')}
-            ref={passwordRef}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -87,7 +147,7 @@ export default function SignupScreen() {
           </Text>
         </TouchableOpacity>
 
-        <View className="flex-row justify-center mt-6">
+        <View className="flex-row justify-center mt-6 mb-8">
           <Text className="text-gray-500 dark:text-gray-400">{t('signup.hasAccount')}</Text>
           <Link href="/(auth)/login" asChild>
             <TouchableOpacity>
@@ -95,7 +155,7 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </Link>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   )
 }
