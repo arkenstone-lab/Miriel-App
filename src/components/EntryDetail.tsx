@@ -4,6 +4,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/Badge'
+import { showErrorAlert } from '@/lib/errors'
 import { useUpdateEntry, useDeleteEntry } from '@/features/entry/hooks'
 import type { Entry } from '@/features/entry/types'
 
@@ -37,7 +38,7 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
       { id: entry.id, input: { raw_text: trimmed } },
       {
         onSuccess: () => setIsEditing(false),
-        onError: () => Alert.alert(tEntry('detail.editFailed'), tEntry('detail.retryMessage')),
+        onError: (error: unknown) => showErrorAlert(tEntry('detail.editFailed'), error),
       },
     )
   }
@@ -51,7 +52,7 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
         onPress: () => {
           deleteEntryMutation.mutate(entry.id, {
             onSuccess: () => onDeleted?.(),
-            onError: () => Alert.alert(tEntry('detail.deleteFailed'), tEntry('detail.retryMessage')),
+            onError: (error: unknown) => showErrorAlert(tEntry('detail.deleteFailed'), error),
           })
         },
       },

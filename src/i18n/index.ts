@@ -14,6 +14,7 @@ import koSettings from './locales/ko/settings.json'
 import koPrivacy from './locales/ko/privacy.json'
 import koOnboarding from './locales/ko/onboarding.json'
 import koLegal from './locales/ko/legal.json'
+import koErrors from './locales/ko/errors.json'
 
 import enCommon from './locales/en/common.json'
 import enDashboard from './locales/en/dashboard.json'
@@ -27,6 +28,7 @@ import enSettings from './locales/en/settings.json'
 import enPrivacy from './locales/en/privacy.json'
 import enOnboarding from './locales/en/onboarding.json'
 import enLegal from './locales/en/legal.json'
+import enErrors from './locales/en/errors.json'
 
 const deviceLanguage = getLocales()[0]?.languageCode ?? 'en'
 const lng = deviceLanguage === 'ko' ? 'ko' : 'en'
@@ -34,7 +36,7 @@ const lng = deviceLanguage === 'ko' ? 'ko' : 'en'
 i18n.use(initReactI18next).init({
   lng,
   fallbackLng: 'en',
-  ns: ['common', 'dashboard', 'timeline', 'entry', 'summary', 'todos', 'auth', 'gamification', 'settings', 'privacy', 'onboarding', 'legal'],
+  ns: ['common', 'dashboard', 'timeline', 'entry', 'summary', 'todos', 'auth', 'gamification', 'settings', 'privacy', 'onboarding', 'legal', 'errors'],
   defaultNS: 'common',
   resources: {
     ko: {
@@ -50,6 +52,7 @@ i18n.use(initReactI18next).init({
       privacy: koPrivacy,
       onboarding: koOnboarding,
       legal: koLegal,
+      errors: koErrors,
     },
     en: {
       common: enCommon,
@@ -64,6 +67,7 @@ i18n.use(initReactI18next).init({
       privacy: enPrivacy,
       onboarding: enOnboarding,
       legal: enLegal,
+      errors: enErrors,
     },
   },
   interpolation: {

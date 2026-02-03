@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
+import { AppError } from '@/lib/errors'
 import type { Session, User } from '@supabase/supabase-js'
 
 interface SignUpParams {
@@ -45,11 +46,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { data: email, error: rpcError } = await supabase.rpc('get_email_by_username', {
       p_username: username,
     })
-    if (rpcError) throw rpcError
-    if (!email) throw new Error('Username not found')
+    if (rpcError) throw new AppError('AUTH_002', rpcError)
+    if (!email) throw new AppError('AUTH_001')
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    if (error) throw new AppError('AUTH_003', error)
   },
 
   signUp: async ({ username, email, phone, password }: SignUpParams) => {
@@ -60,8 +61,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       .eq('username', username.toLowerCase())
       .maybeSingle()
 
-    if (checkError) throw checkError
-    if (existing) throw new Error('Username already taken')
+    if (checkError) throw new AppError('AUTH_004', checkError)
+    if (existing) throw new AppError('AUTH_005')
 
     // Create auth user — store username/phone in user_metadata for deferred profile creation
     const { data, error } = await supabase.auth.signUp({
@@ -74,14 +75,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         },
       },
     })
-    if (error) throw error
+    if (error) throw new AppError('AUTH_006', error)
 
     const userId = data.user?.id
-    if (!userId) throw new Error('Sign up failed')
+    if (!userId) throw new AppError('AUTH_007')
 
     // Detect fake response for already-registered-but-unconfirmed email
     if (data.user?.identities && data.user.identities.length === 0) {
-      throw new Error('This email is already registered. Please log in or use a different email.')
+      throw new AppError('AUTH_008')
     }
 
     // If session exists (email confirmation OFF), insert profile immediately
@@ -91,7 +92,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         username: username.toLowerCase(),
         phone: phone || null,
       })
-      if (profileError) throw profileError
+      if (profileError) throw new AppError('AUTH_009', profileError)
       return { needsEmailVerification: false }
     }
 
@@ -101,6 +102,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    if (error) throw new AppError('AUTH_010', error)
   },
 }))

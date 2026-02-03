@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { Link } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
+import { showErrorAlert } from '@/lib/errors'
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('')
@@ -21,8 +22,8 @@ export default function LoginScreen() {
     setLoading(true)
     try {
       await signIn(username, password)
-    } catch (error: any) {
-      Alert.alert(t('login.failedTitle'), error.message || t('login.failedMessage'))
+    } catch (error: unknown) {
+      showErrorAlert(t('login.failedTitle'), error)
     } finally {
       setLoading(false)
     }
@@ -35,7 +36,7 @@ export default function LoginScreen() {
     >
       <View className="flex-1 justify-center px-8">
         <Text className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
-          ReflectLog
+          Miriel
         </Text>
         <Text className="text-base text-center text-gray-500 dark:text-gray-400 mb-10">
           {t('login.tagline')}

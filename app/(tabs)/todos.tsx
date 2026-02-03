@@ -8,6 +8,7 @@ import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { EntryDetail } from '@/components/EntryDetail'
 import { TodoItem } from '@/components/TodoItem'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { Todo } from '@/features/todo/types'
 
@@ -33,11 +34,7 @@ export default function TodosScreen() {
   if (isLoading) return <LoadingState />
 
   if (error) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-950 px-8">
-        <Text className="text-red-500 text-center">{error.message}</Text>
-      </View>
-    )
+    return <ErrorDisplay error={error} />
   }
 
   if (!todos || todos.length === 0) {

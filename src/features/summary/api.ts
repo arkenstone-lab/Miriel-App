@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { AppError } from '@/lib/errors'
 import type { Summary, SummarySentence } from './types'
 
 export async function fetchSummaries(
@@ -17,7 +18,7 @@ export async function fetchSummaries(
 
   const { data, error } = await query
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('SUMMARY_001', error)
   return data as Summary[]
 }
 
@@ -28,7 +29,7 @@ export async function generateSummary(
     body: { date },
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('SUMMARY_002', error)
   return data as { summary: Summary; sentences: SummarySentence[] }
 }
 
@@ -39,6 +40,6 @@ export async function generateWeeklySummary(
     body: { week_start: weekStart },
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('SUMMARY_003', error)
   return data as { summary: Summary; sentences: SummarySentence[] }
 }

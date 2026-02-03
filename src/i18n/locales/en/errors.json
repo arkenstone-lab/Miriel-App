@@ -1,0 +1,45 @@
+{
+  "codeLabel": "Error code",
+  "UNKNOWN": { "message": "An unexpected error occurred. Please try again." },
+
+  "AUTH_001": { "message": "Username not found. Please check and try again." },
+  "AUTH_002": { "message": "Failed to look up username. Please try again." },
+  "AUTH_003": { "message": "Incorrect password. Please check and try again." },
+  "AUTH_004": { "message": "Failed to check username availability. Please try again." },
+  "AUTH_005": { "message": "This username is already taken. Please choose a different one." },
+  "AUTH_006": { "message": "Sign up failed. Please try again." },
+  "AUTH_007": { "message": "Sign up failed. Please try again." },
+  "AUTH_008": { "message": "This email is already registered. Please log in or use a different email." },
+  "AUTH_009": { "message": "Failed to create profile. Please try again." },
+  "AUTH_010": { "message": "Failed to sign out. Please try again." },
+  "AUTH_011": { "message": "Failed to find username. Please check the email and try again." },
+  "AUTH_012": { "message": "Failed to find account. Please check your information and try again." },
+  "AUTH_013": { "message": "Failed to send password reset email. Please try again." },
+  "AUTH_014": { "message": "Failed to resend verification email. Please try again later." },
+
+  "ENTRY_001": { "message": "Failed to load entries. Please try again." },
+  "ENTRY_002": { "message": "Failed to load entry. Please try again." },
+  "ENTRY_003": { "message": "You need to be logged in. Please sign in again." },
+  "ENTRY_004": { "message": "Failed to save entry. Please try again." },
+  "ENTRY_005": { "message": "Failed to update entry. Please try again." },
+  "ENTRY_006": { "message": "Failed to delete entry. Please try again." },
+  "ENTRY_007": { "message": "Auto-tagging failed. Your entry was saved successfully." },
+
+  "TODO_001": { "message": "Failed to load todos. Please try again." },
+  "TODO_002": { "message": "Failed to load related todos. Please try again." },
+  "TODO_003": { "message": "Failed to update todo. Please try again." },
+  "TODO_004": { "message": "Failed to delete todo. Please try again." },
+  "TODO_005": { "message": "Auto todo extraction failed. Your entry was saved successfully." },
+
+  "SUMMARY_001": { "message": "Failed to load summaries. Please try again." },
+  "SUMMARY_002": { "message": "Failed to generate daily summary. Please try again." },
+  "SUMMARY_003": { "message": "Failed to generate weekly summary. Please try again." },
+
+  "SETTINGS_001": { "message": "Failed to change email. Please try again." },
+  "SETTINGS_002": { "message": "Failed to change phone number. Please try again." },
+  "SETTINGS_003": { "message": "Password must be at least 6 characters." },
+  "SETTINGS_004": { "message": "Failed to change password. Please try again." },
+
+  "PROFILE_001": { "message": "Failed to upload image. Please try again." },
+  "PROFILE_002": { "message": "Failed to save profile. Please try again." }
+}

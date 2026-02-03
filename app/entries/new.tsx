@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
+import { showErrorAlert } from '@/lib/errors'
 import { useChatStore, type ChatMessage } from '@/stores/chatStore'
 import { useCreateEntry, useUpdateEntry } from '@/features/entry/hooks'
 import { requestTagging } from '@/features/entry/api'
@@ -116,9 +117,9 @@ export default function NewEntryScreen() {
         setSaveFeedback(null)
         router.back()
       }, 2000)
-    } catch (error: any) {
+    } catch (error: unknown) {
       setIsSaving(false)
-      Alert.alert(t('create.saveFailed'), error.message || t('detail.retryMessage'))
+      showErrorAlert(t('create.saveFailed'), error)
     }
   }
 

@@ -4,14 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import i18n from '@/i18n'
 import { getLocales } from 'expo-localization'
 import { supabase } from '@/lib/supabase'
+import { AppError } from '@/lib/errors'
 
 type ThemeMode = 'light' | 'dark' | 'system'
 type Language = 'ko' | 'en'
 
 // Device-level settings only (AsyncStorage)
 const KEYS = {
-  theme: '@reflectlog/theme',
-  language: '@reflectlog/language',
+  theme: '@miriel/theme',
+  language: '@miriel/language',
 } as const
 
 interface PersonaData {
@@ -261,18 +262,18 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       .from('profiles')
       .update({ phone: trimmed || null })
       .eq('id', user.id)
-    if (error) throw error
+    if (error) throw new AppError('SETTINGS_002', error)
     set({ phone: trimmed })
   },
 
   setEmail: async (email: string) => {
     const { error } = await supabase.auth.updateUser({ email })
-    if (error) throw error
+    if (error) throw new AppError('SETTINGS_001', error)
   },
 
   changePassword: async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password })
-    if (error) throw error
+    if (error) throw new AppError('SETTINGS_004', error)
   },
 
   setNotificationsEnabled: async (enabled: boolean) => {
