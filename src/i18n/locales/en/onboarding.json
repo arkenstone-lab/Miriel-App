@@ -1,22 +1,38 @@
 {
   "step1": {
-    "title": "Just 3 Minutes",
-    "subtitle": "Quick Journaling",
-    "description": "Answer chatbot prompts or jot down a quick note.\nYour daily log is done in 3 minutes."
+    "title": "Your Daily Growth Cycle",
+    "subtitle": "Growth Routine",
+    "description": "Check your to-dos in the morning, journal in the evening.\nAI organizes everything and suggests next steps."
   },
   "step2": {
-    "title": "AI Organizes for You",
-    "subtitle": "Auto Summary & Evidence Links",
-    "description": "Get daily summaries and weekly reviews automatically.\nEvery insight links back to your original entries."
+    "title": "Weekly Review",
+    "subtitle": "Reflect on your week",
+    "description": "Once a week, AI compiles key achievements and insights.\nChoose your review day and time.",
+    "dayLabel": "Day",
+    "timeLabel": "Time"
   },
   "step3": {
-    "title": "Watch Yourself Grow",
-    "subtitle": "Streaks · Levels · Badges",
-    "description": "Build a daily streak, level up,\nand earn badges as you grow."
+    "title": "Notification Setup",
+    "subtitle": "Reminders",
+    "description": "Morning and evening reminders help you stay consistent.",
+    "morningLabel": "Morning — Check to-dos & plan",
+    "eveningLabel": "Evening — Write your journal",
+    "allowNotifications": "Allow Notifications",
+    "permissionGranted": "Notifications enabled",
+    "permissionDeniedInline": "You can enable this later in Settings"
   },
   "skip": "Skip",
   "next": "Next",
   "getStarted": "Get Started",
+  "complete": {
+    "title": "All Set!",
+    "subtitle": "You're ready to start",
+    "morningAlarm": "Morning reminder",
+    "eveningAlarm": "Evening reminder",
+    "weeklyReview": "Weekly review",
+    "notificationsOff": "Notifications off",
+    "startRecording": "Start Recording"
+  },
   "persona": {
     "title": "Set Up Profile",
     "subtitle": "Help AI understand you better",

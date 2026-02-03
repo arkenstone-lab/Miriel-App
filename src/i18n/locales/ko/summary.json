@@ -19,7 +19,9 @@
     "emptyDescription": "한 주간 기록을 쌓은 후\n주간 회고를 생성해보세요!",
     "pointCount": "{{count}}개 포인트",
     "label": "주간 회고",
-    "periodLabel": "{{range}} 주간 회고"
+    "periodLabel": "{{range}} 주간 회고",
+    "alreadyGenerated": "이번 주 회고 완료",
+    "alreadyGeneratedDesc": "이번 주 회고는 이미 생성되었습니다."
   },
   "evidenceBadge": "근거 기록 {{count}}개",
   "loadingEntry": "기록 로딩 중..."

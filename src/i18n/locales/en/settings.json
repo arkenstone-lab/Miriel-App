@@ -78,7 +78,32 @@
     "eveningBody": "How did your day go? Take a moment to reflect.",
     "hour": "Hour",
     "minute": "Minute",
-    "permissionDenied": "Please enable notification permissions in your device settings."
+    "permissionDenied": "Please enable notification permissions in your device settings.",
+    "weeklyReviewSection": "Weekly Review",
+    "weeklyDay": "Review Day",
+    "weeklyTime": "Review Time",
+    "weeklyDayPickerTitle": "Weekly Review Day",
+    "weeklyTimePickerTitle": "Weekly Review Time",
+    "weeklyTitle": "Time for your weekly review 📅",
+    "weeklyBody": "Reflect on your week and prepare for the next.",
+    "days": {
+      "0": "Monday",
+      "1": "Tuesday",
+      "2": "Wednesday",
+      "3": "Thursday",
+      "4": "Friday",
+      "5": "Saturday",
+      "6": "Sunday"
+    },
+    "daysShort": {
+      "0": "Mon",
+      "1": "Tue",
+      "2": "Wed",
+      "3": "Thu",
+      "4": "Fri",
+      "5": "Sat",
+      "6": "Sun"
+    }
   },
   "version": "Version"
 }

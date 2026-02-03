@@ -9,6 +9,15 @@ export function useEntries(date?: string) {
   })
 }
 
+export function useTodayEntry() {
+  const today = new Date().toISOString().split('T')[0]
+  return useQuery({
+    queryKey: ['entries', today],
+    queryFn: () => fetchEntries(today),
+    select: (entries) => entries[0] ?? null,
+  })
+}
+
 export function useEntry(id: string) {
   return useQuery({
     queryKey: ['entries', id],
