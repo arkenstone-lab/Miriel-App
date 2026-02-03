@@ -10,7 +10,9 @@
     "tagCount": "{{count}} tags",
     "todoCount": "{{count}} to-dos extracted",
     "saveFailed": "Save Failed",
-    "chatCompletion": "Your entry is ready! Press the button below to save."
+    "chatCompletion": "Your entry is ready! Press the button below to save.",
+    "alreadyRecordedToday": "You already have an entry for today",
+    "redirectingToEdit": "Redirecting to edit your existing entry."
   },
   "detail": {
     "notFound": "Entry not found.",

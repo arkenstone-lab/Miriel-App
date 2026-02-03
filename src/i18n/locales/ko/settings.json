@@ -78,7 +78,32 @@
     "eveningBody": "오늘 하루 어땠나요? 잠깐 돌아보세요.",
     "hour": "시",
     "minute": "분",
-    "permissionDenied": "기기 설정에서 알림 권한을 허용해주세요."
+    "permissionDenied": "기기 설정에서 알림 권한을 허용해주세요.",
+    "weeklyReviewSection": "주간 회고",
+    "weeklyDay": "회고 요일",
+    "weeklyTime": "회고 시간",
+    "weeklyDayPickerTitle": "주간 회고 요일",
+    "weeklyTimePickerTitle": "주간 회고 시간",
+    "weeklyTitle": "주간 회고 시간이에요 📅",
+    "weeklyBody": "이번 주를 돌아보고 다음 주를 준비하세요.",
+    "days": {
+      "0": "월요일",
+      "1": "화요일",
+      "2": "수요일",
+      "3": "목요일",
+      "4": "금요일",
+      "5": "토요일",
+      "6": "일요일"
+    },
+    "daysShort": {
+      "0": "월",
+      "1": "화",
+      "2": "수",
+      "3": "목",
+      "4": "금",
+      "5": "토",
+      "6": "일"
+    }
   },
   "version": "버전"
 }

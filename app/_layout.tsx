@@ -18,7 +18,7 @@ SplashScreen.preventAutoHideAsync()
 export default function RootLayout() {
   const { initialized, user, initialize } = useAuthStore()
   const {
-    theme, hasSeenOnboarding,
+    theme, hasSeenOnboarding, hasCompletedSetup,
     initialized: settingsReady, userDataLoaded,
     initialize: initSettings, loadUserData, clearUserData,
   } = useSettingsStore()
@@ -45,13 +45,18 @@ export default function RootLayout() {
 
   // Re-schedule notifications on app restart if enabled
   useEffect(() => {
-    if (userDataLoaded && Platform.OS !== 'web') {
-      const state = useSettingsStore.getState()
-      if (state.notificationsEnabled) {
-        import('@/lib/notifications').then(({ scheduleNotifications }) => {
-          scheduleNotifications(state.morningNotificationTime, state.eveningNotificationTime)
-        })
-      }
+    if (!userDataLoaded) return
+    const state = useSettingsStore.getState()
+    if (!state.notificationsEnabled) return
+
+    if (Platform.OS === 'web') {
+      import('@/lib/webNotifications').then(({ scheduleWebNotifications }) => {
+        scheduleWebNotifications(state)
+      })
+    } else {
+      import('@/lib/notifications').then(({ scheduleAllNotifications }) => {
+        scheduleAllNotifications(state)
+      })
     }
   }, [userDataLoaded])
 
@@ -79,15 +84,29 @@ export default function RootLayout() {
 
     const inAuthGroup = segments[0] === '(auth)'
     const inOnboarding = segments[0] === '(onboarding)'
+    const inSetup = segments[0] === '(setup)'
 
-    if (!user && !inAuthGroup) {
+    // 1. Setup not completed → send to setup (highest priority)
+    if (!hasCompletedSetup && !inSetup) {
+      router.replace('/(setup)' as any)
+      return
+    }
+
+    // 2. Setup completed but still on setup screen → leave
+    if (hasCompletedSetup && inSetup) {
+      router.replace(!user ? '/(auth)/login' : '/(tabs)')
+      return
+    }
+
+    // 3. Normal routing (only when setup is done)
+    if (!user && !inAuthGroup && !inSetup) {
       router.replace('/(auth)/login')
     } else if (user && !hasSeenOnboarding && !inOnboarding) {
       router.replace('/(onboarding)')
     } else if (user && hasSeenOnboarding && (inAuthGroup || inOnboarding)) {
       router.replace('/(tabs)')
     }
-  }, [initialized, settingsReady, userDataLoaded, user, hasSeenOnboarding, segments])
+  }, [initialized, settingsReady, userDataLoaded, user, hasSeenOnboarding, hasCompletedSetup, segments])
 
   if (!initialized || !settingsReady) {
     return null
@@ -95,6 +114,7 @@ export default function RootLayout() {
 
   const inAuthGroup = segments[0] === '(auth)'
   const inOnboardingGroup = segments[0] === '(onboarding)'
+  const inSetupGroup = segments[0] === '(setup)'
 
   const stack = (
     <Stack screenOptions={{
@@ -103,6 +123,7 @@ export default function RootLayout() {
       headerTintColor: isDark ? '#f3f4f6' : '#111827',
       contentStyle: { backgroundColor: isDark ? '#030712' : '#f9fafb' },
     }}>
+      <Stack.Screen name="(setup)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(tabs)" />
@@ -143,7 +164,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {user && !inAuthGroup && !inOnboardingGroup ? <AppShell>{stack}</AppShell> : stack}
+      {user && !inAuthGroup && !inOnboardingGroup && !inSetupGroup ? <AppShell>{stack}</AppShell> : stack}
     </QueryClientProvider>
   )
 }

@@ -19,7 +19,9 @@
     "emptyDescription": "Build up entries over the week,\nthen generate a review!",
     "pointCount": "{{count}} points",
     "label": "Weekly Review",
-    "periodLabel": "{{range}} Weekly Review"
+    "periodLabel": "{{range}} Weekly Review",
+    "alreadyGenerated": "Review already generated",
+    "alreadyGeneratedDesc": "This week's review has already been generated."
   },
   "evidenceBadge": "{{count}} source entries",
   "loadingEntry": "Loading entry..."

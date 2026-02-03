@@ -45,12 +45,12 @@ export default function PersonaScreen() {
       interests: localInterests,
     })
     await acknowledgeOnboarding()
-    router.replace('/(tabs)')
+    router.replace('/(onboarding)/complete' as any)
   }
 
   const handleSkip = async () => {
     await acknowledgeOnboarding()
-    router.replace('/(tabs)')
+    router.replace('/(onboarding)/complete' as any)
   }
 
   return (

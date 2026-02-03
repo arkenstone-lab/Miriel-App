@@ -48,19 +48,39 @@ function parseTime(time: string): { hour: number; minute: number } {
 /**
  * Schedule daily morning + evening notifications.
  * Cancels all existing scheduled notifications first.
+ * @deprecated Use scheduleAllNotifications instead
  */
 export async function scheduleNotifications(
   morningTime: string,
   eveningTime: string,
 ) {
+  await scheduleAllNotifications({
+    morningNotificationTime: morningTime,
+    eveningNotificationTime: eveningTime,
+    weeklyReviewDay: 6,
+    weeklyReviewTime: '19:00',
+  })
+}
+
+/**
+ * Schedule daily morning + evening + weekly review notifications.
+ * Cancels all existing scheduled notifications first.
+ */
+export async function scheduleAllNotifications(settings: {
+  morningNotificationTime: string
+  eveningNotificationTime: string
+  weeklyReviewDay: number   // 0=Mon..6=Sun
+  weeklyReviewTime: string
+}) {
   if (Platform.OS === 'web') return
 
   await Notifications.cancelAllScheduledNotificationsAsync()
 
-  const morning = parseTime(morningTime)
-  const evening = parseTime(eveningTime)
+  const morning = parseTime(settings.morningNotificationTime)
+  const evening = parseTime(settings.eveningNotificationTime)
+  const weekly = parseTime(settings.weeklyReviewTime)
 
-  // Morning check-in
+  // Morning check-in (daily)
   await Notifications.scheduleNotificationAsync({
     content: {
       title: i18n.t('settings:notifications.morningTitle'),
@@ -75,7 +95,7 @@ export async function scheduleNotifications(
     },
   })
 
-  // Evening check-in
+  // Evening check-in (daily)
   await Notifications.scheduleNotificationAsync({
     content: {
       title: i18n.t('settings:notifications.eveningTitle'),
@@ -87,6 +107,24 @@ export async function scheduleNotifications(
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour: evening.hour,
       minute: evening.minute,
+    },
+  })
+
+  // Weekly review — expo-notifications weekday: 1=Sun..7=Sat
+  // Our convention: 0=Mon..6=Sun → convert: (day + 2) % 7 || 7
+  const expoWeekday = (settings.weeklyReviewDay + 2) % 7 || 7
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: i18n.t('settings:notifications.weeklyTitle'),
+      body: i18n.t('settings:notifications.weeklyBody'),
+      sound: 'default',
+      ...(Platform.OS === 'android' && { channelId: 'checkin-reminders' }),
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: expoWeekday,
+      hour: weekly.hour,
+      minute: weekly.minute,
     },
   })
 }

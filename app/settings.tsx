@@ -17,6 +17,7 @@ import { AppError, showErrorAlert } from '@/lib/errors'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { EditModal } from '@/components/ui/EditModal'
 import { TimePickerModal } from '@/components/ui/TimePickerModal'
+import { DayPickerModal } from '@/components/ui/DayPickerModal'
 import { LegalModal } from '@/components/ui/LegalModal'
 
 const SUPPORT_LINKS = {
@@ -36,7 +37,9 @@ export default function SettingsScreen() {
     theme, language, nickname, username, phone,
     setTheme, setLanguage, setNickname, setPhone, setEmail, changePassword,
     notificationsEnabled, morningNotificationTime, eveningNotificationTime,
+    weeklyReviewDay, weeklyReviewTime,
     setNotificationsEnabled, setMorningNotificationTime, setEveningNotificationTime,
+    setWeeklyReviewDay, setWeeklyReviewTime,
   } = useSettingsStore()
   const { user, signOut } = useAuthStore()
   const { colorScheme } = useColorScheme()
@@ -48,6 +51,8 @@ export default function SettingsScreen() {
   const [passwordModalVisible, setPasswordModalVisible] = useState(false)
   const [morningPickerVisible, setMorningPickerVisible] = useState(false)
   const [eveningPickerVisible, setEveningPickerVisible] = useState(false)
+  const [weeklyDayPickerVisible, setWeeklyDayPickerVisible] = useState(false)
+  const [weeklyTimePickerVisible, setWeeklyTimePickerVisible] = useState(false)
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null)
 
   const languageOptions: { label: string; value: 'system' | Language }[] = [
@@ -189,7 +194,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
             {/* Evening */}
             <TouchableOpacity
-              className={`flex-row items-center px-4 py-3.5 ${
+              className={`flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 ${
                 !notificationsEnabled ? 'opacity-40' : ''
               }`}
               disabled={!notificationsEnabled}
@@ -202,6 +207,48 @@ export default function SettingsScreen() {
               </Text>
               <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
                 {formatTimeDisplay(eveningNotificationTime)}
+              </Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {/* Weekly Review Section Divider */}
+            <View className={`px-4 py-2 bg-gray-50 dark:bg-gray-800 ${!notificationsEnabled ? 'opacity-40' : ''}`}>
+              <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase">
+                {t('notifications.weeklyReviewSection')}
+              </Text>
+            </View>
+            {/* Weekly Day */}
+            <TouchableOpacity
+              className={`flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 ${
+                !notificationsEnabled ? 'opacity-40' : ''
+              }`}
+              disabled={!notificationsEnabled}
+              onPress={() => setWeeklyDayPickerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="calendar" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                {t('notifications.weeklyDay')}
+              </Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {t(`notifications.days.${weeklyReviewDay}` as any)}
+              </Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {/* Weekly Time */}
+            <TouchableOpacity
+              className={`flex-row items-center px-4 py-3.5 ${
+                !notificationsEnabled ? 'opacity-40' : ''
+              }`}
+              disabled={!notificationsEnabled}
+              onPress={() => setWeeklyTimePickerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="clock-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                {t('notifications.weeklyTime')}
+              </Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {formatTimeDisplay(weeklyReviewTime)}
               </Text>
               <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
             </TouchableOpacity>
@@ -441,6 +488,20 @@ export default function SettingsScreen() {
         value={eveningNotificationTime}
         onSave={setEveningNotificationTime}
         onClose={() => setEveningPickerVisible(false)}
+      />
+      <DayPickerModal
+        visible={weeklyDayPickerVisible}
+        title={t('notifications.weeklyDayPickerTitle')}
+        value={weeklyReviewDay}
+        onSave={setWeeklyReviewDay}
+        onClose={() => setWeeklyDayPickerVisible(false)}
+      />
+      <TimePickerModal
+        visible={weeklyTimePickerVisible}
+        title={t('notifications.weeklyTimePickerTitle')}
+        value={weeklyReviewTime}
+        onSave={setWeeklyReviewTime}
+        onClose={() => setWeeklyTimePickerVisible(false)}
       />
     </ScrollView>
   )
