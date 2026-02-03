@@ -71,6 +71,74 @@ Centered vertically. Use `emoji` or `icon` (FontAwesome name), not both.
 
 Full-screen centered spinner with `bg-gray-50 dark:bg-gray-950` background.
 
+### EditModal
+
+```tsx
+import { EditModal } from '@/components/ui/EditModal'
+
+// Basic usage
+<EditModal
+  visible={visible}
+  title="Nickname"
+  value={nickname}
+  placeholder="Enter nickname"
+  maxLength={20}
+  onSave={setNickname}
+  onClose={() => setVisible(false)}
+/>
+
+// Password input (secure)
+<EditModal
+  visible={visible}
+  title="Change Password"
+  value=""
+  placeholder="New password (6+ chars)"
+  secureTextEntry
+  onSave={handlePasswordSave}  // async — throw to keep modal open
+  onClose={() => setVisible(false)}
+/>
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `visible` | boolean | required | Show/hide modal |
+| `title` | string | required | Modal header text |
+| `value` | string | required | Initial input value |
+| `onSave` | `(v: string) => void \| Promise<void>` | required | Save handler (async supported — throw to keep modal open) |
+| `onClose` | function | required | Close handler |
+| `placeholder` | string | — | Input placeholder |
+| `maxLength` | number | — | Max input length |
+| `secureTextEntry` | boolean | `false` | Password masking |
+
+### SegmentedControl
+
+```tsx
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+
+<SegmentedControl
+  options={[
+    { label: 'Daily', value: 'daily' },
+    { label: 'Weekly', value: 'weekly' },
+  ]}
+  value={selected}
+  onChange={setSelected}
+/>
+```
+
+### TimePickerModal
+
+```tsx
+import { TimePickerModal } from '@/components/ui/TimePickerModal'
+
+<TimePickerModal
+  visible={visible}
+  title="Morning Reminder"
+  value="09:00"
+  onSave={setTime}
+  onClose={() => setVisible(false)}
+/>
+```
+
 ## Layout Components (`src/components/layout/`)
 
 ### AppShell

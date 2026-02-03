@@ -2,6 +2,25 @@
 
 ## Database Tables (Supabase PostgreSQL)
 
+### `profiles`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid | PK, FK → auth.users, cascade delete |
+| `username` | text | Unique, 3-20 chars `[a-zA-Z0-9_]`, stored lowercase |
+| `phone` | text | Optional phone number |
+| `created_at` | timestamptz | Auto |
+
+**RLS Policies:**
+- SELECT: anyone can read (needed for username lookup)
+- INSERT: `auth.uid() = id` (users can only insert their own profile)
+- UPDATE: `auth.uid() = id` (users can only update their own profile)
+
+**RPC Functions (SECURITY DEFINER):**
+- `get_email_by_username(p_username)` → `text` — Login: resolve username to email
+- `get_username_by_email(p_email)` → `text` — Find ID: resolve email to username
+- `is_username_available(p_username)` → `boolean` — Sign Up: check uniqueness
+
 ### `entries`
 
 | Column | Type | Notes |
@@ -47,6 +66,7 @@ Located in `supabase/migrations/`:
 
 1. `001_initial_schema.sql` — Creates entries, summaries, todos tables + RLS + indexes
 2. `002_add_sentences_data.sql` — Adds `sentences_data` JSONB column to summaries
+3. `003_profiles_username.sql` — Creates profiles table + RLS + 3 SECURITY DEFINER RPC functions
 
 ## TypeScript Interfaces
 

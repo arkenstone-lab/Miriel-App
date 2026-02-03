@@ -25,16 +25,22 @@ export default function TabLayout() {
         screenOptions={{
           tabBarActiveTintColor: '#4f46e5',
           tabBarInactiveTintColor: '#9ca3af',
-          headerStyle: { backgroundColor: isDark ? '#111827' : '#ffffff' },
+          headerStyle: {
+            backgroundColor: isDark ? '#111827' : '#ffffff',
+            borderBottomWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
           headerTintColor: isDark ? '#f3f4f6' : '#111827',
           headerTitleStyle: { fontWeight: '600' },
+          tabBarLabelStyle: { fontSize: 10 },
           tabBarStyle: isDesktop
             ? { display: 'none' }
             : {
                 backgroundColor: isDark ? '#111827' : '#ffffff',
                 borderTopColor: isDark ? '#1f2937' : '#e5e7eb',
-                height: 64,
-                paddingBottom: 10,
+                height: 66,
+                paddingBottom: 12,
                 paddingTop: 4,
               },
           ...(isDesktop ? { headerShown: false } : {}),
@@ -88,6 +94,14 @@ export default function TabLayout() {
           options={{
             title: t('tab.profile'),
             tabBarIcon: ({ color }) => <TabBarIcon name="user-circle-o" color={color} />,
+            headerRight: () => (
+              <Pressable
+                onPress={() => router.push('/settings' as any)}
+                style={{ marginRight: 16 }}
+              >
+                <FontAwesome name="cog" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
+              </Pressable>
+            ),
           }}
         />
       </Tabs>
@@ -114,7 +128,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 76,
+    bottom: 78,
     right: 20,
     width: 56,
     height: 56,

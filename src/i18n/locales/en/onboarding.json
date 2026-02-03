@@ -16,5 +16,29 @@
   },
   "skip": "Skip",
   "next": "Next",
-  "getStarted": "Get Started"
+  "getStarted": "Get Started",
+  "persona": {
+    "title": "Set Up Profile",
+    "subtitle": "Help AI understand you better",
+    "nickname": "Nickname",
+    "nicknamePlaceholder": "What should we call you?",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "occupation": "Occupation",
+    "occupationPlaceholder": "Developer, Designer, PM...",
+    "interests": "Interests",
+    "interestOptions": {
+      "tech": "Tech",
+      "design": "Design",
+      "business": "Business",
+      "marketing": "Marketing",
+      "data": "Data",
+      "selfDev": "Self-Dev",
+      "health": "Health",
+      "other": "Other"
+    },
+    "done": "Done",
+    "skipForNow": "I'll do this later"
+  }
 }
