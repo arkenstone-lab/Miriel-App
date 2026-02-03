@@ -1,4 +1,4 @@
-# AI 일기장 (가칭: ReflectLog)
+# AI 일기장 — Miriel
 
 ## 프로젝트 개요
 - **한 줄 설명**: 내가 쓴 기록을 바탕으로, AI가 '근거 링크'가 있는 회고를 대신 정리해주는 저널
@@ -164,7 +164,7 @@ interface UserStats {
 - 상태관리: React Query (서버 상태) + Zustand (클라이언트)
 - 스타일링: NativeWind (`className` 사용, Tailwind 문법)
 - 네비게이션: Expo Router (파일 기반 라우팅, `/app` 디렉토리)
-- 에러 처리: 데모용이므로 happy path 우선, 최소한의 toast/alert 에러
+- 에러 처리: `AppError(code)` + `showErrorAlert()` 패턴 사용, 에러 코드 카탈로그는 `docs/error-codes.md` 참조
 - i18n: 모든 UI 문자열은 `src/i18n/locales/{ko,en}/` JSON에서 관리, 컴포넌트에서 `useTranslation()` 사용, 하드코딩 금지
 
 ---
@@ -240,6 +240,9 @@ interface UserStats {
 - [x] 아이디/비밀번호 찾기 (find-id, find-password 화면 — RPC 조회, 이메일 마스킹)
 - [x] 계정 정보 수정 (설정 > 이메일/전화번호/비밀번호 변경 — EditModal + async onSave)
 - [x] EditModal 확장 (secureTextEntry, async onSave 지원)
+- [x] 프로젝트 리브랜딩 (ReflectLog → Miriel — 전체 코드/문서/i18n/설정 일괄 변경)
+- [x] 에러 코드 시스템 (AppError + showErrorAlert + ErrorDisplay + errors i18n + CS 문서)
+- [x] 회원가입 비밀번호 확인 필드 (비밀번호 2회 입력 + 불일치 검증)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -309,6 +312,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | **설정 & 개인정보** | [`docs/settings-and-privacy.md`](docs/settings-and-privacy.md) | settingsStore 구조, 설정 화면, 개인정보 고지 컴포넌트 |
 | **게이미피케이션** | [`docs/gamification.md`](docs/gamification.md) | 스트릭/XP/레벨/배지 시스템, 새 배지 추가 방법 |
 | **AI 기능** | [`docs/ai-features.md`](docs/ai-features.md) | AI 파이프라인, Edge Function 스펙, 프롬프트, 미구현 기능 목록 |
+| **에러 코드** | [`docs/error-codes.md`](docs/error-codes.md) | 에러 코드 카탈로그, CS 대응 가이드, 사용자 메시지(ko/en) |
 
 ### 문서 활용 원칙
 1. **새 UI 컴포넌트 작성 시**: `components.md` (사용법) → `dark-mode.md` (색상 매핑) → `i18n.md` (번역 키)
@@ -316,6 +320,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 3. **설정 항목 추가 시**: `settings-and-privacy.md` (스토어/화면 구조)
 4. **게이미피케이션 확장 시**: `gamification.md` (XP/배지/레벨 시스템)
 5. **AI 기능 수정/추가 시**: `ai-features.md` (Edge Function 스펙, 프롬프트, 폴백 전략)
+6. **에러 처리 추가 시**: `error-codes.md` (코드 카탈로그) → `src/lib/errors.ts` (AppError) → `errors.json` (ko/en 메시지)
 
 ---
 
@@ -400,6 +405,10 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-03 | 계정 정보 수정을 설정 화면 Account 섹션에 배치 | 이메일/전화번호/비밀번호 변경은 설정의 자연스러운 위치, EditModal 재사용으로 일관된 UX | 별도 "계정 관리" 화면 |
 | 2026-02-03 | EditModal에 secureTextEntry + async onSave 추가 | 비밀번호 변경 시 마스킹 필요, 서버 호출 실패 시 모달 유지하려면 async 지원 필요 | 비밀번호 전용 모달 분리 |
 | 2026-02-03 | signUp 시 user_metadata에 pendingUsername/Phone 임시 저장 + 지연 프로필 생성 | Supabase 이메일 인증 ON이면 session null → profiles INSERT 불가. user_metadata에 저장 후 첫 로그인 시 loadUserData에서 생성 | 이메일 인증 OFF 강제 / 서버 사이드 프로필 생성 |
+| 2026-02-04 | 프로젝트 이름 ReflectLog → Miriel로 변경 | 브랜딩 결정 — VC 피칭 및 테스터 모집 전 이름 확정 | ReflectLog 유지 |
+| 2026-02-04 | 에러 코드 시스템 도입 (AppError + i18n + CS 문서) | CS 대응 효율화, 사용자가 에러 코드 전달 시 즉시 원인 파악 가능. 33개 에러 코드 카탈로그 | 에러 메시지만 표시 (코드 없음) |
+| 2026-02-04 | 에러 메시지를 errors 네임스페이스로 분리 | 에러별 사용자 친화적 메시지 + 다국어 지원, API 레이어의 기술적 에러를 사용자 언어로 변환 | 하드코딩 에러 메시지 유지 |
+| 2026-02-04 | 멀티 테마는 세 번째 테마 확정 시 도입 (현재 light/dark 유지) | 현재 `dark:` 패턴으로 충분, 시맨틱 컬러 토큰화는 세 번째 테마가 필요해지는 시점에 진행. CSS 변수 기반 토큰(`bg-surface` 등)으로 30+ 파일 일괄 치환 예정 | 지금 즉시 토큰화 |
 | | | | |
 
 ---
@@ -471,6 +480,13 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
   → identities.length === 0 체크로 "이미 등록된 이메일" 에러 표시 필요
 - Supabase auth rate limit: signUp 반복 호출 시 429 Too Many Requests (email rate limit exceeded)
   → 테스트 시 새 이메일 사용하거나 Supabase 대시보드에서 rate limit 조정
+- 리브랜딩 (v0.4): AsyncStorage 키가 @reflectlog/ → @miriel/ 로 변경됨
+  → 기존 테스트 기기에서 테마/언어 설정 초기화됨 (새 키로 저장되므로 이전 값 읽지 못함)
+- 에러 처리: AppError는 생성자에서 i18n.t()로 메시지 번역 → i18n이 초기화된 후에만 정확한 메시지 반환
+  → app/_layout.tsx에서 '@/i18n' import가 최상단에 있으므로 문제 없음
+- 에러 처리: catch 블록에서 error 타입을 `unknown`으로 변경 후 showErrorAlert에 전달
+  → showErrorAlert 내부에서 instanceof AppError 체크로 코드 유무 자동 판별
+- 에러 코드 추가 시: errors.json(ko+en) + error-codes.md + API/스토어에서 throw new AppError('CODE') 3곳 동시 수정 필수
 ```
 
 ---
@@ -482,6 +498,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-02 | v0.1 | 프로젝트 초기 셋업 — 문서 작성, MVP 범위 확정, Expo 전환, Phase R1~R2 완료 | Chris |
 | 2026-02-03 | v0.2 | Phase R3.5~R4 — i18n, 설정+다크모드, 온보딩, 페르소나, 프로필, UX 폴리시, AI 문서화 | Chris |
 | 2026-02-03 | v0.3 | Phase R4 계속 — ID 기반 인증 전환, 아이디/비밀번호 찾기, 계정 정보 수정 | Chris |
+| 2026-02-04 | v0.4 | 리브랜딩 + 에러 코드 시스템 + 비밀번호 확인 (ReflectLog→Miriel, AppError 33코드, 회원가입 UX 개선) | Chris |
 | | | | |
 
 <details>
@@ -589,6 +606,38 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 #### i18n
 - `auth.json` (ko/en): login/signup 섹션 username 기반 키로 교체, findId/findPassword 섹션 추가
 - `settings.json` (ko/en): account 섹션에 username/phone/password/emailChanged 등 키 추가
+
+</details>
+
+<details>
+<summary>v0.4 상세 이력 (클릭하여 펼치기)</summary>
+
+#### 프로젝트 리브랜딩 (ReflectLog → Miriel)
+- 전체 코드베이스에서 ReflectLog/reflectlog 를 Miriel/miriel로 일괄 변경 (18개 파일)
+- `app.json`: name, slug, scheme 변경
+- `package.json` / `package-lock.json`: 패키지 name 변경
+- `login.tsx`: 로그인 화면 브랜드명
+- `settings.tsx`: 지원 링크 URL 4개 (homepage/telegram/discord/x)
+- `settingsStore.ts`: AsyncStorage 키 prefix (`@reflectlog/` → `@miriel/`)
+- i18n: common.json(brand), auth.json(tagline), legal.json(이용약관/개인정보처리방침/이메일) — ko/en 모두
+- docs: data-model.md, ai-features.md, dark-mode.md
+- SQL: 001_initial_schema.sql 주석
+- CLAUDE.md, README.md: 프로젝트 제목
+
+#### 에러 코드 시스템
+- `src/lib/errors.ts`: `AppError` 클래스 (code + i18n 자동 매핑) + `showErrorAlert()` 유틸리티
+- `src/components/ui/ErrorDisplay.tsx`: 풀스크린 인라인 에러 컴포넌트 (아이콘 + 메시지 + 에러 코드)
+- `src/i18n/locales/{ko,en}/errors.json`: 33개 에러 코드별 사용자 친화적 메시지 (한국어/영어)
+- `src/i18n/index.ts`: `errors` 네임스페이스 등록
+- `docs/error-codes.md`: CS 대응용 에러 코드 레퍼런스 문서
+- API 레이어: `entry/api.ts`(7), `todo/api.ts`(5), `summary/api.ts`(3) → `AppError` 전환
+- 스토어: `authStore.ts`(10), `settingsStore.ts`(3), `avatar.ts`(1) → `AppError` 전환
+- UI: auth 5개 + settings + edit-profile + entries/new + EntryDetail → `showErrorAlert` 적용
+- 인라인 에러: `todos.tsx`, `summary.tsx`, `[id].tsx` → `ErrorDisplay` 컴포넌트 전환
+
+#### 회원가입 비밀번호 확인
+- `signup.tsx`: 비밀번호 확인 필드 추가 (2회 입력 + 불일치 검증)
+- `auth.json` (ko/en): `confirmPassword`, `confirmPasswordPlaceholder`, `alertPasswordMismatch` 키 추가
 
 </details>
 

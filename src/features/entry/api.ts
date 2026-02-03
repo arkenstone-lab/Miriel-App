@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { AppError } from '@/lib/errors'
 import type { Entry, CreateEntryInput, UpdateEntryInput } from './types'
 
 export async function fetchEntries(date?: string): Promise<Entry[]> {
@@ -14,7 +15,7 @@ export async function fetchEntries(date?: string): Promise<Entry[]> {
 
   const { data, error } = await query
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('ENTRY_001', error)
   return data as Entry[]
 }
 
@@ -25,13 +26,13 @@ export async function fetchEntry(id: string): Promise<Entry> {
     .eq('id', id)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('ENTRY_002', error)
   return data as Entry
 }
 
 export async function createEntry(input: CreateEntryInput): Promise<Entry> {
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
+  if (!user) throw new AppError('ENTRY_003')
 
   const { data, error } = await supabase
     .from('entries')
@@ -44,7 +45,7 @@ export async function createEntry(input: CreateEntryInput): Promise<Entry> {
     .select()
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('ENTRY_004', error)
   return data as Entry
 }
 
@@ -61,7 +62,7 @@ export async function updateEntry(id: string, input: UpdateEntryInput): Promise<
     .select()
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('ENTRY_005', error)
   return data as Entry
 }
 
@@ -71,7 +72,7 @@ export async function deleteEntry(id: string): Promise<void> {
     .delete()
     .eq('id', id)
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('ENTRY_006', error)
 }
 
 export async function requestTagging(text: string): Promise<{ tags: string[] }> {
@@ -79,6 +80,6 @@ export async function requestTagging(text: string): Promise<{ tags: string[] }> 
     body: { text },
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new AppError('ENTRY_007', error)
   return data as { tags: string[] }
 }

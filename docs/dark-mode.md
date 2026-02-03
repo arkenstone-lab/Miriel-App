@@ -6,7 +6,7 @@ Dark mode uses NativeWind's `darkMode: 'class'` strategy. The user's preference 
 
 ### Initialization Flow
 
-1. `settingsStore.initialize()` reads `@reflectlog/theme` from AsyncStorage
+1. `settingsStore.initialize()` reads `@miriel/theme` from AsyncStorage
 2. `_layout.tsx` calls `setColorScheme(theme)` when settings are ready
 3. NativeWind toggles `dark:` variant classes globally
 4. React Navigation headers/tab bars use JS-level `isDark` conditional

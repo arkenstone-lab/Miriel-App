@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
+import { AppError, showErrorAlert } from '@/lib/errors'
 
 export default function FindIdScreen() {
   const [email, setEmail] = useState('')
@@ -21,15 +22,15 @@ export default function FindIdScreen() {
       const { data: username, error } = await supabase.rpc('get_username_by_email', {
         p_email: email,
       })
-      if (error) throw error
+      if (error) throw new AppError('AUTH_011', error)
 
       if (username) {
         Alert.alert(t('findId.resultTitle'), t('findId.result', { username }))
       } else {
         Alert.alert(t('findId.resultTitle'), t('findId.notFound'))
       }
-    } catch {
-      Alert.alert(t('findId.resultTitle'), t('findId.notFound'))
+    } catch (error: unknown) {
+      showErrorAlert(t('findId.resultTitle'), error)
     } finally {
       setLoading(false)
     }

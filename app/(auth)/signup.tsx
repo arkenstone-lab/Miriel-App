@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { Link, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
+import { showErrorAlert } from '@/lib/errors'
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/
 
@@ -11,11 +12,13 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
   const emailRef = useRef<TextInput>(null)
   const phoneRef = useRef<TextInput>(null)
   const passwordRef = useRef<TextInput>(null)
+  const confirmPasswordRef = useRef<TextInput>(null)
 
   const router = useRouter()
   const signUp = useAuthStore((s) => s.signUp)
@@ -34,6 +37,10 @@ export default function SignupScreen() {
       Alert.alert(t('signup.alertTitle'), t('signup.alertPasswordShort'))
       return
     }
+    if (password !== confirmPassword) {
+      Alert.alert(t('signup.alertTitle'), t('signup.alertPasswordMismatch'))
+      return
+    }
 
     setLoading(true)
     try {
@@ -42,8 +49,8 @@ export default function SignupScreen() {
         router.replace({ pathname: '/(auth)/verify-email', params: { email } })
       }
       // else: session created → onAuthStateChange routes to onboarding
-    } catch (error: any) {
-      Alert.alert(t('signup.failedTitle'), error.message || t('signup.failedMessage'))
+    } catch (error: unknown) {
+      showErrorAlert(t('signup.failedTitle'), error)
     } finally {
       setLoading(false)
     }
@@ -122,7 +129,7 @@ export default function SignupScreen() {
         </View>
 
         {/* Password */}
-        <View className="mb-6">
+        <View className="mb-4">
           <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('signup.password')}</Text>
           <TextInput
             ref={passwordRef}
@@ -132,6 +139,22 @@ export default function SignupScreen() {
             onChangeText={setPassword}
             secureTextEntry
             autoComplete="password"
+            returnKeyType="next"
+            onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+        </View>
+
+        {/* Confirm Password */}
+        <View className="mb-6">
+          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('signup.confirmPassword')}</Text>
+          <TextInput
+            ref={confirmPasswordRef}
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
+            placeholder={t('signup.confirmPasswordPlaceholder')}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
             returnKeyType="done"
             onSubmitEditing={handleSignup}
           />

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Alert } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
+import { AppError, showErrorAlert } from '@/lib/errors'
 
 const COOLDOWN_SECONDS = 60
 
@@ -37,11 +38,11 @@ export default function VerifyEmailScreen() {
         type: 'signup',
         email,
       })
-      if (error) throw error
+      if (error) throw new AppError('AUTH_014', error)
       Alert.alert(t('verify.resendSuccessTitle'), t('verify.resendSuccessMessage'))
       setCooldown(COOLDOWN_SECONDS)
-    } catch {
-      Alert.alert(t('verify.resendFailedTitle'), t('verify.resendFailedMessage'))
+    } catch (error: unknown) {
+      showErrorAlert(t('verify.resendFailedTitle'), error)
     } finally {
       setResending(false)
     }

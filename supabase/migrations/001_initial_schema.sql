@@ -1,4 +1,4 @@
--- ReflectLog Phase 1: Initial Schema
+-- Miriel Phase 1: Initial Schema
 -- Run this in Supabase SQL Editor
 
 -- entries 테이블

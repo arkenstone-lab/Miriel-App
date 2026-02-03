@@ -4,10 +4,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
+import { showErrorAlert } from '@/lib/errors'
 import { useEntry, useUpdateEntry, useDeleteEntry } from '@/features/entry/hooks'
 import { useTodosByEntry, useUpdateTodo } from '@/features/todo/hooks'
 import { useSummaries } from '@/features/summary/hooks'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -32,13 +34,7 @@ export default function EntryDetailScreen() {
   if (isLoading) return <LoadingState />
 
   if (error || !entry) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white dark:bg-gray-950 px-8">
-        <Text className="text-red-500 text-center">
-          {error?.message || t('detail.notFound')}
-        </Text>
-      </View>
-    )
+    return <ErrorDisplay error={error ?? null} fallbackMessage={t('detail.notFound')} />
   }
 
   const handleDelete = () => {
@@ -51,8 +47,8 @@ export default function EntryDetailScreen() {
           try {
             await deleteEntry.mutateAsync(entry.id)
             router.back()
-          } catch (e: any) {
-            Alert.alert(t('detail.deleteFailed'), e.message)
+          } catch (e: unknown) {
+            showErrorAlert(t('detail.deleteFailed'), e)
           }
         },
       },
@@ -72,8 +68,8 @@ export default function EntryDetailScreen() {
         input: { raw_text: editText },
       })
       setIsEditing(false)
-    } catch (e: any) {
-      Alert.alert(t('detail.editFailed'), e.message)
+    } catch (e: unknown) {
+      showErrorAlert(t('detail.editFailed'), e)
     }
   }
 

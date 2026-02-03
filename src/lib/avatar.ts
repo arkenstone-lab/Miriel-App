@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from './supabase'
+import { AppError } from './errors'
 
 const BUCKET = 'avatars'
 
@@ -32,7 +33,7 @@ export async function pickAndUploadAvatar(userId: string): Promise<string | null
       contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
     })
 
-  if (error) throw error
+  if (error) throw new AppError('PROFILE_001', error)
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
   // Append timestamp to bust cache after re-upload
