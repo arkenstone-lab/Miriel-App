@@ -13,6 +13,7 @@ type Language = 'ko' | 'en'
 const KEYS = {
   theme: '@miriel/theme',
   language: '@miriel/language',
+  hasCompletedSetup: '@miriel/hasCompletedSetup',
 } as const
 
 interface PersonaData {
@@ -20,6 +21,14 @@ interface PersonaData {
   gender: string
   occupation: string
   interests: string[]
+}
+
+interface NotificationSettings {
+  notificationsEnabled: boolean
+  morningNotificationTime: string
+  eveningNotificationTime: string
+  weeklyReviewDay: number
+  weeklyReviewTime: string
 }
 
 interface SettingsState {
@@ -41,6 +50,9 @@ interface SettingsState {
   notificationsEnabled: boolean
   morningNotificationTime: string  // "HH:mm"
   eveningNotificationTime: string  // "HH:mm"
+  weeklyReviewDay: number          // 0=Mon..6=Sun
+  weeklyReviewTime: string         // "HH:mm"
+  hasCompletedSetup: boolean
   // Flags
   initialized: boolean
   userDataLoaded: boolean
@@ -48,6 +60,7 @@ interface SettingsState {
   initialize: () => Promise<void>
   setTheme: (theme: ThemeMode) => Promise<void>
   setLanguage: (lang: Language | null) => Promise<void>
+  completeSetup: () => Promise<void>
   // User data actions (Supabase user_metadata)
   loadUserData: (metadata: Record<string, any>, userId: string) => void
   clearUserData: () => void
@@ -67,6 +80,9 @@ interface SettingsState {
   setNotificationsEnabled: (enabled: boolean) => Promise<void>
   setMorningNotificationTime: (time: string) => Promise<void>
   setEveningNotificationTime: (time: string) => Promise<void>
+  setWeeklyReviewDay: (day: number) => Promise<void>
+  setWeeklyReviewTime: (time: string) => Promise<void>
+  saveNotificationSettings: (settings: NotificationSettings) => Promise<void>
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -79,25 +95,30 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   avatarUrl: '',
   hasSeenPrivacyNotice: false,
   hasSeenOnboarding: false,
+  hasCompletedSetup: false,
   username: '',
   phone: '',
   notificationsEnabled: false,
   morningNotificationTime: '09:00',
   eveningNotificationTime: '21:00',
+  weeklyReviewDay: 6,
+  weeklyReviewTime: '19:00',
   initialized: false,
   userDataLoaded: false,
 
   initialize: async () => {
     try {
-      const [storedTheme, storedLang] = await Promise.all([
+      const [storedTheme, storedLang, storedSetup] = await Promise.all([
         AsyncStorage.getItem(KEYS.theme),
         AsyncStorage.getItem(KEYS.language),
+        AsyncStorage.getItem(KEYS.hasCompletedSetup),
       ])
 
       const theme = (storedTheme as ThemeMode) || 'system'
       const language = (storedLang as Language) || null
+      const hasCompletedSetup = storedSetup === 'true'
 
-      set({ theme, language, initialized: true })
+      set({ theme, language, hasCompletedSetup, initialized: true })
 
       if (language) {
         await i18n.changeLanguage(language)
@@ -123,6 +144,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       notificationsEnabled: metadata?.notificationsEnabled === true,
       morningNotificationTime: metadata?.morningNotificationTime || '09:00',
       eveningNotificationTime: metadata?.eveningNotificationTime || '21:00',
+      weeklyReviewDay: metadata?.weeklyReviewDay ?? 6,
+      weeklyReviewTime: metadata?.weeklyReviewTime || '19:00',
     })
 
     // Fetch profile data (username, phone) from profiles table
@@ -184,6 +207,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       notificationsEnabled: false,
       morningNotificationTime: '09:00',
       eveningNotificationTime: '21:00',
+      weeklyReviewDay: 6,
+      weeklyReviewTime: '19:00',
       userDataLoaded: false,
     })
   },
@@ -203,6 +228,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       const deviceLang = getLocales()[0]?.languageCode ?? 'en'
       await i18n.changeLanguage(deviceLang === 'ko' ? 'ko' : 'en')
     }
+  },
+
+  completeSetup: async () => {
+    set({ hasCompletedSetup: true })
+    await AsyncStorage.setItem(KEYS.hasCompletedSetup, 'true')
   },
 
   setNickname: async (name: string) => {
@@ -278,17 +308,24 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   setNotificationsEnabled: async (enabled: boolean) => {
     if (enabled) {
-      if (Platform.OS !== 'web') {
-        const { requestPermissions, scheduleNotifications } = await import('@/lib/notifications')
+      if (Platform.OS === 'web') {
+        const { requestWebPermission } = await import('@/lib/webNotifications')
+        const granted = await requestWebPermission()
+        if (!granted) return
+      } else {
+        const { requestPermissions } = await import('@/lib/notifications')
         const granted = await requestPermissions()
-        if (!granted) return // permission denied — stay disabled
-        const state = useSettingsStore.getState()
-        await scheduleNotifications(state.morningNotificationTime, state.eveningNotificationTime)
+        if (!granted) return
       }
       set({ notificationsEnabled: true })
       await supabase.auth.updateUser({ data: { notificationsEnabled: true } })
+      const state = useSettingsStore.getState()
+      await rescheduleAllNotifications(state)
     } else {
-      if (Platform.OS !== 'web') {
+      if (Platform.OS === 'web') {
+        const { cancelWebNotifications } = await import('@/lib/webNotifications')
+        cancelWebNotifications()
+      } else {
         const { cancelAllNotifications } = await import('@/lib/notifications')
         await cancelAllNotifications()
       }
@@ -301,19 +338,65 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set({ morningNotificationTime: time })
     await supabase.auth.updateUser({ data: { morningNotificationTime: time } })
     const state = useSettingsStore.getState()
-    if (state.notificationsEnabled && Platform.OS !== 'web') {
-      const { scheduleNotifications } = await import('@/lib/notifications')
-      await scheduleNotifications(time, state.eveningNotificationTime)
-    }
+    if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setEveningNotificationTime: async (time: string) => {
     set({ eveningNotificationTime: time })
     await supabase.auth.updateUser({ data: { eveningNotificationTime: time } })
     const state = useSettingsStore.getState()
-    if (state.notificationsEnabled && Platform.OS !== 'web') {
-      const { scheduleNotifications } = await import('@/lib/notifications')
-      await scheduleNotifications(state.morningNotificationTime, time)
+    if (state.notificationsEnabled) await rescheduleAllNotifications(state)
+  },
+
+  setWeeklyReviewDay: async (day: number) => {
+    set({ weeklyReviewDay: day })
+    await supabase.auth.updateUser({ data: { weeklyReviewDay: day } })
+    const state = useSettingsStore.getState()
+    if (state.notificationsEnabled) await rescheduleAllNotifications(state)
+  },
+
+  setWeeklyReviewTime: async (time: string) => {
+    set({ weeklyReviewTime: time })
+    await supabase.auth.updateUser({ data: { weeklyReviewTime: time } })
+    const state = useSettingsStore.getState()
+    if (state.notificationsEnabled) await rescheduleAllNotifications(state)
+  },
+
+  saveNotificationSettings: async (settings: NotificationSettings) => {
+    set({
+      notificationsEnabled: settings.notificationsEnabled,
+      morningNotificationTime: settings.morningNotificationTime,
+      eveningNotificationTime: settings.eveningNotificationTime,
+      weeklyReviewDay: settings.weeklyReviewDay,
+      weeklyReviewTime: settings.weeklyReviewTime,
+    })
+    await supabase.auth.updateUser({
+      data: {
+        notificationsEnabled: settings.notificationsEnabled,
+        morningNotificationTime: settings.morningNotificationTime,
+        eveningNotificationTime: settings.eveningNotificationTime,
+        weeklyReviewDay: settings.weeklyReviewDay,
+        weeklyReviewTime: settings.weeklyReviewTime,
+      },
+    })
+    if (settings.notificationsEnabled) {
+      await rescheduleAllNotifications(settings)
     }
   },
 }))
+
+/** Helper: reschedule all notifications (native + web) based on current settings */
+async function rescheduleAllNotifications(state: {
+  morningNotificationTime: string
+  eveningNotificationTime: string
+  weeklyReviewDay: number
+  weeklyReviewTime: string
+}) {
+  if (Platform.OS === 'web') {
+    const { scheduleWebNotifications } = await import('@/lib/webNotifications')
+    scheduleWebNotifications(state)
+  } else {
+    const { scheduleAllNotifications } = await import('@/lib/notifications')
+    await scheduleAllNotifications(state)
+  }
+}

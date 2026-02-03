@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 
 export default function EntryDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, autoEdit } = useLocalSearchParams<{ id: string; autoEdit?: string }>()
   const router = useRouter()
   const { data: entry, isLoading, error } = useEntry(id!)
   const { data: relatedTodos } = useTodosByEntry(id!)
@@ -30,11 +30,19 @@ export default function EntryDetailScreen() {
 
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
+  const [autoEditApplied, setAutoEditApplied] = useState(false)
 
   if (isLoading) return <LoadingState />
 
   if (error || !entry) {
     return <ErrorDisplay error={error ?? null} fallbackMessage={t('detail.notFound')} />
+  }
+
+  // Auto-enter edit mode when redirected from new entry (daily limit)
+  if (autoEdit === 'true' && entry && !autoEditApplied) {
+    setEditText(entry.raw_text)
+    setIsEditing(true)
+    setAutoEditApplied(true)
   }
 
   const handleDelete = () => {

@@ -64,6 +64,14 @@ function SummaryListCard({
   )
 }
 
+function getMonday(date: Date): string {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+  d.setDate(diff)
+  return d.toISOString().split('T')[0]
+}
+
 export default function SummaryScreen() {
   const [period, setPeriod] = useState<'daily' | 'weekly'>('daily')
   const { data: summaries, isLoading, error } = useSummaries(period)
@@ -101,9 +109,17 @@ export default function SummaryScreen() {
     setSelectedId(summary.id)
   }
 
+  // Weekly review 1-per-week limit
+  const currentWeekStart = getMonday(new Date())
+  const hasWeeklyThisWeek = period === 'weekly' && summaries?.some(
+    (s) => s.period_start === currentWeekStart
+  )
+
   const generateLabel = period === 'daily'
     ? (generateMutation.isPending ? t('daily.generating') : t('daily.generateButton'))
-    : (generateMutation.isPending ? t('weekly.generating') : t('weekly.generateButton'))
+    : hasWeeklyThisWeek
+      ? t('weekly.alreadyGenerated')
+      : (generateMutation.isPending ? t('weekly.generating') : t('weekly.generateButton'))
 
   const emptyEmoji = period === 'daily' ? '📊' : '📅'
   const emptyTitle = period === 'daily' ? t('daily.emptyTitle') : t('weekly.emptyTitle')
@@ -138,6 +154,7 @@ export default function SummaryScreen() {
               title={generateLabel}
               onPress={handleGenerate}
               loading={generateMutation.isPending}
+              disabled={hasWeeklyThisWeek}
               size="lg"
             />
           </View>

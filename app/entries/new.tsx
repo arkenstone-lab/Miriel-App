@@ -16,11 +16,12 @@ import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import { showErrorAlert } from '@/lib/errors'
 import { useChatStore, type ChatMessage } from '@/stores/chatStore'
-import { useCreateEntry, useUpdateEntry } from '@/features/entry/hooks'
+import { useCreateEntry, useUpdateEntry, useTodayEntry } from '@/features/entry/hooks'
 import { requestTagging } from '@/features/entry/api'
 import { extractTodos } from '@/features/todo/api'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
@@ -54,10 +55,18 @@ export default function NewEntryScreen() {
   const { messages, isComplete, addUserMessage, getFullText, reset, mode, setMode } = useChatStore()
   const createEntry = useCreateEntry()
   const updateEntry = useUpdateEntry()
+  const { data: todayEntry, isLoading: checkingToday } = useTodayEntry()
   const router = useRouter()
   const flatListRef = useRef<FlatList>(null)
   const { t } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
+
+  // Redirect to edit if today's entry already exists
+  useEffect(() => {
+    if (!checkingToday && todayEntry) {
+      router.replace(`/entries/${todayEntry.id}?autoEdit=true` as any)
+    }
+  }, [checkingToday, todayEntry])
 
   useEffect(() => {
     reset()
@@ -122,6 +131,9 @@ export default function NewEntryScreen() {
       showErrorAlert(t('create.saveFailed'), error)
     }
   }
+
+  // Show loading while checking for today's entry
+  if (checkingToday) return <LoadingState />
 
   // Save success feedback screen
   if (saveFeedback) {
