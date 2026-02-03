@@ -129,7 +129,7 @@ export default function TimelineScreen() {
     return (
       <MasterDetailLayout
         master={master}
-        detail={selectedEntry ? <EntryDetail entry={selectedEntry} /> : null}
+        detail={selectedEntry ? <EntryDetail entry={selectedEntry} onDeleted={() => setSelectedId(null)} /> : null}
         detailPlaceholder={tCommon('placeholder.selectEntry')}
       />
     )

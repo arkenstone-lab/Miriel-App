@@ -10,7 +10,7 @@
 | Styling | NativeWind (Tailwind for RN) | 4.1 |
 | CSS Engine | Tailwind CSS | 3.4 |
 | Backend | Supabase (PostgreSQL + Edge Functions) | 2.93 |
-| Auth | Supabase Auth (email/password) | - |
+| Auth | Supabase Auth (username/password via profiles table) | - |
 | AI | OpenAI GPT-4o (via Edge Functions) | - |
 | Server State | TanStack React Query | 5 |
 | Client State | Zustand | 5 |
@@ -21,7 +21,7 @@
 ```
 C:\Work\demo\
 ├── app/                    # Expo Router pages (file-based routing)
-│   ├── (auth)/             # Auth group (login, signup)
+│   ├── (auth)/             # Auth group (login, signup, find-id, find-password, verify-email)
 │   ├── (tabs)/             # Tab navigator (home, timeline, summary, weekly, todos)
 │   ├── entries/            # Entry screens (new, [id])
 │   ├── settings.tsx        # Settings modal screen
@@ -91,7 +91,7 @@ Expo Router uses file-based routing. The navigation structure:
 
 ```
 Root Stack (_layout.tsx)
-├── (auth) group          → login, signup (hidden when authenticated)
+├── (auth) group          → login, signup, find-id, find-password, verify-email (hidden when authenticated)
 ├── (tabs) group          → bottom tab navigator
 │   ├── index             → Dashboard (home)
 │   ├── timeline          → Entry list with date grouping
@@ -121,9 +121,9 @@ Layout components:
 
 | Store | Purpose | Persistence |
 |-------|---------|-------------|
-| `authStore` | Session, user object, signIn/signUp/signOut | Supabase session (auto) |
+| `authStore` | Session, user object, signIn(username)/signUp/signOut | Supabase session (auto) |
 | `chatStore` | Chat mode messages, question index, input mode | In-memory only |
-| `settingsStore` | Theme, language, privacy notice state | AsyncStorage |
+| `settingsStore` | Theme, language, privacy, username, phone, account management | AsyncStorage (device) + user_metadata + profiles table |
 
 React Query handles all server state (entries, summaries, todos, gamification stats). Query keys follow the pattern `['resource', id?]`.
 
@@ -131,8 +131,14 @@ React Query handles all server state (entries, summaries, todos, gamification st
 
 1. `_layout.tsx` calls `authStore.initialize()` on mount
 2. Supabase session is restored from storage
-3. Auth guard redirects: no user → login, user + auth group → tabs
+3. Auth guard redirects: no user → login, user + !onboarding → onboarding, user + auth group → tabs
 4. `onAuthStateChange` listener keeps state in sync
+5. **Login**: username → `get_email_by_username` RPC → `signInWithPassword({ email, password })`
+6. **Sign Up** (email confirmation OFF): username availability check → `auth.signUp({ email, password, options.data: pendingUsername/Phone })` → `profiles.insert` → auto-route to onboarding
+7. **Sign Up** (email confirmation ON): same as above but no session → redirect to verify-email → profile created on first login via `loadUserData`
+8. **Duplicate email detection**: `auth.signUp` returns `identities: []` for existing unconfirmed users → error shown
+9. **Find ID**: email → `get_username_by_email` RPC → Alert with username
+10. **Find Password**: username/email → resolve email → `resetPasswordForEmail(email)`
 
 ## Environment Variables
 

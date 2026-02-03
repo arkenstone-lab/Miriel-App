@@ -53,7 +53,7 @@
 - **상태관리**: React Query (서버 상태) + Zustand (클라이언트: auth, chat, settings)
 - **Backend**: Supabase Edge Functions
 - **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth (이메일/소셜 간단히)
+- **Auth**: Supabase Auth (ID/비밀번호 — profiles 테이블로 username↔email 매핑)
 - **AI**: OpenAI API (GPT-4o) - 요약/태깅용
 - **배포**: EAS Build (iOS/Android) + Expo Web (PC)
 - **크로스플랫폼**: PC(웹) + iOS + Android 단일 코드베이스
@@ -63,6 +63,14 @@
 ## 데이터 모델
 
 ```typescript
+// Profile (사용자 프로필 — username↔email 매핑)
+interface Profile {
+  id: string;                // FK → auth.users
+  username: string;          // 3~20자, 영문/숫자/_ — 로그인 ID
+  phone?: string;
+  created_at: timestamp;
+}
+
 // Entry (기록)
 interface Entry {
   id: string;
@@ -218,6 +226,20 @@ interface UserStats {
 - [x] 프로필 탭 신설 (유저 정보, 게이미피케이션, 설정, 개인정보, 로그아웃)
 - [x] Write Today FAB (모바일 하단 플로팅 버튼)
 - [x] 공유 컴포넌트 추출 (SegmentedControl, EditModal → src/components/ui/)
+- [x] 온보딩 Skip 위치 변경 (상단 우측 → 다음 버튼 아래 텍스트)
+- [x] 페르소나 수집 화면 (닉네임, 성별, 직업, 관심사 — 온보딩 4단계)
+- [x] 사용자 데이터 Supabase user_metadata 마이그레이션 (AsyncStorage → 계정별 서버 저장)
+- [x] 프로필 탭 리팩토링 (설정 분리, 내 정보+성취감 중심, 할일 달성률 카드)
+- [x] 프로필 편집 화면 (edit-profile 모달 — 아바타 업로드/삭제, 페르소나 수정)
+- [x] 이메일 인증 안내 화면 (회원가입 후 verify-email 화면)
+- [x] 지원/커뮤니티 링크 (설정 화면 Support 섹션)
+- [x] AI 기능 문서화 (docs/ai-features.md — 파이프라인, Edge Function 스펙, 미구현 목록)
+- [x] 로컬 푸시 알림 (아침/저녁 체크인 리마인더 — expo-notifications, 설정 화면 토글+시간 선택)
+- [x] 이메일 인증 재전송 (verify-email 화면 — 60초 쿨다운, 성공/실패 Alert)
+- [x] ID 기반 인증 전환 (email 로그인 → username 로그인, profiles 테이블 + RPC 함수 3개)
+- [x] 아이디/비밀번호 찾기 (find-id, find-password 화면 — RPC 조회, 이메일 마스킹)
+- [x] 계정 정보 수정 (설정 > 이메일/전화번호/비밀번호 변경 — EditModal + async onSave)
+- [x] EditModal 확장 (secureTextEntry, async onSave 지원)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -286,12 +308,14 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | **컴포넌트 가이드** | [`docs/components.md`](docs/components.md) | UI 프리미티브(Button/Card/Badge 등) 사용법, 새 컴포넌트 작성 규칙 |
 | **설정 & 개인정보** | [`docs/settings-and-privacy.md`](docs/settings-and-privacy.md) | settingsStore 구조, 설정 화면, 개인정보 고지 컴포넌트 |
 | **게이미피케이션** | [`docs/gamification.md`](docs/gamification.md) | 스트릭/XP/레벨/배지 시스템, 새 배지 추가 방법 |
+| **AI 기능** | [`docs/ai-features.md`](docs/ai-features.md) | AI 파이프라인, Edge Function 스펙, 프롬프트, 미구현 기능 목록 |
 
 ### 문서 활용 원칙
 1. **새 UI 컴포넌트 작성 시**: `components.md` (사용법) → `dark-mode.md` (색상 매핑) → `i18n.md` (번역 키)
 2. **새 데이터 기능 추가 시**: `data-model.md` (DB/API/훅 패턴) → `architecture.md` (feature 모듈 구조)
 3. **설정 항목 추가 시**: `settings-and-privacy.md` (스토어/화면 구조)
 4. **게이미피케이션 확장 시**: `gamification.md` (XP/배지/레벨 시스템)
+5. **AI 기능 수정/추가 시**: `ai-features.md` (Edge Function 스펙, 프롬프트, 폴백 전략)
 
 ---
 
@@ -325,6 +349,15 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 3. **왜(Why) 기록** - 무엇을 했는지보다 왜 그렇게 결정했는지가 중요
 4. **체크리스트 실시간 반영** - 진행 상황 한눈에 파악
 
+### 커밋 전 문서 체크리스트
+코드 변경 사항을 커밋하기 전에 반드시 아래 문서들에 추가/수정이 필요한 내용이 없는지 확인하세요:
+
+1. **`CLAUDE.md`** — 체크리스트, 결정 로그, 삽질 노트, 변경 로그에 반영할 내용이 있는지
+2. **`docs/` 폴더** — 변경된 기능과 관련된 문서(architecture, data-model, settings-and-privacy, components 등)가 최신 상태인지
+3. **`README.md`** — 프로젝트 소개, 기능 목록, 설치 방법 등에 반영할 변경이 있는지
+
+> 새 기능, 설계 변경, 버그 수정 등 모든 의미 있는 코드 변경은 관련 문서도 함께 업데이트한 뒤 커밋해야 합니다.
+
 ---
 
 ## 📋 결정 로그
@@ -344,13 +377,29 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-03 | 개인정보 고지 + AI 출력 스키마 동시 도입 | 데이터 안전성 시각화 + AI 출력 정형화로 신뢰성 향상 | 고지만 / 스키마만 |
 | 2026-02-03 | 온보딩을 `(onboarding)` route group으로 구현 | Expo Router 파일 기반 라우팅 패턴 유지, settingsStore에서 게이트 제어 | 모달 / 조건부 렌더링 |
 | 2026-02-03 | 데모 데이터 시딩을 설정 화면 버튼으로 제공 | 시연자가 직접 제어 가능, 멱등 실행(clear-first), React Query 캐시 무효화 | CLI 스크립트 / 자동 시딩 |
-| 2026-02-03 | 닉네임을 settingsStore(AsyncStorage)에 저장 | Supabase user_metadata 수정 없이 클라이언트만으로 구현, 데모용 간결함 유지 | Supabase Auth user_metadata |
+| 2026-02-03 | ~~닉네임을 settingsStore(AsyncStorage)에 저장~~ → user_metadata로 이전됨 | ~~클라이언트만으로 구현~~ → 계정별 데이터 일관성을 위해 user_metadata로 마이그레이션 | ~~Supabase Auth user_metadata~~ |
 | 2026-02-03 | 데모 데이터 섹션을 설정 UI에서 제거 (코드는 유지) | 데모데이 전까지 불필요한 UI 노출 방지, 필요 시 코드 복원 용이 | 설정에 계속 노출 |
 | 2026-02-03 | 설정 입력을 팝업 모달(EditModal)로 전환 | 인라인 TextInput보다 아기자기하고 즐거운 UX, 모달 패턴 재사용 가능 | 인라인 입력 유지 |
 | 2026-02-03 | 일간요약+주간회고 → 통합 "요약" 탭 (SegmentedControl 토글) | 탭 수 최적화, 전환 UX 개선, 한 화면에서 일간/주간 모두 접근 | 별도 탭 유지 |
 | 2026-02-03 | 프로필 탭 신설 (5번째 탭, 설정 통합) | 유저 정보+게이미피케이션+설정을 한 곳에, 모바일 headerRight 설정 버튼 제거로 헤더 깔끔 | 설정 모달 유지 |
 | 2026-02-03 | Write Today FAB (모바일 전용) | 기록 진입 접근성 향상, 모바일 UX 업계 표준 패턴 | 탭바 + 버튼만 |
 | 2026-02-03 | SegmentedControl/EditModal을 공유 컴포넌트로 추출 | settings.tsx와 profile.tsx에서 중복 사용, DRY 원칙 | settings.tsx 인라인 유지 |
+| 2026-02-03 | 사용자 데이터를 Supabase user_metadata로 마이그레이션 | AsyncStorage는 디바이스별 저장이라 계정 전환 시 온보딩/페르소나가 공유됨. user_metadata는 계정별 서버 저장으로 정확한 상태 유지 | AsyncStorage 유지 + 로그아웃 시 리셋 |
+| 2026-02-03 | 페르소나 데이터 단일 배치 저장 (savePersona) | 개별 필드마다 updateUser 호출 시 동시성 문제(last-write-wins)로 데이터 유실 | 필드별 개별 updateUser 호출 |
+| 2026-02-03 | 성별 옵션에서 "기타" 제거 (남성/여성만) | 사용자 요청 — 심플한 선택지 |  "기타" 옵션 유지 |
+| 2026-02-03 | 프로필 편집을 별도 모달 화면(edit-profile)으로 분리 | 프로필 탭은 조회 중심, 편집은 독립 화면으로 UX 분리. 아바타+페르소나 한 곳에서 관리 | 프로필 탭 내 인라인 편집 |
+| 2026-02-03 | 아바타를 Supabase Storage + user_metadata URL로 저장 | 추후 기본 아바타 이미지 확장 시 동일한 avatarUrl 필드 활용 가능 | Base64로 user_metadata에 직접 저장 |
+| 2026-02-03 | 지원 링크를 설정 화면 Support 섹션에 배치 | 설정은 앱 관리 허브, Linking.openURL로 외부 링크 처리는 업계 표준 패턴 | 프로필 탭 / 별도 화면 |
+| 2026-02-03 | AI 기능 문서(docs/ai-features.md) 작성 | Edge Function 스펙, 프롬프트, 폴백 전략, 미구현 기능을 한 곳에 정리하여 개발 참조 효율화 | CLAUDE.md에 모두 포함 |
+| 2026-02-03 | 로컬 푸시 알림 (expo-notifications) | 리텐션 핵심 — 아침/저녁 체크인 리마인더로 매일 기록 유도, 설정 화면에서 시간 제어 | 서버 푸시 (FCM/APNs) |
+| 2026-02-03 | 알림 설정을 user_metadata에 저장 | 디바이스 전환 시 알림 설정 유지, 기존 user_metadata 패턴과 일관성 | AsyncStorage에 저장 |
+| 2026-02-03 | 이메일 인증 재전송 + 60초 쿨다운 | 인증 메일 미수신 시 UX 개선, 쿨다운으로 남용 방지 | 재전송 없이 안내만 |
+| 2026-02-03 | ID(username) 기반 인증으로 전환 | 이메일 노출 없이 아이디로 로그인하는 일반적 UX, profiles 테이블로 username↔email 매핑 | 이메일 로그인 유지 |
+| 2026-02-03 | profiles 테이블 + SECURITY DEFINER RPC | username→email 조회가 auth.users 접근 필요, RLS로는 불가 → SECURITY DEFINER 함수로 안전하게 매핑 | 클라이언트에서 직접 auth.users 조회 |
+| 2026-02-03 | 아이디/비밀번호 찾기 화면 분리 | 각각 다른 입력(이메일/아이디or이메일)이 필요, 별도 화면이 UX 명확 | 단일 "계정 찾기" 화면 |
+| 2026-02-03 | 계정 정보 수정을 설정 화면 Account 섹션에 배치 | 이메일/전화번호/비밀번호 변경은 설정의 자연스러운 위치, EditModal 재사용으로 일관된 UX | 별도 "계정 관리" 화면 |
+| 2026-02-03 | EditModal에 secureTextEntry + async onSave 추가 | 비밀번호 변경 시 마스킹 필요, 서버 호출 실패 시 모달 유지하려면 async 지원 필요 | 비밀번호 전용 모달 분리 |
+| 2026-02-03 | signUp 시 user_metadata에 pendingUsername/Phone 임시 저장 + 지연 프로필 생성 | Supabase 이메일 인증 ON이면 session null → profiles INSERT 불가. user_metadata에 저장 후 첫 로그인 시 loadUserData에서 생성 | 이메일 인증 OFF 강제 / 서버 사이드 프로필 생성 |
 | | | | |
 
 ---
@@ -386,6 +435,42 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 - Header 높이: 모바일에서 기본 헤더가 너무 높음 → headerStyle: { height: 48 }로 줄임
 - Settings 팝업 모달: React Native Modal + KeyboardAvoidingView + transparent overlay 패턴 사용
   → onShow 콜백에서 draft 동기화, onSubmitEditing으로 키보드 Done 지원
+- user_metadata 동시성: Supabase auth.updateUser()를 여러 필드에 동시 호출하면 last-write-wins로 데이터 유실
+  → 반드시 단일 updateUser({ data: { ...allFields } })로 배치 호출 (savePersona 패턴)
+- user_metadata 라우팅 가드: user 변경 시 loadUserData() 비동기 완료 전에 라우팅 결정하면 온보딩 플래시 발생
+  → userDataLoaded 플래그로 메타데이터 로드 완료까지 라우팅 보류
+- AsyncStorage vs user_metadata: 온보딩/페르소나/개인정보 동의 같은 계정별 데이터는 반드시 user_metadata에 저장
+  → AsyncStorage는 디바이스별이라 계정 전환 시 다른 사용자 데이터가 남음
+  → theme/language만 AsyncStorage 유지 (디바이스 설정이므로)
+- Supabase Storage 아바타: 버킷 'avatars'에 {userId}/avatar.{ext} 경로로 업로드
+  → 같은 경로에 덮어쓰기해도 CDN 캐시로 이전 이미지 표시될 수 있음 → ?t=timestamp 캐시버스팅 필수
+  → 버킷 생성 + RLS 정책 설정을 Supabase 콘솔에서 수동으로 해야 함
+- expo-image-picker: aspect [1,1]로 정사각형 크롭, quality 0.7로 파일 크기 절약
+  → mediaTypes 옵션이 ImagePicker.MediaTypeOptions에서 MediaType로 변경됨 (SDK 버전 주의)
+- expo-notifications: 웹에서는 지원 안 됨 → 모든 함수에 Platform.OS === 'web' early return 필수
+  → settingsStore에서 동적 import('@/lib/notifications')로 웹 번들에서 제외
+  → Android는 NotificationChannel 필수 (checkin-reminders), iOS는 자동
+- 알림 스케줄링: SchedulableTriggerInputTypes.DAILY 사용 시 cancelAllScheduledNotificationsAsync() 먼저 호출
+  → 중복 스케줄 방지, 시간 변경 시에도 기존 알림 제거 후 재등록
+- Supabase auth.resend(): type: 'signup'으로 호출해야 회원가입 인증 메일 재전송
+  → 쿨다운 없이 연속 호출 시 rate limit 발생 가능 → 클라이언트에서 60초 쿨다운 적용
+- profiles 테이블: username은 반드시 lowercase로 저장 → insert 시 username.toLowerCase() 필수
+  → DB 제약조건으로 ^[a-zA-Z0-9_]{3,20}$ 포맷 강제 (대소문자 허용하지만 저장은 소문자)
+- SECURITY DEFINER 함수: get_email_by_username, get_username_by_email, is_username_available
+  → auth.users에 직접 접근해야 하므로 SECURITY DEFINER 필수, search_path = public 설정으로 스키마 고정
+- loadUserData 2단계: user_metadata는 동기 set, profiles 데이터는 비동기 fetch 후 set
+  → profiles fetch 실패(회원가입 직후 등)해도 userDataLoaded: true 설정해서 라우팅 차단하지 않음
+- Supabase .single().then(): PromiseLike 타입이라 .catch() 없음 → .then() 내에서 error 체크
+- EditModal async onSave: onSave가 throw하면 모달 유지, 정상이면 onClose() 호출
+  → 서버 에러 시 사용자가 재시도 가능
+- Supabase auth.signUp + 이메일 인증(Confirm Email) ON:
+  → session이 null로 반환됨 → auth.uid()가 null이라 RLS 보호 테이블에 INSERT 불가
+  → 해결: user_metadata에 pendingUsername/pendingPhone 임시 저장 → 이메일 인증 후 첫 로그인 시 loadUserData에서 profiles 생성
+- Supabase auth.signUp 중복 이메일 (이메일 인증 ON + 미인증 사용자):
+  → 에러 없이 "가짜" 응답 반환 (email enumeration 방지), data.user.identities === []
+  → identities.length === 0 체크로 "이미 등록된 이메일" 에러 표시 필요
+- Supabase auth rate limit: signUp 반복 호출 시 429 Too Many Requests (email rate limit exceeded)
+  → 테스트 시 새 이메일 사용하거나 Supabase 대시보드에서 rate limit 조정
 ```
 
 ---
@@ -395,12 +480,8 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 날짜 | 버전 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
 | 2026-02-02 | v0.1 | 프로젝트 초기 셋업 — 문서 작성, MVP 범위 확정, Expo 전환, Phase R1~R2 완료 | Chris |
-| 2026-02-03 | v0.2 | i18n (한국어+영어) — 시스템 로케일 자동 감지, 전체 UI 문자열 다국어 전환 | Chris |
-| 2026-02-03 | v0.3 | 설정 + 다크 모드 + 개인정보 — 설정 화면, 전체 다크 모드, 개인정보 고지, AI 스키마, 개발자 문서 | Chris |
-| 2026-02-03 | v0.4 | Phase R4 온보딩 + 데모 데이터 — 3스텝 온보딩, 데모 시딩/삭제, i18n onboarding 네임스페이스 | Chris |
-| 2026-02-03 | v0.5 | UX 폴리시 — 다크모드 보완(8파일), Enter-to-submit(인증/채팅), 온보딩 Skip 버튼, 닉네임 기능 | Chris |
-| 2026-02-03 | v0.6 | UI 폴리시 — 설정 팝업 모달, 데모 데이터 UI 제거, 모바일 탭바/헤더 높이 조정 | Chris |
-| 2026-02-03 | v0.7 | 탭 리팩토링 — 요약 탭 통합(Daily/Weekly 토글), 프로필 탭 신설, Write Today FAB, 공유 컴포넌트 추출 | Chris |
+| 2026-02-03 | v0.2 | Phase R3.5~R4 — i18n, 설정+다크모드, 온보딩, 페르소나, 프로필, UX 폴리시, AI 문서화 | Chris |
+| 2026-02-03 | v0.3 | Phase R4 계속 — ID 기반 인증 전환, 아이디/비밀번호 찾기, 계정 정보 수정 | Chris |
 | | | | |
 
 <details>
@@ -424,117 +505,90 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 <details>
 <summary>v0.2 상세 이력 (클릭하여 펼치기)</summary>
 
-1. **i18n 인프라 구축**: i18next + react-i18next + expo-localization 설치, `src/i18n/index.ts` 초기화 (시스템 로케일 자동 감지)
-2. **번역 파일 생성**: 8개 네임스페이스 × 2개 언어(ko/en) = 16 JSON 파일 (`src/i18n/locales/`)
-   - common, dashboard, timeline, entry, summary, todos, auth, gamification
-3. **전체 UI 문자열 전환 (~30 파일)**:
-   - 앱 레이아웃: 루트 레이아웃, 탭 레이아웃, 사이드바, MasterDetail 플레이스홀더
-   - 인증: 로그인/회원가입 폼 라벨, 알림, 유효성 메시지
-   - 대시보드: 인사말, 스트릭, 레벨, 배지, 퀵액션, 리마인더, 통계, 주간활동
-   - 핵심 화면: 타임라인(날짜 그룹), 일간 요약, 주간 회고, 할 일 목록
-   - 기록: 생성(챗봇/빠른입력), 상세(편집/삭제), 저장 피드백
-   - 공유 컴포넌트: EntryCard(상대 시간), EntryDetail, EvidenceChip, SummaryDetailView, TodoItem
-   - 상수/스토어: 게이미피케이션(8 레벨, 11 배지), 체크인 질문, 챗 완료 메시지
-4. **검증**: TypeScript 타입 체크 0 에러, 소스 파일 내 잔여 한국어 하드코딩 0건
+#### i18n (다국어)
+- i18next + react-i18next + expo-localization 설치, 시스템 로케일 자동 감지
+- 10개 네임스페이스 × 2개 언어(ko/en) = 20 JSON 파일
+- 전체 UI 문자열 (~30 파일) 한국어 하드코딩 → `t()` 함수 전환
+
+#### 설정 + 다크 모드 + 개인정보
+- settingsStore (Zustand): 테마/언어는 AsyncStorage, 계정별 데이터는 Supabase user_metadata
+- 설정 화면: 언어/테마 SegmentedControl, 계정 정보, 개인정보 고지, 지원 링크(커뮤니티/문의/이용약관/개인정보처리방침)
+- 다크 모드 전체 적용 (~30 파일): NativeWind `dark:` + React Navigation JS 조건부 스타일
+- PrivacyNotice 컴포넌트 (배너/인라인), AI 출력 스키마 (ProcessedEntry)
+- 개발자 문서 8개 (`docs/` 폴더)
+
+#### 온보딩 + 페르소나
+- 3스텝 온보딩 가이드 (빠른 기록 → AI 정리 → 리텐션 습관)
+- 페르소나 수집 화면 (닉네임/성별/직업/관심사) — 온보딩 후 진입
+- 데모 데이터 생성기 (22 Entry + 12 Summary + 15 Todo)
+
+#### 탭 리팩토링 + 프로필
+- 일간요약 + 주간회고 → 통합 "요약" 탭 (Daily/Weekly SegmentedControl 토글)
+- 프로필 탭: 아바타 + 페르소나 칩 + 성취 현황 (스트릭/레벨/할일달성률/배지)
+- 프로필 편집 화면: 아바타 업로드(expo-image-picker)/삭제, 페르소나 수정
+- Write Today FAB (모바일 플로팅 버튼)
+- 공유 컴포넌트 추출 (SegmentedControl, EditModal, TodoCompletionCard)
+
+#### 인증 + 사용자 데이터
+- 이메일 인증 안내 화면 (회원가입 → verify-email)
+- 사용자 데이터 Supabase user_metadata 마이그레이션 (계정별 서버 저장)
+- savePersona() 배치 저장 (updateUser 동시성 문제 해결)
+
+#### UX 폴리시
+- Enter-to-submit (로그인/회원가입/채팅), Shift+Enter 줄바꿈
+- 다크모드 보완 (FontAwesome 아이콘, MasterDetail 디테일 패인 등 8파일)
+- 탭바 높이/패딩 조정 (글자 잘림 해결), 헤더 border 제거
+- 설정 EditModal 팝업 패턴
+
+#### AI 기능 문서화
+- `docs/ai-features.md`: Edge Function 4개 스펙, 파이프라인 다이어그램, 미구현 기능 목록
+
+#### 로컬 푸시 알림
+- expo-notifications + expo-device 설치, app.json 플러그인 설정
+- `src/lib/notifications.ts`: 알림 서비스 모듈 (핸들러/채널/권한/스케줄/취소)
+- settingsStore에 알림 3개 필드 + 3개 액션 추가 (user_metadata 저장)
+- 설정 화면 Notifications 섹션 (Switch 토글 + TimePickerModal 시간 선택)
+- `app/_layout.tsx`에서 앱 시작 시 알림 핸들러 초기화 + 저장된 설정 복원
+- 웹에서는 알림 섹션 숨김 (Platform.OS !== 'web')
+
+#### 이메일 인증 재전송
+- `verify-email.tsx`: supabase.auth.resend() + 60초 쿨다운 타이머 + 성공/실패 Alert
+- auth.json에 재전송 관련 i18n 키 6개 추가 (ko/en)
 
 </details>
 
 <details>
 <summary>v0.3 상세 이력 (클릭하여 펼치기)</summary>
 
-1. **설정 기반**: settingsStore (Zustand + AsyncStorage) — 테마/언어/개인정보 동의 상태 관리
-2. **설정 화면** (`app/settings.tsx`): 언어 전환(시스템/한국어/영어), 테마 전환(시스템/라이트/다크), 계정 정보, 개인정보 섹션
-3. **설정 네비게이션**: 사이드바 톱니바퀴 아이콘 (desktop), 탭바 headerRight 아이콘 (mobile)
-4. **다크 모드 전체 적용** (~30 파일):
-   - NativeWind `darkMode: 'class'` + `setColorScheme()` 연동
-   - UI 프리미티브 5개, 레이아웃 3개, 대시보드 8개, 탭 화면 6개, 기록 2개, 인증 2개, 기타 3개
-   - React Navigation 헤더/탭바: JS 레벨 `isDark` 조건부 색상
-5. **개인정보 고지**: PrivacyNotice 컴포넌트 (배너/인라인 모드), 대시보드 첫 방문 시 표시
-6. **AI 출력 스키마**: ProcessedEntry 타입 + normalizeProcessedEntry() + processedEntryToTags()
-7. **i18n 확장**: settings + privacy 네임스페이스 추가 (4 JSON 파일)
-8. **개발자 문서**: `docs/` 폴더에 7개 기술 레퍼런스 문서 작성
-9. **검증**: TypeScript 0 에러, `bg-white` / `text-gray-900` 누락 검사 0건
+#### ID 기반 인증 전환
+- 이메일 로그인 → username(아이디) 기반 로그인으로 전환
+- `profiles` 테이블 신설 (username + phone, RLS, unique constraint, format check)
+- SECURITY DEFINER RPC 함수 3개: `get_email_by_username`, `get_username_by_email`, `is_username_available`
+- `authStore`: `signIn(username, password)` — RPC로 email 조회 후 signInWithPassword
+- `authStore`: `signUp({ username, email, phone, password })` — 이메일 인증 ON/OFF 양쪽 지원
+  - 이메일 인증 OFF: 즉시 profiles.insert → 자동 라우팅
+  - 이메일 인증 ON: user_metadata에 pendingUsername/Phone 저장 → verify-email 이동 → 인증 후 첫 로그인 시 loadUserData에서 profiles 자동 생성
+- 중복 이메일 감지: `identities.length === 0` 체크로 이미 등록된 이메일 에러 표시
+- 회원가입 화면: 4개 필드 (username/email/phone/password), ref 체인, 유효성 검사
 
-</details>
+#### 아이디/비밀번호 찾기
+- `find-id.tsx`: 이메일 입력 → `get_username_by_email` RPC → Alert으로 username 표시
+- `find-password.tsx`: 아이디 또는 이메일 입력 → email 해석 → `resetPasswordForEmail` → 마스킹된 이메일 표시
+- 로그인 화면에 "아이디 찾기 | 비밀번호 찾기" 링크 추가
 
-<details>
-<summary>v0.4 상세 이력 (클릭하여 펼치기)</summary>
+#### 계정 정보 수정 (설정 화면)
+- Account 섹션 확장: 아이디(읽기전용) / 닉네임 / 이메일 / 전화번호 / 비밀번호 변경 / 로그아웃
+- `settingsStore`: `setPhone()` (profiles 테이블), `setEmail()` (auth.updateUser), `changePassword()` (auth.updateUser)
+- `EditModal` 확장: `secureTextEntry` prop + async `onSave` (throw 시 모달 유지)
 
-1. **온보딩 기반**: settingsStore에 `hasSeenOnboarding` + `acknowledgeOnboarding()` 추가, AsyncStorage `@reflectlog/onboarding_seen`
-2. **온보딩 화면** (`app/(onboarding)/index.tsx`): 3스텝 페이저 (빠른 기록 → AI 정리 → 리텐션 습관), 이모지 일러스트, 페이지 인디케이터, Skip/Next/Get Started
-3. **온보딩 라우팅**: `_layout.tsx`에서 `initialized` + `settingsReady` 동시 체크, `(onboarding)` route group, AppShell 래핑 제외
-4. **i18n 확장**: onboarding 네임스페이스 추가 (2 JSON 파일, ko/en)
-5. **데모 데이터 생성기** (`src/lib/demoData.ts`):
-   - 22개 Entry: 14일 중 12일 활성 (D-12, D-11 빈 날 → 스트릭 끊김/회복), early_bird(06:45), night_owl(23:10) 트리거
-   - 12개 Summary: 일간 10개 + 주간 2개, sentences_data에 실제 entry_id 참조
-   - 15개 Todo: done 10 + pending 5, source_entry_id 연결
-6. **시드 실행** (`src/lib/seedDemoData.ts`): clearDemoData() → entries INSERT → summaries INSERT → todos INSERT, 멱등 실행
-7. **설정 화면 확장**: "데모 데이터" 섹션 (불러오기/삭제 버튼, 확인 Alert, 로딩 스피너, React Query 캐시 무효화)
-8. **i18n 확장**: settings.json에 `demo.*` 키 추가 (ko/en)
-9. **검증**: TypeScript 0 에러, Expo Router 타입 재생성 확인
+#### 프로필 데이터 연동
+- `settingsStore.loadUserData(metadata, userId)`: user_metadata + profiles 테이블 병렬 로드
+- `profile.tsx` / `edit-profile.tsx`: `displayName` fallback을 `nickname || username || '?'`로 변경
+- 프로필 탭: 이메일 대신 `@username` 표시
 
-</details>
-
-<details>
-<summary>v0.5 상세 이력 (클릭하여 펼치기)</summary>
-
-1. **온보딩 Skip 버튼**: 카드 내부 텍스트 → SafeAreaView 상단 우측 칩 버튼(bg-gray-100 rounded-full)으로 이동
-2. **다크모드 보완** (8개 파일):
-   - `MasterDetailLayout`: 디테일 패인 + 플레이스홀더에 `bg-gray-50 dark:bg-gray-950` 추가
-   - `entries/new.tsx`: 채팅 모드 `bg-white` → `dark:bg-gray-950`, 모드 토글 텍스트 `dark:` 추가
-   - `(tabs)/index.tsx`: 모바일 대시보드 `bg-gray-50` → `dark:bg-gray-950`
-   - `SummaryDetailView`, `EvidenceChip`, `TodoItem`, `entries/[id].tsx`, `settings.tsx`: FontAwesome 아이콘 hardcoded color → `isDark` 조건부 색상
-3. **Enter-to-submit**:
-   - 로그인/회원가입: 이메일 Enter → 비밀번호 포커스, 비밀번호 Enter → 로그인/가입 실행
-   - 채팅: Enter → 전송, Shift+Enter → 줄바꿈 (웹 onKeyPress + e.preventDefault)
-4. **닉네임 기능**:
-   - settingsStore: `nickname` 상태 + `setNickname()` + AsyncStorage `@reflectlog/nickname`
-   - 설정 화면: 계정 섹션에 닉네임 입력 필드 (max 20자)
-   - 대시보드: `greeting.withName` i18n 키로 "좋은 아침이에요, {name}님" / "Good morning, {name}" 표시
-5. **검증**: TypeScript 0 에러
-
-</details>
-
-<details>
-<summary>v0.6 상세 이력 (클릭하여 펼치기)</summary>
-
-1. **설정 데모 데이터 제거**: `app/settings.tsx`에서 데모 데이터 섹션(불러오기/삭제 버튼, 핸들러, 상태, import) 전체 삭제, `settings.json`(ko/en)에서 `demo.*` 키 삭제 — 코드(`src/lib/demoData.ts`, `seedDemoData.ts`)는 보존
-2. **설정 팝업 모달**: `EditModal` 컴포넌트 신규 — transparent overlay + 중앙 카드 + TextInput + Cancel/Save 버튼, KeyboardAvoidingView 지원
-   - 닉네임: 인라인 TextInput → TouchableOpacity 행(현재값 + chevron-right) → 탭 시 EditModal 팝업
-   - i18n: `modal.cancel`, `modal.save` 키 추가 (ko/en)
-3. **모바일 탭바 수정** (`app/(tabs)/_layout.tsx`):
-   - tabBarStyle: `height: 56, paddingBottom: 6, paddingTop: 4` (텍스트 잘림 해결)
-   - TabBarIcon: `size: 24→22`, `marginBottom: -3→0`
-4. **모바일 헤더 축소**: `headerStyle: { height: 48 }` (기본 ~56에서 축소)
-5. **검증**: TypeScript 0 에러
-
-</details>
-
-<details>
-<summary>v0.7 상세 이력 (클릭하여 펼치기)</summary>
-
-1. **공유 컴포넌트 추출**: `SegmentedControl<T>` + `EditModal` → `src/components/ui/`로 분리, settings.tsx에서 import로 전환
-2. **요약 탭 통합** (`app/(tabs)/summary.tsx`):
-   - `useState<'daily' | 'weekly'>` + `SegmentedControl`로 기간 토글
-   - `SummaryListCard`: period에 따라 날짜 포맷/라벨 분기 (daily: period_start, weekly: formatWeekRange)
-   - 생성 버튼/빈 상태/디테일 플레이스홀더 모두 기간별 분기
-   - `formatWeekRange()` 함수를 weekly.tsx에서 이관
-3. **프로필 탭** (`app/(tabs)/profile.tsx`):
-   - 이니셜 아바타 + 닉네임(EditModal 편집) + 이메일
-   - 활동 현황: StreakCard + LevelProgressCard + StatsRow + BadgeGrid
-   - 설정: 언어/테마 SegmentedControl
-   - 개인정보 고지 (PrivacyNotice 인라인)
-   - 로그아웃 버튼 + 버전 정보
-4. **탭 레이아웃 수정** (`app/(tabs)/_layout.tsx`):
-   - 헤더 height: 48 삭제 (기본값 사용으로 일관성 확보)
-   - 탭바: height 64, paddingBottom 10 (텍스트 잘림 해결)
-   - `weekly` 탭: `href: null`로 탭바에서 숨김
-   - `profile` 탭 추가 (icon: user-circle-o)
-   - 설정 headerRight 버튼 제거 (프로필 탭에 설정 통합)
-   - Write Today FAB: 모바일 전용 인디고 플로팅 버튼 (bottom: 76, right: 20)
-5. **사이드바 수정**: dailySummary+weeklyReview → 단일 "Summary", profile 항목 추가
-6. **i18n 확장**: tab.summary, tab.profile (common), tab.daily/weekly (summary), profile.* (settings)
-7. **검증**: TypeScript 0 에러 (Expo Router 타입 재생성 포함)
+#### i18n
+- `auth.json` (ko/en): login/signup 섹션 username 기반 키로 교체, findId/findPassword 섹션 추가
+- `settings.json` (ko/en): account 섹션에 username/phone/password/emailChanged 등 키 추가
 
 </details>
 

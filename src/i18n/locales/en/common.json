@@ -2,7 +2,8 @@
   "screen": {
     "newEntry": "New Entry",
     "entryDetail": "Entry Detail",
-    "settings": "Settings"
+    "settings": "Settings",
+    "editProfile": "Edit Profile"
   },
   "tab": {
     "home": "Home",

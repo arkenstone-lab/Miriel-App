@@ -8,7 +8,7 @@
 - **스타일링**: NativeWind (Tailwind CSS for React Native)
 - **Backend**: Supabase Edge Functions (Deno)
 - **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth (이메일/비밀번호)
+- **Auth**: Supabase Auth (ID/비밀번호 — profiles 테이블로 username↔email 매핑)
 - **AI**: OpenAI API (GPT-4o) - 요약/태깅/할일 추출
 - **상태관리**: React Query (서버 상태) + Zustand (클라이언트 상태)
 - **플랫폼**: PC(웹) + iOS + Android 단일 코드베이스
@@ -40,11 +40,17 @@ Supabase 대시보드 > SQL Editor에서 아래 파일을 순서대로 실행해
 ```
 supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_add_sentences_data.sql
+supabase/migrations/003_profiles_username.sql
 ```
 
 ### 4. Supabase Auth 설정
 
-Supabase 대시보드 > Authentication > Providers > Email에서 **Confirm email**을 OFF로 설정해주세요.
+앱은 이메일 인증 ON/OFF 양쪽 모두 지원합니다:
+
+- **Confirm email OFF**: 회원가입 → 즉시 세션 생성 → profiles 테이블에 바로 INSERT → 온보딩 진입
+- **Confirm email ON**: 회원가입 → verify-email 화면 → 이메일 인증 후 첫 로그인 시 profiles 자동 생성
+
+Supabase 대시보드 > Authentication > Providers > Email에서 원하는 모드를 선택하세요.
 
 ### 5. 개발 서버 실행
 
@@ -64,8 +70,11 @@ npx expo start --android
 app/                              # Expo Router (파일 기반 라우팅)
 ├── _layout.tsx                   # 루트 레이아웃 (인증 분기)
 ├── (auth)/                       # 인증 화면
-│   ├── login.tsx                 # 로그인
-│   └── signup.tsx                # 회원가입
+│   ├── login.tsx                 # 로그인 (아이디 + 비밀번호)
+│   ├── signup.tsx                # 회원가입 (아이디/이메일/전화번호/비밀번호)
+│   ├── find-id.tsx               # 아이디 찾기 (이메일 → 아이디 조회)
+│   ├── find-password.tsx         # 비밀번호 찾기 (비밀번호 재설정 메일)
+│   └── verify-email.tsx          # 이메일 인증 안내
 ├── (tabs)/                       # 탭 네비게이션 (메인 앱)
 │   ├── _layout.tsx               # 탭 설정 (4개 탭)
 │   ├── index.tsx                 # 타임라인
@@ -86,6 +95,10 @@ src/
 │   │   ├── Button.tsx
 │   │   ├── Card.tsx
 │   │   ├── Badge.tsx
+│   │   ├── EditModal.tsx
+│   │   ├── SegmentedControl.tsx
+│   │   ├── TimePickerModal.tsx
+│   │   ├── LegalModal.tsx
 │   │   ├── EmptyState.tsx
 │   │   └── LoadingState.tsx
 │   ├── EntryCard.tsx             # 타임라인 카드
@@ -101,15 +114,19 @@ src/
 │   └── useResponsiveLayout.ts    # 반응형 분기 (isDesktop/isMobile)
 ├── lib/
 │   ├── supabase.ts               # Supabase 클라이언트 초기화
+│   ├── notifications.ts          # 로컬 푸시 알림 (expo-notifications)
+│   ├── avatar.ts                 # 아바타 업로드/삭제 (Supabase Storage)
 │   └── constants.ts              # 체크인 질문 상수
 └── stores/
     ├── authStore.ts              # 인증 상태 (Zustand)
-    └── chatStore.ts              # 챗봇 상태 (Zustand)
+    ├── chatStore.ts              # 챗봇 상태 (Zustand)
+    └── settingsStore.ts          # 설정 상태 (Zustand — 테마/언어/유저데이터)
 
 supabase/
 ├── migrations/                   # DB 스키마
 │   ├── 001_initial_schema.sql    # entries, summaries, todos + RLS
-│   └── 002_add_sentences_data.sql # summaries에 sentences_data JSONB 추가
+│   ├── 002_add_sentences_data.sql # summaries에 sentences_data JSONB 추가
+│   └── 003_profiles_username.sql # profiles 테이블 + RPC 함수 3개
 └── functions/                    # Edge Functions (Deno)
     ├── tagging/                  # 자동 태깅 (프로젝트/사람/이슈 추출)
     ├── generate-summary/         # 일간 요약 생성 + 문장별 근거 링크
@@ -119,6 +136,7 @@ supabase/
 
 ## 주요 기능
 
+- **ID 기반 인증**: 아이디(username) + 비밀번호 로그인, 아이디/비밀번호 찾기, 이메일 인증(선택) 지원
 - **챗봇 기록 작성**: 아침/저녁 체크인 질문으로 3분 안에 기록 완성 + 빠른 입력 모드
 - **자동 태깅**: 프로젝트/사람/이슈 자동 추출 (AI)
 - **일간 요약**: AI가 하루 기록을 요약 + 문장별 근거 링크(EvidenceChip)
@@ -126,6 +144,7 @@ supabase/
 - **할 일 추출**: 기록에서 action item 자동 추출 + 완료 관리 + 근거 Entry 링크
 - **반응형 레이아웃**: Desktop(사이드바 + 2패널) / Mobile(하단 탭) 자동 전환
 - **기록 관리**: 기록 상세 보기, 편집, 삭제 + 관련 할일/요약 표시
+- **계정 관리**: 이메일/전화번호/비밀번호 변경, 프로필 편집(아바타/닉네임/페르소나)
 
 ## 반응형 레이아웃
 

@@ -1,5 +1,6 @@
 import '@/i18n'
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -16,7 +17,11 @@ SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   const { initialized, user, initialize } = useAuthStore()
-  const { theme, hasSeenOnboarding, initialized: settingsReady, initialize: initSettings } = useSettingsStore()
+  const {
+    theme, hasSeenOnboarding,
+    initialized: settingsReady, userDataLoaded,
+    initialize: initSettings, loadUserData, clearUserData,
+  } = useSettingsStore()
   const { colorScheme, setColorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
   const segments = useSegments()
@@ -28,6 +33,37 @@ export default function RootLayout() {
     initSettings()
   }, [])
 
+  // Initialize notification handler & channel (native only)
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      import('@/lib/notifications').then(({ setupNotificationHandler, setupNotificationChannel }) => {
+        setupNotificationHandler()
+        setupNotificationChannel()
+      })
+    }
+  }, [])
+
+  // Re-schedule notifications on app restart if enabled
+  useEffect(() => {
+    if (userDataLoaded && Platform.OS !== 'web') {
+      const state = useSettingsStore.getState()
+      if (state.notificationsEnabled) {
+        import('@/lib/notifications').then(({ scheduleNotifications }) => {
+          scheduleNotifications(state.morningNotificationTime, state.eveningNotificationTime)
+        })
+      }
+    }
+  }, [userDataLoaded])
+
+  // Load / clear user-specific data from Supabase user_metadata
+  useEffect(() => {
+    if (user) {
+      loadUserData(user.user_metadata || {}, user.id)
+    } else {
+      clearUserData()
+    }
+  }, [user])
+
   useEffect(() => {
     if (settingsReady) {
       setColorScheme(theme)
@@ -36,6 +72,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!initialized || !settingsReady) return
+    // Wait for user_metadata to be loaded before routing
+    if (user && !userDataLoaded) return
 
     SplashScreen.hideAsync()
 
@@ -49,7 +87,7 @@ export default function RootLayout() {
     } else if (user && hasSeenOnboarding && (inAuthGroup || inOnboarding)) {
       router.replace('/(tabs)')
     }
-  }, [initialized, settingsReady, user, hasSeenOnboarding, segments])
+  }, [initialized, settingsReady, userDataLoaded, user, hasSeenOnboarding, segments])
 
   if (!initialized || !settingsReady) {
     return null
@@ -88,6 +126,14 @@ export default function RootLayout() {
         options={{
           headerShown: true,
           title: t('screen.settings'),
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="edit-profile"
+        options={{
+          headerShown: true,
+          title: t('screen.editProfile'),
           presentation: 'modal',
         }}
       />

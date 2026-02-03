@@ -16,5 +16,29 @@
   },
   "skip": "건너뛰기",
   "next": "다음",
-  "getStarted": "시작하기"
+  "getStarted": "시작하기",
+  "persona": {
+    "title": "프로필 설정",
+    "subtitle": "AI가 더 잘 도와드릴 수 있어요",
+    "nickname": "닉네임",
+    "nicknamePlaceholder": "무엇이라 불러드릴까요?",
+    "gender": "성별",
+    "genderMale": "남성",
+    "genderFemale": "여성",
+    "occupation": "직업",
+    "occupationPlaceholder": "개발자, 디자이너, PM...",
+    "interests": "관심 분야",
+    "interestOptions": {
+      "tech": "기술",
+      "design": "디자인",
+      "business": "경영",
+      "marketing": "마케팅",
+      "data": "데이터",
+      "selfDev": "자기계발",
+      "health": "건강",
+      "other": "기타"
+    },
+    "done": "완료",
+    "skipForNow": "나중에 입력할게요"
+  }
 }

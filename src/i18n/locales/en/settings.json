@@ -14,9 +14,19 @@
   },
   "account": {
     "title": "Account",
+    "username": "Username",
     "nickname": "Nickname",
     "nicknamePlaceholder": "What should we call you?",
     "email": "Email",
+    "emailPlaceholder": "Enter new email",
+    "phone": "Phone",
+    "phonePlaceholder": "Enter phone number",
+    "password": "Change Password",
+    "newPasswordPlaceholder": "New password (6+ chars)",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "passwordChanged": "Password has been changed.",
+    "emailChanged": "Email change request has been submitted.",
+    "phoneChanged": "Phone number has been updated.",
     "signOut": "Sign Out",
     "signOutConfirmTitle": "Sign Out",
     "signOutConfirmMessage": "Are you sure you want to sign out?"
@@ -26,13 +36,49 @@
   },
   "modal": {
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "close": "Close"
   },
   "profile": {
     "title": "My Profile",
     "activity": "Activity",
+    "achievements": "Achievements",
     "settings": "Settings",
-    "privacyData": "Privacy & Data"
+    "privacyData": "Privacy & Data",
+    "todoCompletion": "Todo Completion",
+    "completedOf": "{{completed}}/{{total}} completed",
+    "goToSettings": "Settings",
+    "editProfile": "Edit Profile",
+    "changePhoto": "Change Photo",
+    "removePhoto": "Remove Photo",
+    "photoRemoved": "Profile photo has been removed."
+  },
+  "support": {
+    "title": "Support",
+    "homepage": "Homepage",
+    "telegram": "Telegram",
+    "discord": "Discord",
+    "x": "X (Twitter)"
+  },
+  "legal": {
+    "title": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "enable": "Daily Reminders",
+    "morning": "Morning Check-in",
+    "evening": "Evening Check-in",
+    "morningPickerTitle": "Morning Reminder Time",
+    "eveningPickerTitle": "Evening Reminder Time",
+    "morningTitle": "Good morning! ☀️",
+    "morningBody": "What's the most important thing on your plate today?",
+    "eveningTitle": "Time to wrap up 🌙",
+    "eveningBody": "How did your day go? Take a moment to reflect.",
+    "hour": "Hour",
+    "minute": "Minute",
+    "permissionDenied": "Please enable notification permissions in your device settings."
   },
   "version": "Version"
 }
