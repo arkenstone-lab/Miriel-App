@@ -23,10 +23,10 @@ import { LegalModal } from '@/components/ui/LegalModal'
 import { useAiPreferences, useUpsertAiPreferences } from '@/features/ai-preferences/hooks'
 
 const SUPPORT_LINKS = {
-  homepage: 'https://miriel.app',
-  telegram: 'https://t.me/mirielapp',
-  discord: 'https://discord.gg/mirielapp',
-  x: 'https://x.com/mirielapp',
+  homepage: 'https://x.com/miriel_app',
+  telegram: 'https://t.me/miriel_communtiy',
+  discord: 'https://discord.gg/PnHNNtJNjn',
+  x: 'https://x.com/miriel_app',
 } as const
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -536,7 +536,7 @@ export default function SettingsScreen() {
               onPress={() => Linking.openURL(SUPPORT_LINKS.x)}
               activeOpacity={0.7}
             >
-              <FontAwesome name="twitter" size={16} color="#9ca3af" />
+              <Text style={{ fontSize: 16, color: '#9ca3af', fontWeight: '700', width: 16, textAlign: 'center' }}>𝕏</Text>
               <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.x')}</Text>
               <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
             </TouchableOpacity>
