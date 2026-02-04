@@ -81,6 +81,7 @@
 |------|-------------------|-------------------|------|-------------|
 | PROFILE_001 | 이미지 업로드 실패 | Failed to upload image | Supabase Storage 업로드 실패 | 파일 크기/형식 확인, 네트워크 확인, 재시도 안내 |
 | PROFILE_002 | 프로필 저장 실패 | Failed to save profile | user_metadata 업데이트 실패 | 재시도 안내 |
+| PROFILE_003 | 이미지 크기가 2MB 초과 | Image exceeds 2 MB | 선택한 이미지가 2MB 이상 | 더 작은 이미지 선택 안내, 이미지 압축 후 재시도 |
 
 ---
 

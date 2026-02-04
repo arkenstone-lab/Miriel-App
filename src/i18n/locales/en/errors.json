@@ -41,5 +41,6 @@
   "SETTINGS_004": { "message": "Failed to change password. Please try again." },
 
   "PROFILE_001": { "message": "Failed to upload image. Please try again." },
-  "PROFILE_002": { "message": "Failed to save profile. Please try again." }
+  "PROFILE_002": { "message": "Failed to save profile. Please try again." },
+  "PROFILE_003": { "message": "Image exceeds 2 MB. Please choose a smaller image." }
 }

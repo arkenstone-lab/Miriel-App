@@ -474,6 +474,9 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
   → 버킷 생성 + RLS 정책 설정을 Supabase 콘솔에서 수동으로 해야 함
 - expo-image-picker: aspect [1,1]로 정사각형 크롭, quality 0.7로 파일 크기 절약
   → mediaTypes 옵션이 ImagePicker.MediaTypeOptions에서 MediaType로 변경됨 (SDK 버전 주의)
+  → 웹에서 asset.uri가 data URI 또는 blob URL → `uri.split('.').pop()`으로 확장자 추출 불가
+  → 반드시 `asset.mimeType`에서 contentType/확장자 결정, `fetch(uri).blob()` → ArrayBuffer 변환 후 업로드
+  → 파일 크기 제한: asset.fileSize (가능하면) + blob.size 이중 체크, 2MB 초과 시 PROFILE_003 에러
 - expo-notifications: 웹에서는 지원 안 됨 → 모든 함수에 Platform.OS === 'web' early return 필수
   → settingsStore에서 동적 import('@/lib/notifications')로 웹 번들에서 제외
   → Android는 NotificationChannel 필수 (checkin-reminders), iOS는 자동
