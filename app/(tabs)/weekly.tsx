@@ -35,7 +35,7 @@ function WeeklySummaryCard({
   return (
     <Card
       onPress={onPress}
-      className={`mb-3 ${isSelected ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : ''}`}
+      className={`mb-3 ${isSelected ? 'border-cyan-300 dark:border-gray-600 bg-cyan-50 dark:bg-gray-800/50' : ''}`}
     >
       <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
         {formatWeekRange(summary.period_start)}
@@ -46,7 +46,7 @@ function WeeklySummaryCard({
       <View className="flex-row gap-2 mt-2.5">
         <Badge label={t('weekly.pointCount', { count: sentenceCount })} variant="gray" />
         {summary.entry_links.length > 0 && (
-          <Badge label={tCommon('label.evidenceCount', { count: summary.entry_links.length })} variant="indigo" />
+          <Badge label={tCommon('label.evidenceCount', { count: summary.entry_links.length })} variant="cyan" />
         )}
       </View>
     </Card>

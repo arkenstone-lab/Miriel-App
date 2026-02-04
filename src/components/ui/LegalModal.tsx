@@ -61,7 +61,7 @@ export function LegalModal({ visible, type, onClose }: LegalModalProps) {
           {/* Footer */}
           <View className="px-6 pb-5 pt-3">
             <TouchableOpacity
-              className="py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 items-center"
+              className="py-3 rounded-xl bg-cyan-600 dark:bg-cyan-500 items-center"
               onPress={onClose}
               activeOpacity={0.8}
             >

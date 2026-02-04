@@ -15,7 +15,7 @@ interface ButtonProps {
 
 const variantClasses: Record<ButtonVariant, { container: string; text: string }> = {
   primary: {
-    container: 'bg-indigo-600',
+    container: 'bg-cyan-600',
     text: 'text-white',
   },
   secondary: {
@@ -24,7 +24,7 @@ const variantClasses: Record<ButtonVariant, { container: string; text: string }>
   },
   ghost: {
     container: 'bg-transparent',
-    text: 'text-indigo-600 dark:text-indigo-400',
+    text: 'text-cyan-600 dark:text-cyan-400',
   },
 }
 
@@ -61,7 +61,7 @@ export function Button({
       {loading && (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' ? '#ffffff' : '#4f46e5'}
+          color={variant === 'primary' ? '#ffffff' : '#06b6d4'}
           style={{ marginRight: 8 }}
         />
       )}

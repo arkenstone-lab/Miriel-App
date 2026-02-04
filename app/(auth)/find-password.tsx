@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
-import { AppError, showErrorAlert } from '@/lib/errors'
+import { AppError, getErrorMessage } from '@/lib/errors'
 
 function maskEmail(email: string): string {
   const [local, domain] = email.split('@')
@@ -15,12 +15,17 @@ function maskEmail(email: string): string {
 export default function FindPasswordScreen() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorText, setErrorText] = useState('')
+  const [resultText, setResultText] = useState('')
   const router = useRouter()
   const { t } = useTranslation('auth')
 
   const handleFindPassword = async () => {
+    setErrorText('')
+    setResultText('')
+
     if (!input) {
-      Alert.alert(t('findPassword.alertTitle'), t('findPassword.alertFillField'))
+      setErrorText(t('findPassword.alertFillField'))
       return
     }
 
@@ -38,7 +43,7 @@ export default function FindPasswordScreen() {
         })
         if (error) throw new AppError('AUTH_012', error)
         if (!data) {
-          Alert.alert(t('findPassword.resultTitle'), t('findPassword.notFound'))
+          setErrorText(t('findPassword.notFound'))
           return
         }
         email = data
@@ -47,12 +52,9 @@ export default function FindPasswordScreen() {
       const { error } = await supabase.auth.resetPasswordForEmail(email)
       if (error) throw new AppError('AUTH_013', error)
 
-      Alert.alert(
-        t('findPassword.resultTitle'),
-        t('findPassword.success', { email: maskEmail(email) }),
-      )
+      setResultText(t('findPassword.success', { email: maskEmail(email) }))
     } catch (error: unknown) {
-      showErrorAlert(t('findPassword.resultTitle'), error)
+      setErrorText(getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -81,7 +83,7 @@ export default function FindPasswordScreen() {
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder={t('findPassword.placeholder')}
             value={input}
-            onChangeText={setInput}
+            onChangeText={(v) => { setInput(v); setErrorText(''); setResultText('') }}
             autoCapitalize="none"
             autoComplete="username"
             returnKeyType="done"
@@ -89,8 +91,22 @@ export default function FindPasswordScreen() {
           />
         </View>
 
+        {/* Inline result message */}
+        {resultText !== '' && (
+          <View className="mb-3 px-3 py-2.5 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg border border-cyan-200 dark:border-cyan-800">
+            <Text className="text-sm text-cyan-700 dark:text-cyan-300">{resultText}</Text>
+          </View>
+        )}
+
+        {/* Inline error message */}
+        {errorText !== '' && (
+          <View className="mb-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <Text className="text-sm text-red-600 dark:text-red-400">{errorText}</Text>
+          </View>
+        )}
+
         <TouchableOpacity
-          className={`rounded-lg py-3.5 mb-4 ${loading ? 'bg-indigo-400' : 'bg-indigo-600'}`}
+          className={`rounded-lg py-3.5 mb-4 ${loading ? 'bg-cyan-400' : 'bg-cyan-600'}`}
           onPress={handleFindPassword}
           disabled={loading}
         >
@@ -104,7 +120,7 @@ export default function FindPasswordScreen() {
           onPress={() => router.replace('/(auth)/login')}
           activeOpacity={0.7}
         >
-          <Text className="text-sm text-indigo-600 dark:text-indigo-400">
+          <Text className="text-sm text-cyan-600 dark:text-cyan-400">
             {t('findPassword.goToLogin')}
           </Text>
         </TouchableOpacity>

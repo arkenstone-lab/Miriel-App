@@ -214,8 +214,8 @@ export default function SettingsScreen() {
               <Switch
                 value={notificationsEnabled}
                 onValueChange={handleNotificationToggle}
-                trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#818cf8' }}
-                thumbColor={notificationsEnabled ? '#4f46e5' : '#f4f3f4'}
+                trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#22d3ee' }}
+                thumbColor={notificationsEnabled ? '#06b6d4' : '#f4f3f4'}
               />
             </View>
             {/* Morning */}
@@ -307,7 +307,7 @@ export default function SettingsScreen() {
           <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
             {aiPrefsLoading ? (
               <View className="px-4 py-6 items-center">
-                <ActivityIndicator size="small" color={isDark ? '#818cf8' : '#4f46e5'} />
+                <ActivityIndicator size="small" color={isDark ? '#22d3ee' : '#06b6d4'} />
               </View>
             ) : (
               <>
@@ -325,8 +325,8 @@ export default function SettingsScreen() {
                   <Switch
                     value={aiPrefs?.share_persona ?? true}
                     onValueChange={(v) => handleAiPrefToggle('share_persona', v)}
-                    trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#818cf8' }}
-                    thumbColor={(aiPrefs?.share_persona ?? true) ? '#4f46e5' : '#f4f3f4'}
+                    trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#22d3ee' }}
+                    thumbColor={(aiPrefs?.share_persona ?? true) ? '#06b6d4' : '#f4f3f4'}
                   />
                 </View>
 
@@ -363,7 +363,7 @@ export default function SettingsScreen() {
                           key={key}
                           className={`px-3 py-1.5 rounded-full border ${
                             selected
-                              ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-300 dark:border-indigo-700'
+                              ? 'bg-cyan-50 dark:bg-gray-700/40 border-cyan-300 dark:border-gray-600'
                               : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                           }`}
                           onPress={() => toggleFocusArea(key)}
@@ -372,7 +372,7 @@ export default function SettingsScreen() {
                           <Text
                             className={`text-xs font-medium ${
                               selected
-                                ? 'text-indigo-600 dark:text-indigo-400'
+                                ? 'text-cyan-600 dark:text-cyan-400'
                                 : 'text-gray-500 dark:text-gray-400'
                             }`}
                           >
@@ -487,7 +487,7 @@ export default function SettingsScreen() {
           </Text>
           <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
             <View className="flex-row items-start mb-2">
-              <FontAwesome name="shield" size={18} color={isDark ? '#818cf8' : '#4f46e5'} style={{ marginTop: 2 }} />
+              <FontAwesome name="shield" size={18} color={isDark ? '#22d3ee' : '#06b6d4'} style={{ marginTop: 2 }} />
               <Text className="ml-3 text-base font-semibold text-gray-900 dark:text-gray-100">
                 {tPrivacy('notice.title')}
               </Text>

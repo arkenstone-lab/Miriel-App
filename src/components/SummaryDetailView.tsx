@@ -51,9 +51,9 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
           <FontAwesome
             name={summary.period === 'weekly' ? 'calendar' : 'file-text-o'}
             size={16}
-            color={isDark ? '#818cf8' : '#4f46e5'}
+            color={isDark ? '#22d3ee' : '#06b6d4'}
           />
-          <Text className="ml-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+          <Text className="ml-2 text-xs font-medium text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">
             {summary.period === 'weekly' ? t('weekly.label') : t('daily.label')}
           </Text>
         </View>
@@ -63,7 +63,7 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
         <View className="flex-row items-center mb-6">
           <Badge
             label={t('evidenceBadge', { count: summary.entry_links.length })}
-            variant="indigo"
+            variant="cyan"
           />
         </View>
 
@@ -71,8 +71,8 @@ export function SummaryDetailView({ summary }: SummaryDetailViewProps) {
         {displaySentences.map((sentence, index) => (
           <View key={index} className="mb-5">
             <View className="flex-row mb-2">
-              <View className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-800/40 items-center justify-center mr-3 mt-0.5">
-                <Text className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{index + 1}</Text>
+              <View className="w-6 h-6 rounded-full bg-cyan-100 dark:bg-gray-700/40 items-center justify-center mr-3 mt-0.5">
+                <Text className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{index + 1}</Text>
               </View>
               <Text className="text-base text-gray-900 dark:text-gray-100 leading-6 flex-1">
                 {sentence.text}

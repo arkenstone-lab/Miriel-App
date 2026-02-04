@@ -40,3 +40,16 @@ export function showErrorAlert(title: string, error: unknown): void {
     Alert.alert(title, fallback)
   }
 }
+
+/**
+ * Extract user-friendly error message with error code for inline display.
+ * Returns: "사용자 메시지 (오류 코드: AUTH_001)"
+ */
+export function getErrorMessage(error: unknown): string {
+  const codeLabel = i18n.t('errors:codeLabel')
+
+  if (error instanceof AppError) {
+    return `${error.message} (${codeLabel}: ${error.code})`
+  }
+  return i18n.t('errors:UNKNOWN.message')
+}

@@ -100,14 +100,14 @@ export default function PersonaScreen() {
                     activeOpacity={0.7}
                     className={`flex-1 py-3 rounded-xl items-center border ${
                       selected
-                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-400 dark:border-indigo-500'
+                        ? 'bg-cyan-50 dark:bg-gray-800/50 border-cyan-400 dark:border-cyan-500'
                         : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <Text
                       className={`text-sm font-medium ${
                         selected
-                          ? 'text-indigo-600 dark:text-indigo-400'
+                          ? 'text-cyan-600 dark:text-cyan-400'
                           : 'text-gray-600 dark:text-gray-400'
                       }`}
                     >
@@ -149,14 +149,14 @@ export default function PersonaScreen() {
                     activeOpacity={0.7}
                     className={`px-4 py-2.5 rounded-full border ${
                       selected
-                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-400 dark:border-indigo-500'
+                        ? 'bg-cyan-50 dark:bg-gray-800/50 border-cyan-400 dark:border-cyan-500'
                         : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <Text
                       className={`text-sm font-medium ${
                         selected
-                          ? 'text-indigo-600 dark:text-indigo-400'
+                          ? 'text-cyan-600 dark:text-cyan-400'
                           : 'text-gray-600 dark:text-gray-400'
                       }`}
                     >
@@ -170,7 +170,7 @@ export default function PersonaScreen() {
 
           {/* Done button */}
           <TouchableOpacity
-            className="w-full bg-indigo-600 dark:bg-indigo-500 py-4 rounded-2xl items-center"
+            className="w-full bg-cyan-600 dark:bg-cyan-500 py-4 rounded-2xl items-center"
             onPress={handleDone}
             activeOpacity={0.8}
           >

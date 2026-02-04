@@ -148,7 +148,7 @@ export default function EntryDetailScreen() {
             <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{tCommon('label.tags')}</Text>
             <View className="flex-row flex-wrap gap-2">
               {entry.tags.map((tag, i) => (
-                <Badge key={i} label={tag} variant="indigo" size="md" />
+                <Badge key={i} label={tag} variant="cyan" size="md" />
               ))}
             </View>
           </View>
@@ -191,14 +191,14 @@ export default function EntryDetailScreen() {
             </Text>
             <Card
               onPress={() => router.push('/(tabs)/summary')}
-              className="bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-800"
+              className="bg-cyan-50 dark:bg-gray-800/50 border-cyan-100 dark:border-gray-700"
             >
               <View className="flex-row items-center">
-                <FontAwesome name="file-text-o" size={16} color={isDark ? '#818cf8' : '#4f46e5'} />
-                <Text className="ml-2 text-sm text-indigo-700 dark:text-indigo-300 flex-1" numberOfLines={2}>
+                <FontAwesome name="file-text-o" size={16} color={isDark ? '#22d3ee' : '#06b6d4'} />
+                <Text className="ml-2 text-sm text-cyan-700 dark:text-cyan-300 flex-1" numberOfLines={2}>
                   {dailySummary.text}
                 </Text>
-                <FontAwesome name="chevron-right" size={12} color={isDark ? '#6366f1' : '#a5b4fc'} />
+                <FontAwesome name="chevron-right" size={12} color={isDark ? '#22d3ee' : '#67e8f9'} />
               </View>
             </Card>
           </View>

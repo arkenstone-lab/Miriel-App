@@ -18,6 +18,8 @@
     "morningLabel": "아침 — 할 일 확인 & 계획",
     "eveningLabel": "저녁 — 일기 작성",
     "allowNotifications": "알림 허용",
+    "allowAndContinue": "알림 허용하고 계속",
+    "continueWithout": "알림 없이 계속",
     "permissionGranted": "알림이 허용되었습니다",
     "permissionDeniedInline": "나중에 설정에서 켤 수 있어요"
   },

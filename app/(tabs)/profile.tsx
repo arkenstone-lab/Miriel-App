@@ -61,8 +61,8 @@ export default function ProfileScreen() {
               className="w-20 h-20 rounded-full mb-3"
             />
           ) : (
-            <View className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/40 items-center justify-center mb-3">
-              <Text className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+            <View className="w-20 h-20 rounded-full bg-cyan-100 dark:bg-gray-700/40 items-center justify-center mb-3">
+              <Text className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">
                 {initial}
               </Text>
             </View>
@@ -81,9 +81,9 @@ export default function ProfileScreen() {
               {personaChips.map((chip, idx) => (
                 <View
                   key={idx}
-                  className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700"
+                  className="px-3 py-1 rounded-full bg-cyan-50 dark:bg-gray-800/50 border border-cyan-200 dark:border-gray-600"
                 >
-                  <Text className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                  <Text className="text-xs font-medium text-cyan-600 dark:text-cyan-400">
                     {chip}
                   </Text>
                 </View>

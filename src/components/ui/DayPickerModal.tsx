@@ -69,7 +69,7 @@ export function DayPickerModal({
                   key={day}
                   className={`py-3 px-4 rounded-xl ${
                     isSelected
-                      ? 'bg-indigo-100 dark:bg-indigo-900/40'
+                      ? 'bg-cyan-100 dark:bg-gray-700/40'
                       : 'bg-gray-50 dark:bg-gray-800'
                   }`}
                   onPress={() => setSelected(day)}
@@ -78,7 +78,7 @@ export function DayPickerModal({
                   <Text
                     className={`text-base text-center ${
                       isSelected
-                        ? 'font-bold text-indigo-600 dark:text-indigo-400'
+                        ? 'font-bold text-cyan-600 dark:text-cyan-400'
                         : 'text-gray-700 dark:text-gray-300'
                     }`}
                   >
@@ -101,7 +101,7 @@ export function DayPickerModal({
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-1 py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 items-center"
+              className="flex-1 py-3 rounded-xl bg-cyan-600 dark:bg-cyan-500 items-center"
               onPress={handleSave}
               activeOpacity={0.8}
             >

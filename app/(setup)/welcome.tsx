@@ -1,8 +1,9 @@
-import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native'
+import { View, Text, TouchableOpacity, useWindowDimensions, Image } from 'react-native'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { supabase } from '@/lib/supabase'
 
 export default function SetupWelcomeScreen() {
   const router = useRouter()
@@ -13,11 +14,14 @@ export default function SetupWelcomeScreen() {
 
   const handleSignUp = async () => {
     await completeSetup()
+    // Clear any stale session so routing guard doesn't redirect to /(tabs)
+    await supabase.auth.signOut().catch(() => {})
     router.replace('/(auth)/signup' as any)
   }
 
   const handleSignIn = async () => {
     await completeSetup()
+    await supabase.auth.signOut().catch(() => {})
     router.replace('/(auth)/login' as any)
   }
 
@@ -25,9 +29,13 @@ export default function SetupWelcomeScreen() {
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-950">
       <View className="flex-1 items-center justify-center px-6">
         <View className={`w-full items-center ${isDesktop ? 'max-w-md bg-gray-50 dark:bg-gray-900 rounded-3xl p-10 border border-gray-100 dark:border-gray-800' : ''}`}>
-          <Text className="text-7xl mb-8">✨</Text>
+          <Image
+            source={require('../../assets/images/icon.png')}
+            style={{ width: 96, height: 96, borderRadius: 16 }}
+            className="mb-4"
+          />
 
-          <Text className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 text-center mb-2">
+          <Text className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 text-center mb-2">
             Miriel
           </Text>
 
@@ -43,11 +51,11 @@ export default function SetupWelcomeScreen() {
           <View className="flex-row items-center gap-2 mb-8">
             <View className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
             <View className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
-            <View className="w-6 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+            <View className="w-6 h-2 rounded-full bg-cyan-600 dark:bg-cyan-400" />
           </View>
 
           <TouchableOpacity
-            className="w-full bg-indigo-600 dark:bg-indigo-500 py-4 rounded-2xl items-center mb-3"
+            className="w-full bg-cyan-600 dark:bg-cyan-500 py-4 rounded-2xl items-center mb-3"
             onPress={handleSignUp}
             activeOpacity={0.8}
           >
@@ -57,11 +65,11 @@ export default function SetupWelcomeScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="w-full border-2 border-indigo-600 dark:border-indigo-400 py-4 rounded-2xl items-center"
+            className="w-full border-2 border-cyan-600 dark:border-cyan-400 py-4 rounded-2xl items-center"
             onPress={handleSignIn}
             activeOpacity={0.8}
           >
-            <Text className="text-base font-semibold text-indigo-600 dark:text-indigo-400">
+            <Text className="text-base font-semibold text-cyan-600 dark:text-cyan-400">
               {t('welcome.signIn')}
             </Text>
           </TouchableOpacity>
