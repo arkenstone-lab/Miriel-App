@@ -1,12 +1,28 @@
+import { Platform } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { supabase } from './supabase'
 import { AppError } from './errors'
 
 const BUCKET = 'avatars'
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+
+/** Derive file extension from MIME type */
+function extFromMime(mime: string): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+  }
+  return map[mime] || 'jpg'
+}
 
 /**
- * Open image picker, upload selected image to Supabase Storage,
+ * Open image picker with crop UI, upload selected image to Supabase Storage,
  * and return the public URL. Returns null if the user cancels.
+ *
+ * - Crop: expo-image-picker allowsEditing + aspect [1,1]
+ * - File size limit: 2 MB
  */
 export async function pickAndUploadAvatar(userId: string): Promise<string | null> {
   const result = await ImagePicker.launchImageLibraryAsync({
@@ -18,19 +34,35 @@ export async function pickAndUploadAvatar(userId: string): Promise<string | null
 
   if (result.canceled || !result.assets[0]) return null
 
-  const uri = result.assets[0].uri
-  const ext = uri.split('.').pop()?.toLowerCase() || 'jpg'
+  const asset = result.assets[0]
+  const mimeType = asset.mimeType || 'image/jpeg'
+  const ext = extFromMime(mimeType)
   const path = `${userId}/avatar.${ext}`
 
-  // Convert URI to blob via fetch
-  const response = await fetch(uri)
+  // Check file size from asset metadata first
+  if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
+    throw new AppError('PROFILE_003')
+  }
+
+  // Convert URI to blob
+  const response = await fetch(asset.uri)
   const blob = await response.blob()
+
+  // Double-check size from blob (fileSize may not be available on all platforms)
+  if (blob.size > MAX_FILE_SIZE) {
+    throw new AppError('PROFILE_003')
+  }
+
+  // On web, convert to ArrayBuffer for reliable Supabase upload
+  // (blob URLs and data URIs can cause issues with direct blob upload)
+  const uploadBody: Blob | ArrayBuffer =
+    Platform.OS === 'web' ? await blob.arrayBuffer() : blob
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, blob, {
+    .upload(path, uploadBody, {
       upsert: true,
-      contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+      contentType: mimeType,
     })
 
   if (error) throw new AppError('PROFILE_001', error)
