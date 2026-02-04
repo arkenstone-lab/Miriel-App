@@ -1,11 +1,17 @@
 # AI 기능 구현 현황
 
-> 최종 수정: 2026-02-03
+> 최종 수정: 2026-02-04
 
 ## 개요
 
 Miriel의 AI 파이프라인은 사용자가 기록을 저장하면 자동으로 **태깅 → 할일 추출 → 요약 생성**을 수행합니다.
 모든 AI 호출은 Supabase Edge Functions (Deno) → OpenAI GPT-4o API 경로로 처리됩니다.
+
+### AI 개인화 (v0.7)
+
+모든 Edge Function은 optional `ai_context` 문자열을 body에서 받습니다.
+클라이언트가 `user_ai_preferences` 테이블 + 페르소나(닉네임/직업/관심사)를 기반으로 `buildAiContext()`를 호출하여 문자열을 빌드하고, 이를 body에 포함시킵니다.
+Edge Function은 `ai_context`가 존재하면 시스템 프롬프트 끝에 `--- 사용자 정보 ---\n{ai_context}`를 추가합니다.
 
 ---
 
@@ -20,6 +26,7 @@ Miriel의 AI 파이프라인은 사용자가 기록을 저장하면 자동으로
 | 5 | 대화형 작성 | ✅ 구현 완료 | — (클라이언트) | 아침/저녁 체크인 질문 |
 | 6 | 감정 분석 | ⏳ 미구현 | — | schema.ts에 타입만 정의 |
 | 7 | AI 출력 스키마 | ✅ 구현 완료 | — | ProcessedEntry 타입 + 정규화 |
+| 8 | AI 개인화 | ✅ 구현 완료 | 전체 (ai_context) | user_ai_preferences + buildAiContext |
 
 ---
 

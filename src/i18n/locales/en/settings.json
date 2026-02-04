@@ -51,7 +51,10 @@
     "editProfile": "Edit Profile",
     "changePhoto": "Change Photo",
     "removePhoto": "Remove Photo",
-    "photoRemoved": "Profile photo has been removed."
+    "photoRemoved": "Profile photo has been removed.",
+    "photoSizeHint": "Max 2 MB, JPG/PNG recommended",
+    "cropTitle": "Crop Photo",
+    "cropConfirm": "Apply"
   },
   "support": {
     "title": "Support",
@@ -103,6 +106,25 @@
       "4": "Fri",
       "5": "Sat",
       "6": "Sun"
+    }
+  },
+  "aiPersonalization": {
+    "title": "AI Personalization",
+    "sharePersona": "Share Profile Info",
+    "sharePersonaDesc": "Share your nickname, occupation, and interests with AI",
+    "summaryStyle": "Summary Style",
+    "summaryStylePlaceholder": "e.g. concise, detailed, encouraging tone",
+    "focusAreas": "Focus Areas",
+    "focusAreasDesc": "Choose topics for AI to focus on",
+    "customInstructions": "Custom Instructions",
+    "customInstructionsPlaceholder": "Additional instructions for AI (max 500 chars)",
+    "focusOptions": {
+      "projectMgmt": "Project Management",
+      "selfDev": "Self Development",
+      "workEfficiency": "Work Efficiency",
+      "communication": "Communication",
+      "health": "Health & Wellness",
+      "learning": "Learning & Growth"
     }
   },
   "version": "Version"

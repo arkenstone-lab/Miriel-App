@@ -63,7 +63,7 @@ serve(async (req) => {
       })
     }
 
-    const { text, entry_id } = await req.json()
+    const { text, entry_id, ai_context } = await req.json()
     if (!text) {
       return new Response(JSON.stringify({ error: 'text is required' }), {
         status: 400,
@@ -74,6 +74,10 @@ serve(async (req) => {
     // Extract todos (AI or mock)
     let result: TodoExtractionResult
     const apiKey = Deno.env.get('OPENAI_API_KEY')
+
+    const systemMessage = ai_context
+      ? `${TODO_PROMPT}\n\n--- 사용자 정보 ---\n${ai_context}`
+      : TODO_PROMPT
 
     if (!apiKey) {
       result = mockTodoExtraction(text)
@@ -88,7 +92,7 @@ serve(async (req) => {
           body: JSON.stringify({
             model: 'gpt-4o',
             messages: [
-              { role: 'system', content: TODO_PROMPT },
+              { role: 'system', content: systemMessage },
               { role: 'user', content: text },
             ],
             response_format: { type: 'json_object' },

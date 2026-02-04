@@ -58,7 +58,7 @@ serve(async (req) => {
       })
     }
 
-    const { date } = await req.json()
+    const { date, ai_context } = await req.json()
     const targetDate = date || new Date().toISOString().split('T')[0]
 
     // Fetch entries for the date
@@ -93,6 +93,10 @@ serve(async (req) => {
         .map((e: { id: string; raw_text: string }) => `[ID: ${e.id}]\n${e.raw_text}`)
         .join('\n\n---\n\n')
 
+      const systemMessage = ai_context
+        ? `${SUMMARY_PROMPT}\n\n--- 사용자 정보 ---\n${ai_context}`
+        : SUMMARY_PROMPT
+
       try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -103,7 +107,7 @@ serve(async (req) => {
           body: JSON.stringify({
             model: 'gpt-4o',
             messages: [
-              { role: 'system', content: SUMMARY_PROMPT },
+              { role: 'system', content: systemMessage },
               { role: 'user', content: formatted },
             ],
             response_format: { type: 'json_object' },

@@ -75,9 +75,12 @@ export async function deleteEntry(id: string): Promise<void> {
   if (error) throw new AppError('ENTRY_006', error)
 }
 
-export async function requestTagging(text: string): Promise<{ tags: string[] }> {
+export async function requestTagging(text: string, aiContext?: string): Promise<{ tags: string[] }> {
+  const body: Record<string, unknown> = { text }
+  if (aiContext) body.ai_context = aiContext
+
   const { data, error } = await supabase.functions.invoke('tagging', {
-    body: { text },
+    body,
   })
 
   if (error) throw new AppError('ENTRY_007', error)

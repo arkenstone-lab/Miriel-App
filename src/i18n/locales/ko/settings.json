@@ -51,7 +51,10 @@
     "editProfile": "프로필 수정",
     "changePhoto": "사진 변경",
     "removePhoto": "사진 삭제",
-    "photoRemoved": "프로필 사진이 삭제되었습니다."
+    "photoRemoved": "프로필 사진이 삭제되었습니다.",
+    "photoSizeHint": "최대 2MB, JPG/PNG 권장",
+    "cropTitle": "사진 자르기",
+    "cropConfirm": "적용"
   },
   "support": {
     "title": "지원",
@@ -103,6 +106,25 @@
       "4": "금",
       "5": "토",
       "6": "일"
+    }
+  },
+  "aiPersonalization": {
+    "title": "AI 개인화",
+    "sharePersona": "프로필 정보 공유",
+    "sharePersonaDesc": "닉네임, 직업, 관심사를 AI에 전달합니다",
+    "summaryStyle": "요약 스타일",
+    "summaryStylePlaceholder": "예: 간결하게, 구체적으로, 격려하는 톤으로",
+    "focusAreas": "집중 영역",
+    "focusAreasDesc": "AI가 중점적으로 다룰 주제를 선택하세요",
+    "customInstructions": "커스텀 지시",
+    "customInstructionsPlaceholder": "AI에게 추가로 전달할 지시사항 (최대 500자)",
+    "focusOptions": {
+      "projectMgmt": "프로젝트 관리",
+      "selfDev": "자기개발",
+      "workEfficiency": "업무 효율",
+      "communication": "커뮤니케이션",
+      "health": "건강/웰빙",
+      "learning": "학습/성장"
     }
   },
   "version": "버전"
