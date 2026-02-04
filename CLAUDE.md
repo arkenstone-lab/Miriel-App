@@ -243,6 +243,13 @@ interface UserStats {
 - [x] 프로젝트 리브랜딩 (ReflectLog → Miriel — 전체 코드/문서/i18n/설정 일괄 변경)
 - [x] 에러 코드 시스템 (AppError + showErrorAlert + ErrorDisplay + errors i18n + CS 문서)
 - [x] 회원가입 비밀번호 확인 필드 (비밀번호 2회 입력 + 불일치 검증)
+- [x] 초기 설정 플로우 (첫 실행 시 언어→테마→환영 3단계 — 로그인 전 진입, AsyncStorage 디바이스 레벨)
+- [x] 온보딩 리디자인 (성장 사이클 교육 → 주간 회고 설정 → 알림 설정 3단계 + 완료 화면)
+- [x] 주간 회고 알림 설정 (요일/시간 선택 — 온보딩 + 설정 화면, DayPickerModal)
+- [x] 알림 시스템 확장 (scheduleAllNotifications 주간 WEEKLY trigger + 웹 Notification API 폴링)
+- [x] 일일 기록 1회 제한 (useTodayEntry 훅 + 기존 기록 편집으로 autoEdit 리다이렉트)
+- [x] 주간 회고 1회 제한 (이번 주 회고 존재 시 생성 버튼 비활성화)
+- [x] 설정 화면 주간 회고 섹션 (요일/시간 — DayPickerModal + TimePickerModal)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -409,6 +416,17 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-04 | 에러 코드 시스템 도입 (AppError + i18n + CS 문서) | CS 대응 효율화, 사용자가 에러 코드 전달 시 즉시 원인 파악 가능. 33개 에러 코드 카탈로그 | 에러 메시지만 표시 (코드 없음) |
 | 2026-02-04 | 에러 메시지를 errors 네임스페이스로 분리 | 에러별 사용자 친화적 메시지 + 다국어 지원, API 레이어의 기술적 에러를 사용자 언어로 변환 | 하드코딩 에러 메시지 유지 |
 | 2026-02-04 | 멀티 테마는 세 번째 테마 확정 시 도입 (현재 light/dark 유지) | 현재 `dark:` 패턴으로 충분, 시맨틱 컬러 토큰화는 세 번째 테마가 필요해지는 시점에 진행. CSS 변수 기반 토큰(`bg-surface` 등)으로 30+ 파일 일괄 치환 예정 | 지금 즉시 토큰화 |
+| 2026-02-04 | 초기 설정 플로우를 로그인 전 3단계로 구현 | 첫 실행 시 언어/테마를 미리 설정하면 로그인 화면부터 올바른 언어·테마 적용, 신규/기존 유저 분기로 자연스러운 진입 | 설정 없이 바로 로그인 |
+| 2026-02-04 | hasCompletedSetup을 AsyncStorage(디바이스 레벨)에 저장 | 로그아웃해도 setup을 다시 표시하지 않음 (언어/테마는 디바이스 설정), user_metadata는 로그인 후에만 접근 가능 | user_metadata에 저장 |
+| 2026-02-04 | setup 테마 선택에서 "System" 옵션 미제공 | 첫 사용자에게 심플한 2가지 선택지, 나중에 설정에서 변경 가능 | Light/Dark/System 3가지 |
+| 2026-02-04 | 온보딩을 성장 사이클 교육 + 설정 중심으로 리디자인 | 기존 3스텝(기록→AI→배지)은 정보 전달뿐, 신규 3스텝은 사용자가 실제 설정까지 완료하여 리텐션 루프 진입 | 기존 교육 온보딩 유지 |
+| 2026-02-04 | 온보딩 알림 설정을 로컬 state → 배치 저장 (saveNotificationSettings) | 스텝별 개별 저장 시 user_metadata 동시성 문제, 배치로 한 번에 저장하여 안전 | 스텝별 즉시 저장 |
+| 2026-02-04 | 온보딩 완료 화면(complete.tsx) 별도 분리 | 설정 요약을 보여주고 "기록 시작" CTA로 자연스러운 전환, persona에서 직접 tabs 이동 시 급격한 전환 | persona에서 바로 /(tabs) 이동 |
+| 2026-02-04 | 주간 회고 요일을 0=Mon..6=Sun 컨벤션 사용 | ISO 8601 요일 순서와 일관, JS getDay()(0=Sun)과 다르므로 변환 필요하지만 사용자 UX가 자연스러움 | JS getDay() 컨벤션 그대로 사용 |
+| 2026-02-04 | 웹 알림을 30초 폴링으로 구현 (데모용) | Service Worker + VAPID + 서버 크론은 데모 범위 초과, 탭 열린 상태에서 시연하면 충분 | 서버 푸시 (VAPID) |
+| 2026-02-04 | 일일 기록 1회 제한 — 기존 기록 편집으로 리다이렉트 | 하루 한 번 기록이라는 제품 철학, 추가 기록 대신 기존 기록 보완 유도 | 제한 없이 다중 기록 허용 |
+| 2026-02-04 | 주간 회고 1회 제한 — 이번 주 월요일 기준 체크 | 중복 생성 방지, getMonday()로 현재 주 시작일 계산 후 period_start 비교 | 제한 없이 다중 생성 허용 |
+| 2026-02-04 | DayPickerModal을 공유 컴포넌트로 구현 | TimePickerModal 패턴 재사용, 온보딩과 설정 화면 모두에서 사용 | 인라인 선택 UI |
 | | | | |
 
 ---
@@ -487,6 +505,23 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 - 에러 처리: catch 블록에서 error 타입을 `unknown`으로 변경 후 showErrorAlert에 전달
   → showErrorAlert 내부에서 instanceof AppError 체크로 코드 유무 자동 판별
 - 에러 코드 추가 시: errors.json(ko+en) + error-codes.md + API/스토어에서 throw new AppError('CODE') 3곳 동시 수정 필수
+- Setup 플로우 라우팅: hasCompletedSetup 체크가 라우팅 가드에서 최우선 → setup 미완료 시 auth/onboarding 라우팅 무시
+  → completeSetup()의 Zustand set()은 동기이므로 router.replace 전에 가드가 새 값을 인식 → setup으로 되돌아오지 않음
+- Setup vs Onboarding: setup은 로그인 전(디바이스 레벨, AsyncStorage), onboarding은 로그인 후(계정 레벨, user_metadata)
+  → setup에서는 Supabase 호출 불가 (미로그인), onboarding에서는 user_metadata 사용
+- 온보딩 알림 설정: 로컬 state로 모은 뒤 Step 3 완료 시 saveNotificationSettings()로 배치 저장
+  → 개별 저장 시 user_metadata last-write-wins 문제 발생 (savePersona와 동일 패턴)
+- expo-notifications WEEKLY trigger: weekday 값이 1=Sun..7=Sat (ISO와 다름)
+  → 우리 컨벤션 0=Mon..6=Sun에서 변환: (day + 2) % 7 || 7
+- 웹 알림 (webNotifications.ts): Notification API는 탭이 열려 있을 때만 동작
+  → 30초 간격 폴링, lastFiredKey로 동일 시간대 중복 발사 방지
+  → typeof Notification === 'undefined' 가드 필수 (SSR/Node 환경)
+- 일일 기록 제한: useTodayEntry()가 로딩 중이면 LoadingState 표시 필수
+  → 체크 완료 전에 UI 렌더링하면 새 기록 폼이 잠깐 보였다가 리다이렉트됨
+- autoEdit 파라미터: useLocalSearchParams에서 string으로 전달됨
+  → 'true' === 'true' 문자열 비교, autoEditApplied 플래그로 1회만 적용 (무한 루프 방지)
+- 주간 회고 제한: getMonday()로 현재 주 월요일 계산 시 getDay()가 0(일요일)인 경우 -6 보정 필요
+  → day === 0 ? -6 : 1 로 처리
 ```
 
 ---
@@ -499,6 +534,8 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-03 | v0.2 | Phase R3.5~R4 — i18n, 설정+다크모드, 온보딩, 페르소나, 프로필, UX 폴리시, AI 문서화 | Chris |
 | 2026-02-03 | v0.3 | Phase R4 계속 — ID 기반 인증 전환, 아이디/비밀번호 찾기, 계정 정보 수정 | Chris |
 | 2026-02-04 | v0.4 | 리브랜딩 + 에러 코드 시스템 + 비밀번호 확인 (ReflectLog→Miriel, AppError 33코드, 회원가입 UX 개선) | Chris |
+| 2026-02-04 | v0.5 | 초기 설정 플로우 (첫 실행 시 언어→테마→환영 3단계, setup i18n, 라우팅 가드 확장) | Chris |
+| 2026-02-04 | v0.6 | 온보딩 리디자인 + 알림 확장 + 기록/회고 제한 + 웹 알림 | Chris |
 | | | | |
 
 <details>
@@ -638,6 +675,71 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 #### 회원가입 비밀번호 확인
 - `signup.tsx`: 비밀번호 확인 필드 추가 (2회 입력 + 불일치 검증)
 - `auth.json` (ko/en): `confirmPassword`, `confirmPasswordPlaceholder`, `alertPasswordMismatch` 키 추가
+
+</details>
+
+<details>
+<summary>v0.5 상세 이력 (클릭하여 펼치기)</summary>
+
+#### 초기 설정 플로우 (First-Time Setup)
+- `app/(setup)/_layout.tsx`: Setup Stack 레이아웃 (headerShown: false)
+- `app/(setup)/index.tsx`: 1단계 — 언어 선택 (한국어/English 카드, 시스템 감지 기본값, 선택 즉시 `setLanguage()` 호출로 실시간 전환)
+- `app/(setup)/theme.tsx`: 2단계 — 테마 선택 (Light/Dark 카드, 선택 즉시 `setTheme()` 호출로 실시간 전환)
+- `app/(setup)/welcome.tsx`: 3단계 — 환영 화면 (Miriel 브랜딩, "계정 만들기" primary + "이미 계정이 있어요" outlined 버튼)
+- `src/i18n/locales/{ko,en}/setup.json`: setup 네임스페이스 번역 파일 (language/theme/welcome/next)
+- `src/i18n/index.ts`: `setup` 네임스페이스 등록
+- `src/stores/settingsStore.ts`: `hasCompletedSetup` 플래그 (AsyncStorage `@miriel/hasCompletedSetup`), `initialize()`에서 함께 읽기, `completeSetup()` 액션 추가, `clearUserData()`에서 리셋하지 않음
+- `app/_layout.tsx`: 라우팅 가드에 setup 체크 최우선 추가, `(setup)` Stack.Screen 등록, AppShell 래핑에서 setup 제외
+
+</details>
+
+<details>
+<summary>v0.6 상세 이력 (클릭하여 펼치기)</summary>
+
+#### 온보딩 리디자인
+- `app/(onboarding)/index.tsx`: 전체 리라이트 — 3스텝 인터랙티브 온보딩
+  - Step 1: 성장 사이클 교육 (🔄 아침 할일 → 저녁 기록 → AI 정리 → 반복)
+  - Step 2: 주간 회고 요일/시간 선택 (📅 7 칩 + TimePickerModal)
+  - Step 3: 알림 시간 설정 + 권한 요청 (🔔 아침/저녁 시간 + 네이티브/웹 권한)
+- `app/(onboarding)/persona.tsx`: 네비게이션 타겟 `/(tabs)` → `/(onboarding)/complete`로 변경
+- `app/(onboarding)/complete.tsx`: 신규 — 설정 완료 축하 + 알림 요약 표시 + "기록 시작" CTA
+- `app/(onboarding)/_layout.tsx`: `complete` 스크린 추가
+
+#### settingsStore 확장
+- `weeklyReviewDay` (0=Mon..6=Sun), `weeklyReviewTime` ("HH:mm") 필드 추가
+- `setWeeklyReviewDay()`, `setWeeklyReviewTime()`: 개별 업데이트 + 리스케줄링
+- `saveNotificationSettings()`: 온보딩에서 5개 필드 배치 저장 (user_metadata)
+- `setNotificationsEnabled()`: 웹에서도 동작하도록 수정 (webNotifications 호출)
+- `rescheduleAllNotifications()` 헬퍼: 플랫폼별 알림 일괄 재스케줄링
+
+#### 알림 시스템 확장
+- `src/lib/notifications.ts`: `scheduleAllNotifications()` — DAILY(아침/저녁) + WEEKLY(주간 회고) trigger
+  - expo-notifications weekday 변환: (ourDay + 2) % 7 || 7
+  - 기존 `scheduleNotifications()` 하위호환 유지
+- `src/lib/webNotifications.ts`: 신규 — Web Notification API 래퍼
+  - `requestWebPermission()`: 브라우저 알림 권한 요청
+  - `scheduleWebNotifications()`: 30초 폴링, 아침/저녁/주간 시간 매칭 시 알림
+  - `cancelWebNotifications()`: 인터벌 클리어
+  - `showWebNotification()`: new Notification(title, { body })
+- `app/_layout.tsx`: 앱 시작 시 알림 복원에 웹 분기 추가
+
+#### 일일 기록 1회 제한
+- `src/features/entry/hooks.ts`: `useTodayEntry()` 훅 — 오늘 날짜 entries 조회, 첫 번째 반환
+- `app/entries/new.tsx`: todayEntry 존재 시 `router.replace(/entries/${id}?autoEdit=true)` 리다이렉트
+- `app/entries/[id].tsx`: `autoEdit` 파라미터 지원 — 자동 편집 모드 진입 (1회만)
+
+#### 주간 회고 1회 제한
+- `app/(tabs)/summary.tsx`: `getMonday()` 유틸 + 이번 주 회고 존재 시 버튼 disabled + 라벨 변경
+
+#### 설정 화면 업데이트
+- `app/settings.tsx`: Notifications 섹션에 주간 회고 하위 섹션 추가 (요일/시간)
+- `src/components/ui/DayPickerModal.tsx`: 신규 — 7개 요일 세로 리스트 선택 모달 (TimePickerModal 패턴)
+
+#### i18n (8 파일)
+- `onboarding.json` (ko/en): 스텝 내용 교체 + complete 섹션 + 알림/주간회고 키
+- `settings.json` (ko/en): 주간 회고 섹션 + 요일 이름 (days/daysShort) + 알림 제목/본문
+- `entry.json` (ko/en): 일일 제한 메시지 (alreadyRecordedToday, redirectingToEdit)
+- `summary.json` (ko/en): 주간 제한 메시지 (alreadyGenerated, alreadyGeneratedDesc)
 
 </details>
 
