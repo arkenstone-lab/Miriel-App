@@ -125,7 +125,7 @@ export function AvatarCropModal({ visible, imageUri, onCrop, onCancel }: Props) 
               step={0.05}
               value={zoom}
               onChange={(e: any) => setZoom(Number(e.target.value))}
-              style={{ width: '100%', accentColor: '#6366f1' }}
+              style={{ width: '100%', accentColor: '#22d3ee' }}
             />
           </View>
 
@@ -145,7 +145,7 @@ export function AvatarCropModal({ visible, imageUri, onCrop, onCancel }: Props) 
               onPress={handleConfirm}
               activeOpacity={0.7}
             >
-              <Text className="text-base font-semibold text-indigo-600 dark:text-indigo-400">
+              <Text className="text-base font-semibold text-cyan-600 dark:text-cyan-400">
                 {t('profile.cropConfirm')}
               </Text>
             </TouchableOpacity>

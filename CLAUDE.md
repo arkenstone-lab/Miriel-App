@@ -176,7 +176,7 @@ interface UserAiPreferences {
 - 상태관리: React Query (서버 상태) + Zustand (클라이언트)
 - 스타일링: NativeWind (`className` 사용, Tailwind 문법)
 - 네비게이션: Expo Router (파일 기반 라우팅, `/app` 디렉토리)
-- 에러 처리: `AppError(code)` + `showErrorAlert()` 패턴 사용, 에러 코드 카탈로그는 `docs/error-codes.md` 참조
+- 에러 처리: `AppError(code)` + 화면별 표시 방식 분리 — auth 화면은 `getErrorMessage()` 인라인 텍스트, 그 외는 `showErrorAlert()` Alert. 에러 코드 카탈로그는 `docs/error-codes.md` 참조
 - i18n: 모든 UI 문자열은 `src/i18n/locales/{ko,en}/` JSON에서 관리, 컴포넌트에서 `useTranslation()` 사용, 하드코딩 금지
 
 ---
@@ -263,6 +263,11 @@ interface UserAiPreferences {
 - [x] 주간 회고 1회 제한 (이번 주 회고 존재 시 생성 버튼 비활성화)
 - [x] 설정 화면 주간 회고 섹션 (요일/시간 — DayPickerModal + TimePickerModal)
 - [x] AI 개인화 (user_ai_preferences 테이블 + 설정 UI + Edge Function ai_context 주입)
+- [x] 테마 색상 변경 (Indigo → Cyan + Dark Gray — Tailwind 클래스 38파일 + JS 헥스 16파일 + 문서)
+- [x] 인라인 에러 표시 (auth 5화면 Alert→인라인 텍스트 전환 + 실시간 비밀번호 불일치 검증)
+- [x] 온보딩 알림 유도 개선 (Step 3 메인 버튼이 권한 요청 직접 유도 + 웹 자동 활성화)
+- [x] 셋업 세션 정리 (환영 화면에서 기존 세션 signOut 후 auth 이동 — 자동 로그인 버그 수정)
+- [x] 홈 탭 설정 아이콘 (모바일 헤더 우측 톱니바퀴 아이콘)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -443,6 +448,11 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-04 | AI 개인화를 별도 user_ai_preferences 테이블로 구현 | user_metadata는 이미 과밀, 별도 테이블로 프라이버시 분리 + CRUD 단순화 | user_metadata에 추가 |
 | 2026-02-04 | Edge Function에 ai_context를 클라이언트가 전달 (DB 직접 조회 안 함) | Edge Function 수정 최소화, 사용자가 전달 정보 클라이언트에서 제어 | Edge Function에서 DB 직접 조회 |
 | 2026-02-04 | EditModal에 multiline prop 추가 | 커스텀 지시 입력에 여러 줄 필요, 기존 컴포넌트 확장으로 일관된 UX | 별도 TextAreaModal 생성 |
+| 2026-02-05 | 테마 색상 Indigo→Cyan 전환 | 시안 계열이 브랜드 이미지에 적합, 다크 모드 배경은 순수 그레이로 분리 | Indigo 유지 |
+| 2026-02-05 | auth 화면 에러를 인라인 텍스트로 전환 | Alert 팝업은 UX 흐름을 끊음, 인라인은 사용자가 에러를 보면서 바로 수정 가능 | Alert 유지 |
+| 2026-02-05 | 온보딩 Step 3 메인 버튼으로 알림 권한 유도 | 별도 버튼은 무시하기 쉬움, 메인 CTA가 직접 유도해야 전환율 높음 | 별도 알림 허용 버튼 |
+| 2026-02-05 | 웹 알림 권한은 앱 레벨에서 항상 활성화 | 브라우저 이전 거부 시 재요청 불가, 데모용 폴링 방식이므로 앱 내부만 켜면 충분 | 브라우저 권한 결과에 의존 |
+| 2026-02-05 | 셋업 환영 화면에서 signOut 후 auth 이동 | 기존 세션이 남아있으면 라우팅 가드가 auth에서 tabs로 리다이렉트하는 버그 | 세션 체크 없이 이동 |
 | | | | |
 
 ---
@@ -469,7 +479,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 - AppShell 래핑: 온보딩 중에는 AppShell(사이드바) 표시하면 안 됨 → inOnboardingGroup 조건 추가 필수
 - Expo Router 타입: 새 route group 추가 후 .expo/types/router.d.ts 재생성 필요 (`npx expo customize tsconfig.json`)
 - Dark Mode: FontAwesome 아이콘의 color prop은 NativeWind className과 무관 → useColorScheme()으로 isDark 읽어서 조건부 색상 전달 필수
-  → indigo: isDark ? '#818cf8' : '#4f46e5' / light gray: isDark ? '#6b7280' : '#d1d5db'
+  → cyan: isDark ? '#22d3ee' : '#06b6d4' / light gray: isDark ? '#6b7280' : '#d1d5db'
   → 새 아이콘 추가 시 반드시 dark 색상 매핑 확인
 - Dark Mode: MasterDetailLayout 디테일 패인에 배경색 미지정 시 기본 흰색 → 반드시 bg-gray-50 dark:bg-gray-950 추가
 - Chat Enter/Shift+Enter: React Native에서 multiline TextInput은 onSubmitEditing이 동작 안 함
@@ -545,6 +555,17 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
   → focus_areas 토글 시 번역된 라벨 문자열로 저장 → 언어 변경 시 기존 선택이 매칭 안 될 수 있음 (데모 범위에서는 무시)
 - user_ai_preferences: UPSERT(onConflict: user_id) 사용 → 첫 저장 시 INSERT, 이후 UPDATE
   → updated_at 트리거는 update_updated_at_column() 함수 재사용 (001_initial_schema.sql에 정의)
+- 에러 표시 이중 패턴: auth 화면은 getErrorMessage() + 인라인 텍스트 (빨간 박스), 그 외 화면은 showErrorAlert() Alert
+  → auth는 사용자가 에러를 보면서 입력값을 즉시 수정해야 하므로 인라인이 적합
+  → settings/entries는 모달/비동기 작업이므로 Alert이 적합
+- 셋업 환영 화면 세션 버그: hasCompletedSetup이 false인데 Supabase 세션이 남아있는 경우
+  → 환영 화면에서 auth로 이동 시 라우팅 가드가 기존 세션 감지 → /(tabs) 리다이렉트
+  → 해결: completeSetup() 후 supabase.auth.signOut()으로 세션 정리, .catch(() => {})로 세션 없는 경우 무시
+- 웹 알림 권한: 브라우저가 이전에 거부(denied)하면 requestPermission() 재호출 불가
+  → 온보딩에서 웹은 Notification.permission === 'default'일 때만 팝업, 결과 무관하게 앱 레벨 활성화
+  → 네이티브는 기존 대로 권한 결과에 의존
+- PowerShell Set-Content 인코딩 경고: PowerShell로 UTF-8 파일 수정 시 한국어/이모지 깨짐 + LF→CRLF 변환
+  → 일괄 치환 작업은 반드시 Edit 도구 사용, PowerShell 사용 금지
 ```
 
 ---
@@ -560,6 +581,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-04 | v0.5 | 초기 설정 플로우 (첫 실행 시 언어→테마→환영 3단계, setup i18n, 라우팅 가드 확장) | Chris |
 | 2026-02-04 | v0.6 | 온보딩 리디자인 + 알림 확장 + 기록/회고 제한 + 웹 알림 | Chris |
 | 2026-02-04 | v0.7 | AI 개인화 (user_ai_preferences 테이블, 설정 UI, Edge Function ai_context 주입, EditModal multiline) | Chris |
+| 2026-02-05 | v0.8 | 테마 Cyan 전환 + 인라인 에러 + 온보딩/셋업 UX 개선 + 홈 설정 아이콘 | Chris |
 | | | | |
 
 <details>

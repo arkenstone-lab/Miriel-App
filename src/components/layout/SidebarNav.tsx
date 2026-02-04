@@ -35,14 +35,14 @@ export function SidebarNav() {
     <View className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full">
       {/* Logo */}
       <View className="px-5 py-6 border-b border-gray-100 dark:border-gray-800">
-        <Text className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{t('sidebar.brand')}</Text>
+        <Text className="text-xl font-bold text-cyan-600 dark:text-cyan-400">{t('sidebar.brand')}</Text>
         <Text className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('sidebar.tagline')}</Text>
       </View>
 
       {/* New Entry Button */}
       <View className="px-4 pt-4 pb-2">
         <TouchableOpacity
-          className="bg-indigo-600 rounded-xl py-3 flex-row items-center justify-center"
+          className="bg-cyan-600 rounded-xl py-3 flex-row items-center justify-center"
           onPress={() => router.push('/entries/new')}
           activeOpacity={0.7}
         >
@@ -59,7 +59,7 @@ export function SidebarNav() {
             <TouchableOpacity
               key={item.path}
               className={`flex-row items-center px-3 py-2.5 rounded-lg mb-1 ${
-                active ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''
+                active ? 'bg-cyan-50 dark:bg-gray-800/50' : ''
               }`}
               onPress={() => router.push(item.path as any)}
               activeOpacity={0.7}
@@ -67,11 +67,11 @@ export function SidebarNav() {
               <FontAwesome
                 name={item.icon}
                 size={18}
-                color={active ? '#4f46e5' : '#9ca3af'}
+                color={active ? '#06b6d4' : '#9ca3af'}
               />
               <Text
                 className={`ml-3 text-sm font-medium ${
-                  active ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-400'
+                  active ? 'text-cyan-700 dark:text-cyan-300' : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 {t(item.labelKey)}

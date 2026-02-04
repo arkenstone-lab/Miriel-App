@@ -76,7 +76,7 @@ export function TimePickerModal({
           </Text>
 
           {/* Preview */}
-          <Text className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 text-center mb-5">
+          <Text className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 text-center mb-5">
             {pad(selectedHour)}:{pad(selectedMinute)}
           </Text>
 
@@ -97,7 +97,7 @@ export function TimePickerModal({
                     key={h}
                     className={`py-2.5 px-3 items-center ${
                       h === selectedHour
-                        ? 'bg-indigo-100 dark:bg-indigo-900/40'
+                        ? 'bg-cyan-100 dark:bg-gray-700/40'
                         : ''
                     }`}
                     onPress={() => setSelectedHour(h)}
@@ -106,7 +106,7 @@ export function TimePickerModal({
                     <Text
                       className={`text-base ${
                         h === selectedHour
-                          ? 'font-bold text-indigo-600 dark:text-indigo-400'
+                          ? 'font-bold text-cyan-600 dark:text-cyan-400'
                           : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
@@ -132,7 +132,7 @@ export function TimePickerModal({
                     key={m}
                     className={`py-2.5 px-3 items-center ${
                       m === selectedMinute
-                        ? 'bg-indigo-100 dark:bg-indigo-900/40'
+                        ? 'bg-cyan-100 dark:bg-gray-700/40'
                         : ''
                     }`}
                     onPress={() => setSelectedMinute(m)}
@@ -141,7 +141,7 @@ export function TimePickerModal({
                     <Text
                       className={`text-base ${
                         m === selectedMinute
-                          ? 'font-bold text-indigo-600 dark:text-indigo-400'
+                          ? 'font-bold text-cyan-600 dark:text-cyan-400'
                           : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
@@ -165,7 +165,7 @@ export function TimePickerModal({
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-1 py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 items-center"
+              className="flex-1 py-3 rounded-xl bg-cyan-600 dark:bg-cyan-500 items-center"
               onPress={handleSave}
               activeOpacity={0.8}
             >

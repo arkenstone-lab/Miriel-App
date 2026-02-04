@@ -23,7 +23,7 @@ export default function TabLayout() {
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#4f46e5',
+          tabBarActiveTintColor: '#06b6d4',
           tabBarInactiveTintColor: '#9ca3af',
           headerStyle: {
             backgroundColor: isDark ? '#111827' : '#ffffff',
@@ -51,6 +51,14 @@ export default function TabLayout() {
           options={{
             title: t('tab.home'),
             tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+            headerRight: () => (
+              <Pressable
+                onPress={() => router.push('/settings' as any)}
+                style={{ marginRight: 16 }}
+              >
+                <FontAwesome name="cog" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
+              </Pressable>
+            ),
           }}
         />
         <Tabs.Screen
@@ -63,7 +71,7 @@ export default function TabLayout() {
                 onPress={() => router.push('/entries/new')}
                 style={{ marginRight: 16 }}
               >
-                <FontAwesome name="plus" size={20} color="#4f46e5" />
+                <FontAwesome name="plus" size={20} color="#06b6d4" />
               </Pressable>
             ),
           }}
@@ -113,8 +121,8 @@ export default function TabLayout() {
           style={[
             styles.fab,
             {
-              backgroundColor: '#4f46e5',
-              shadowColor: '#4f46e5',
+              backgroundColor: '#06b6d4',
+              shadowColor: '#06b6d4',
             },
           ]}
         >

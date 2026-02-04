@@ -34,7 +34,7 @@ export function RecentSummaryCard() {
           onPress={() => router.push('/(tabs)/summary')}
           activeOpacity={0.7}
         >
-          <Text className="text-xs text-indigo-600 dark:text-indigo-400">{tCommon('action.seeMore')}</Text>
+          <Text className="text-xs text-cyan-600 dark:text-cyan-400">{tCommon('action.seeMore')}</Text>
         </TouchableOpacity>
       </View>
       <Text className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">{latest.period_start}</Text>

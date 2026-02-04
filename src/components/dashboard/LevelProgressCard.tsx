@@ -15,15 +15,15 @@ export function LevelProgressCard({ level }: LevelProgressCardProps) {
   return (
     <Card className="flex-1">
       <View className="items-center">
-        <View className="bg-indigo-100 dark:bg-indigo-800/40 w-10 h-10 rounded-full items-center justify-center mb-1">
-          <Text className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{level.level}</Text>
+        <View className="bg-cyan-100 dark:bg-gray-700/40 w-10 h-10 rounded-full items-center justify-center mb-1">
+          <Text className="text-lg font-bold text-cyan-600 dark:text-cyan-400">{level.level}</Text>
         </View>
         <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100">{level.title}</Text>
       </View>
       <View className="mt-3">
         <View className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <View
-            className="h-full bg-indigo-500 rounded-full"
+            className="h-full bg-cyan-500 rounded-full"
             style={{ width: `${progressPercent}%` }}
           />
         </View>

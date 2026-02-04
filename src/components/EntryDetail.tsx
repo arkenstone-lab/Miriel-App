@@ -80,7 +80,7 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
                 className="p-2"
                 activeOpacity={0.7}
               >
-                <FontAwesome name="pencil" size={16} color={isDark ? '#818cf8' : '#4f46e5'} />
+                <FontAwesome name="pencil" size={16} color={isDark ? '#22d3ee' : '#06b6d4'} />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleDelete} className="p-2" activeOpacity={0.7}>
                 <FontAwesome name="trash-o" size={16} color="#ef4444" />
@@ -114,7 +114,7 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-2.5 rounded-xl bg-indigo-600 dark:bg-indigo-500 items-center"
+                className="flex-1 py-2.5 rounded-xl bg-cyan-600 dark:bg-cyan-500 items-center"
                 onPress={handleSave}
                 disabled={updateEntry.isPending}
                 activeOpacity={0.8}
@@ -137,7 +137,7 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
             <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('label.tags')}</Text>
             <View className="flex-row flex-wrap gap-2">
               {entry.tags.map((tag, i) => (
-                <Badge key={i} label={tag} variant="indigo" size="md" />
+                <Badge key={i} label={tag} variant="cyan" size="md" />
               ))}
             </View>
           </View>

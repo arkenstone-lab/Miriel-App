@@ -47,7 +47,7 @@ export default function SetupLanguageScreen() {
                   key={lang.code}
                   className={`w-full flex-row items-center px-5 py-4 rounded-2xl border-2 ${
                     isSelected
-                      ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-950'
+                      ? 'border-cyan-600 dark:border-cyan-400 bg-cyan-50 dark:bg-gray-800'
                       : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
                   }`}
                   onPress={() => handleSelect(lang.code)}
@@ -56,13 +56,13 @@ export default function SetupLanguageScreen() {
                   <Text className="text-2xl mr-4">{lang.flag}</Text>
                   <Text className={`text-lg font-semibold ${
                     isSelected
-                      ? 'text-indigo-600 dark:text-indigo-400'
+                      ? 'text-cyan-600 dark:text-cyan-400'
                       : 'text-gray-900 dark:text-gray-100'
                   }`}>
                     {lang.label}
                   </Text>
                   {isSelected && (
-                    <View className="ml-auto w-6 h-6 rounded-full bg-indigo-600 dark:bg-indigo-400 items-center justify-center">
+                    <View className="ml-auto w-6 h-6 rounded-full bg-cyan-600 dark:bg-cyan-400 items-center justify-center">
                       <Text className="text-white text-xs font-bold">✓</Text>
                     </View>
                   )}
@@ -73,13 +73,13 @@ export default function SetupLanguageScreen() {
 
           {/* Page indicators */}
           <View className="flex-row items-center gap-2 mb-8">
-            <View className="w-6 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+            <View className="w-6 h-2 rounded-full bg-cyan-600 dark:bg-cyan-400" />
             <View className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
             <View className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
           </View>
 
           <TouchableOpacity
-            className="w-full bg-indigo-600 dark:bg-indigo-500 py-4 rounded-2xl items-center"
+            className="w-full bg-cyan-600 dark:bg-cyan-500 py-4 rounded-2xl items-center"
             onPress={handleNext}
             activeOpacity={0.8}
           >

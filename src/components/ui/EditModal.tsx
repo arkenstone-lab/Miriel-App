@@ -107,7 +107,7 @@ export function EditModal({
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-3 rounded-xl bg-indigo-600 dark:bg-indigo-500 items-center"
+                className="flex-1 py-3 rounded-xl bg-cyan-600 dark:bg-cyan-500 items-center"
                 onPress={handleSave}
                 activeOpacity={0.8}
               >

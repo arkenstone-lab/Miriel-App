@@ -31,7 +31,7 @@ import { Card } from '@/components/ui/Card'
 
 <Card>content</Card>                              // static card
 <Card onPress={handlePress}>tappable card</Card>  // touchable card
-<Card className="border-indigo-300">custom</Card> // extra classes
+<Card className="border-cyan-300">custom</Card> // extra classes
 ```
 
 Provides: `bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-100 dark:border-gray-800`.
@@ -41,12 +41,12 @@ Provides: `bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-100 dark:
 ```tsx
 import { Badge } from '@/components/ui/Badge'
 
-<Badge label="project:A" variant="indigo" />
+<Badge label="project:A" variant="cyan" />
 <Badge label="3 done" variant="green" size="md" />
 <Badge label="urgent" variant="red" onPress={handlePress} />
 ```
 
-Variants: `indigo`, `gray`, `green`, `red`, `amber`, `gold`. All have dark mode support built in.
+Variants: `cyan`, `gray`, `green`, `red`, `amber`, `gold`. All have dark mode support built in.
 
 ### EmptyState
 
@@ -65,7 +65,7 @@ Centered vertically. Use `emoji` or `icon` (FontAwesome name), not both.
 ### LoadingState
 
 ```tsx
-<LoadingState />               // default indigo spinner
+<LoadingState />               // default cyan spinner
 <LoadingState color="#22c55e" /> // custom color
 ```
 

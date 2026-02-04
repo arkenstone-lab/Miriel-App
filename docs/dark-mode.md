@@ -71,16 +71,24 @@ When adding `dark:` variants, follow this table consistently:
 | `border-gray-200` | `dark:border-gray-700` |
 | `border-gray-300` | `dark:border-gray-600` |
 
-### Brand/Accent Colors
+### Brand/Accent Colors (Cyan)
 
-| Light | Dark |
-|-------|------|
-| `bg-indigo-50` | `dark:bg-indigo-900/30` |
-| `bg-indigo-100` | `dark:bg-indigo-800/40` |
-| `text-indigo-600` | `dark:text-indigo-400` |
-| `text-indigo-700` | `dark:text-indigo-300` |
-| `border-indigo-100` | `dark:border-indigo-800` |
-| `border-indigo-300` | `dark:border-indigo-700` |
+| Light | Dark | Notes |
+|-------|------|-------|
+| `bg-cyan-50` | `dark:bg-gray-800/50` | 배경은 다크모드에서 순수 그레이 |
+| `bg-cyan-100` | `dark:bg-gray-700/40` | 선택 상태 배경도 그레이 |
+| `text-cyan-600` | `dark:text-cyan-400` | 텍스트 액센트는 시안 유지 |
+| `text-cyan-700` | `dark:text-cyan-300` | 텍스트 액센트는 시안 유지 |
+| `border-cyan-100` | `dark:border-gray-700` | 보더는 다크모드에서 그레이 |
+| `border-cyan-300` | `dark:border-gray-600` | 보더는 다크모드에서 그레이 |
+
+### JS Hex Code Reference (Cyan)
+
+| Hex | Tailwind Equivalent | Usage |
+|-----|---------------------|-------|
+| `#06b6d4` | cyan-500 | 기본 액센트 (버튼, FAB, 탭 active, 토글 thumb) |
+| `#22d3ee` | cyan-400 | 밝은 액센트 (다크모드 아이콘, 토글 track) |
+| `#67e8f9` | cyan-300 | 매우 밝은 액센트 (쉐브론, 서브 아이콘) |
 
 ### Semantic Colors (amber, green, red, yellow)
 
@@ -98,9 +106,11 @@ When adding `dark:` variants, follow this table consistently:
 
 ### Keep As-Is (no dark variant needed)
 
-- `bg-indigo-600` (primary buttons — works in both modes)
+- `bg-cyan-600` (primary buttons — works in both modes)
 - `text-white` on colored backgrounds
-- `bg-indigo-500` (filled chart dots)
+- `bg-cyan-500` (filled chart dots, active button backgrounds)
+- `dark:text-cyan-400`, `dark:text-cyan-300` (다크모드 텍스트 액센트 — 시안 유지)
+- `dark:bg-cyan-500` (다크모드 버튼 배경 — 시안 유지)
 
 ## Adding Dark Mode to a New Component
 
