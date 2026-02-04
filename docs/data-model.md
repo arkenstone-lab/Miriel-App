@@ -29,7 +29,7 @@
 | `user_id` | uuid | FK → auth.users, cascade delete |
 | `date` | date | Entry date (YYYY-MM-DD), defaults to today |
 | `raw_text` | text | User's journal entry text |
-| `tags` | text[] | AI-extracted tags (e.g. `["project:A", "person:Kim"]`) |
+| `tags` | text[] | AI-extracted tags (e.g. `["프로젝트:A", "사람:Kim"]`) |
 | `created_at` | timestamptz | Auto |
 | `updated_at` | timestamptz | Auto (trigger) |
 
@@ -105,15 +105,15 @@ Each feature has an `api.ts` with functions that call Supabase:
 | `createEntry(input)` | `INSERT` | Create new entry |
 | `updateEntry(id, input)` | `UPDATE` | Update entry text/tags/date |
 | `deleteEntry(id)` | `DELETE` | Delete entry |
-| `requestTagging(text)` | Edge Function `tagging` | AI tag extraction |
+| `requestTagging(text, aiContext?)` | Edge Function `tagging` | AI tag extraction |
 
 ### Summary API (`features/summary/api.ts`)
 
 | Function | Method | Description |
 |----------|--------|-------------|
 | `fetchSummaries(period, date?)` | `SELECT` | List summaries by period type |
-| `generateSummary(date?)` | Edge Function `generate-summary` | Generate daily summary via AI |
-| `generateWeeklySummary(weekStart?)` | Edge Function `generate-weekly` | Generate weekly review via AI |
+| `generateSummary(date?, aiContext?)` | Edge Function `generate-summary` | Generate daily summary via AI |
+| `generateWeeklySummary(weekStart?, aiContext?)` | Edge Function `generate-weekly` | Generate weekly review via AI |
 
 ### Todo API (`features/todo/api.ts`)
 
@@ -163,10 +163,10 @@ Located in `supabase/functions/`. Each runs on Deno runtime and calls OpenAI GPT
 
 | Function | Input | Output |
 |----------|-------|--------|
-| `tagging` | `{ text }` | `{ tags: string[] }` |
-| `extract-todos` | `{ text, entry_id? }` | `{ todos: Todo[] }` |
-| `generate-summary` | `{ date? }` | `{ summary, sentences }` |
-| `generate-weekly` | `{ week_start? }` | `{ summary, sentences }` |
+| `tagging` | `{ text, ai_context? }` | `{ tags: string[] }` |
+| `extract-todos` | `{ text, entry_id?, ai_context? }` | `{ todos: Todo[] }` |
+| `generate-summary` | `{ date?, ai_context? }` | `{ summary, sentences }` |
+| `generate-weekly` | `{ week_start?, ai_context? }` | `{ summary, sentences }` |
 
 ## ProcessedEntry Schema
 
@@ -189,12 +189,12 @@ Helper functions:
 
 ## Tag Format Convention
 
-Tags use a `prefix:value` format:
+Edge Function이 생성하는 태그는 한국어 `prefix:value` 형식입니다:
 
 ```
-project:Miriel
-person:Kim
-issue:login-bug
+프로젝트:Miriel
+사람:Kim
+이슈:login-bug
 ```
 
-AI-generated tags may also include freeform tags without a prefix. The `processedEntryToTags()` function handles both structured metadata and raw tags.
+> **참고**: `schema.ts`의 `processedEntryToTags()` 함수는 영어 prefix(`project:`, `person:`, `issue:`)를 사용하지만, 현재 코드에서 호출되지 않는 미사용 코드입니다. 실제 태그는 Edge Function `formatTags()`에서 한국어 prefix로 직접 생성됩니다.

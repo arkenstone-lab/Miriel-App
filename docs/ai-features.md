@@ -35,7 +35,7 @@ Edge Function은 `ai_context`가 존재하면 시스템 프롬프트 끝에 `---
 ### 1. `tagging` — 자동 태깅
 
 - **경로**: `supabase/functions/tagging/index.ts`
-- **입력**: `{ text: string }`
+- **입력**: `{ text: string, ai_context?: string }`
 - **출력**: `{ tags: string[] }` (예: `["프로젝트:A", "사람:김대리", "이슈:버그"]`)
 - **프롬프트**:
   ```
@@ -49,7 +49,7 @@ Edge Function은 `ai_context`가 존재하면 시스템 프롬프트 끝에 `---
 ### 2. `extract-todos` — 할일 추출
 
 - **경로**: `supabase/functions/extract-todos/index.ts`
-- **입력**: `{ text: string, entry_id?: string }`
+- **입력**: `{ text: string, entry_id?: string, ai_context?: string }`
 - **출력**: `{ todos: Array<{ text, due_hint }> }`
 - **프롬프트**:
   ```
@@ -64,7 +64,7 @@ Edge Function은 `ai_context`가 존재하면 시스템 프롬프트 끝에 `---
 ### 3. `generate-summary` — 일간 요약
 
 - **경로**: `supabase/functions/generate-summary/index.ts`
-- **입력**: `{ date?: string }` (YYYY-MM-DD, 기본값 오늘)
+- **입력**: `{ date?: string, ai_context?: string }` (date: YYYY-MM-DD, 기본값 오늘)
 - **출력**: `{ summary: Summary, sentences: SummarySentence[] }`
 - **프롬프트**:
   ```
@@ -78,7 +78,7 @@ Edge Function은 `ai_context`가 존재하면 시스템 프롬프트 끝에 `---
 ### 4. `generate-weekly` — 주간 회고
 
 - **경로**: `supabase/functions/generate-weekly/index.ts`
-- **입력**: `{ week_start?: string }` (YYYY-MM-DD, 기본값 이번 주 월요일)
+- **입력**: `{ week_start?: string, ai_context?: string }` (week_start: YYYY-MM-DD, 기본값 이번 주 월요일)
 - **출력**: `{ summary: Summary, sentences: SummarySentence[] }`
 - **프롬프트**:
   ```
@@ -171,10 +171,12 @@ Edge Function은 `ai_context`가 존재하면 시스템 프롬프트 끝에 `---
 | 카테고리 | 파일 경로 |
 |----------|----------|
 | Edge Functions | `supabase/functions/{tagging,extract-todos,generate-summary,generate-weekly}/index.ts` |
-| 클라이언트 API | `src/features/{entry,summary,todo}/api.ts` |
-| React Query 훅 | `src/features/{entry,summary,todo}/hooks.ts` |
+| 클라이언트 API | `src/features/{entry,summary,todo,ai-preferences}/api.ts` |
+| React Query 훅 | `src/features/{entry,summary,todo,ai-preferences}/hooks.ts` |
 | AI 스키마 | `src/features/entry/schema.ts` |
 | 챗봇 상태 | `src/stores/chatStore.ts` |
 | 체크인 질문 | `src/lib/constants.ts` |
+| AI 개인화 컨텍스트 | `src/features/ai-preferences/context.ts` |
+| AI 개인화 타입 | `src/features/ai-preferences/types.ts` |
 | 기록 작성 UI | `app/entries/new.tsx` |
 | 근거 링크 UI | `src/components/EvidenceChip.tsx`, `src/components/SummaryDetailView.tsx` |
