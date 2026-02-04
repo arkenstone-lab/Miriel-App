@@ -97,6 +97,18 @@ import { EditModal } from '@/components/ui/EditModal'
   onSave={handlePasswordSave}  // async — throw to keep modal open
   onClose={() => setVisible(false)}
 />
+
+// Multiline input (custom instructions)
+<EditModal
+  visible={visible}
+  title="Custom Instructions"
+  value={instructions}
+  placeholder="Additional instructions for AI (max 500 chars)"
+  multiline
+  maxLength={500}
+  onSave={handleSave}
+  onClose={() => setVisible(false)}
+/>
 ```
 
 | Prop | Type | Default | Description |
@@ -109,6 +121,7 @@ import { EditModal } from '@/components/ui/EditModal'
 | `placeholder` | string | — | Input placeholder |
 | `maxLength` | number | — | Max input length |
 | `secureTextEntry` | boolean | `false` | Password masking |
+| `multiline` | boolean | `false` | Multi-line text input (min-height 100, top-aligned) |
 
 ### SegmentedControl
 
