@@ -89,18 +89,25 @@ useEffect(() => {
 
 1. **Language** — Segmented control: System / 한국어 / English
 2. **Theme** — Segmented control: System / Light / Dark
-3. **Notifications** — Toggle + morning/evening time pickers (native only)
-4. **Account**
+3. **Notifications** — Toggle + morning/evening time pickers + weekly review day/time
+4. **AI Personalization** — Customize how AI processes entries
+   - Share Persona (Switch toggle) — 닉네임/직업/관심사를 AI에 전달할지
+   - Summary Style (EditModal) — 요약 스타일 (예: "간결하게", "구체적으로")
+   - Focus Areas (6 chip toggles) — 프로젝트관리, 자기개발, 업무효율, 커뮤니케이션, 건강/웰빙, 학습/성장
+   - Custom Instructions (EditModal multiline, 500자) — AI에 추가 전달할 자유 텍스트
+   - Data: `user_ai_preferences` 테이블 (별도 RLS — 본인만 CRUD)
+   - Hooks: `useAiPreferences()`, `useUpsertAiPreferences()` (`src/features/ai-preferences/`)
+5. **Account**
    - Username (read-only, shows `@username`)
    - Nickname (EditModal)
    - Email (EditModal → `setEmail`)
    - Phone (EditModal → `setPhone`)
    - Password (EditModal with `secureTextEntry` → `changePassword`)
    - Sign Out (confirmation alert)
-5. **Privacy & Data** — Inline privacy notice
-6. **Support** — External links (homepage, Telegram, Discord, X)
-7. **Legal** — Terms of Service, Privacy Policy (LegalModal)
-8. **Version** — App version number
+6. **Privacy & Data** — Inline privacy notice
+7. **Support** — External links (homepage, Telegram, Discord, X)
+8. **Legal** — Terms of Service, Privacy Policy (LegalModal)
+9. **Version** — App version number
 
 ### Navigation Entry Points
 
@@ -145,3 +152,4 @@ Namespace: `privacy`
 5. For profiles: add fetch in `loadUserData()` and update action with `supabase.from('profiles').update()`
 6. Add translation keys to `settings.json` (both ko and en)
 7. Add UI section in `app/settings.tsx`
+8. For AI-related settings, use `user_ai_preferences` table + `src/features/ai-preferences/` module (not settingsStore)

@@ -41,6 +41,7 @@ Supabase 대시보드 > SQL Editor에서 아래 파일을 순서대로 실행해
 supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_add_sentences_data.sql
 supabase/migrations/003_profiles_username.sql
+supabase/migrations/004_user_ai_preferences.sql
 ```
 
 ### 4. Supabase Auth 설정
@@ -109,7 +110,8 @@ src/
 ├── features/                     # 기능별 API + hooks
 │   ├── entry/                    # 기록 (types, api, hooks)
 │   ├── summary/                  # 요약 (types, api, hooks)
-│   └── todo/                     # 할 일 (types, api, hooks)
+│   ├── todo/                     # 할 일 (types, api, hooks)
+│   └── ai-preferences/           # AI 개인화 (types, api, hooks, context)
 ├── hooks/
 │   └── useResponsiveLayout.ts    # 반응형 분기 (isDesktop/isMobile)
 ├── lib/
@@ -126,7 +128,8 @@ supabase/
 ├── migrations/                   # DB 스키마
 │   ├── 001_initial_schema.sql    # entries, summaries, todos + RLS
 │   ├── 002_add_sentences_data.sql # summaries에 sentences_data JSONB 추가
-│   └── 003_profiles_username.sql # profiles 테이블 + RPC 함수 3개
+│   ├── 003_profiles_username.sql # profiles 테이블 + RPC 함수 3개
+│   └── 004_user_ai_preferences.sql # AI 개인화 설정 테이블
 └── functions/                    # Edge Functions (Deno)
     ├── tagging/                  # 자동 태깅 (프로젝트/사람/이슈 추출)
     ├── generate-summary/         # 일간 요약 생성 + 문장별 근거 링크
@@ -142,6 +145,7 @@ supabase/
 - **일간 요약**: AI가 하루 기록을 요약 + 문장별 근거 링크(EvidenceChip)
 - **주간 회고**: 한 주 핵심 3~5개 포인트 + 근거 링크
 - **할 일 추출**: 기록에서 action item 자동 추출 + 완료 관리 + 근거 Entry 링크
+- **AI 개인화**: 요약 스타일, 집중 영역, 커스텀 지시로 AI 출력 맞춤화 + 프로필 정보 공유 토글
 - **반응형 레이아웃**: Desktop(사이드바 + 2패널) / Mobile(하단 탭) 자동 전환
 - **기록 관리**: 기록 상세 보기, 편집, 삭제 + 관련 할일/요약 표시
 - **계정 관리**: 이메일/전화번호/비밀번호 변경, 프로필 편집(아바타/닉네임/페르소나)
