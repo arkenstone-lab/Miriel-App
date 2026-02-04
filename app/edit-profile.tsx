@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
-import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore } from '@/stores/authStore'
-import { pickAndUploadAvatar, deleteAvatar } from '@/lib/avatar'
+import { pickImageForAvatar, uploadAvatar, deleteAvatar } from '@/lib/avatar'
 import { AppError, showErrorAlert } from '@/lib/errors'
+import { AvatarCropModal } from '@/components/ui/AvatarCropModal'
 
 const GENDER_OPTIONS = ['male', 'female'] as const
 
@@ -37,26 +37,52 @@ export default function EditProfileScreen() {
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Web crop modal state
+  const [cropSource, setCropSource] = useState('')
+  const [showCropModal, setShowCropModal] = useState(false)
+
   const toggleInterest = (key: string) => {
     setLocalInterests((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     )
   }
 
-  const handlePickAvatar = async () => {
+  const doUpload = async (uri: string, mimeType?: string) => {
     if (!user) return
     setUploading(true)
     try {
-      const url = await pickAndUploadAvatar(user.id)
-      if (url) {
-        setLocalAvatarUrl(url)
-        await setAvatarUrl(url)
-      }
+      const url = await uploadAvatar(user.id, uri, mimeType)
+      setLocalAvatarUrl(url)
+      await setAvatarUrl(url)
     } catch (error: unknown) {
       showErrorAlert('', error)
     } finally {
       setUploading(false)
     }
+  }
+
+  const handlePickAvatar = async () => {
+    if (!user) return
+    try {
+      const asset = await pickImageForAvatar()
+      if (!asset) return
+
+      if (Platform.OS === 'web') {
+        // Show crop modal on web (allowsEditing doesn't work)
+        setCropSource(asset.uri)
+        setShowCropModal(true)
+      } else {
+        // Native: already cropped by system image picker
+        await doUpload(asset.uri, asset.mimeType || undefined)
+      }
+    } catch (error: unknown) {
+      showErrorAlert('', error)
+    }
+  }
+
+  const handleCropComplete = async (croppedUri: string) => {
+    setShowCropModal(false)
+    await doUpload(croppedUri, 'image/jpeg')
   }
 
   const handleRemoveAvatar = async () => {
@@ -83,7 +109,11 @@ export default function EditProfileScreen() {
         occupation: localOccupation,
         interests: localInterests,
       })
-      router.back()
+      if (router.canGoBack()) {
+        router.back()
+      } else {
+        router.replace('/(tabs)' as any)
+      }
     } catch (error: unknown) {
       showErrorAlert('', new AppError('PROFILE_002', error))
     } finally {
@@ -137,6 +167,9 @@ export default function EditProfileScreen() {
               </TouchableOpacity>
             ) : null}
           </View>
+          <Text className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            {t('profile.photoSizeHint')}
+          </Text>
         </View>
 
         {/* Nickname */}
@@ -248,6 +281,14 @@ export default function EditProfileScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Web crop modal */}
+      <AvatarCropModal
+        visible={showCropModal}
+        imageUri={cropSource}
+        onCrop={handleCropComplete}
+        onCancel={() => setShowCropModal(false)}
+      />
     </ScrollView>
   )
 }
