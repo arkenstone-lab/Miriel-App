@@ -1,0 +1,19 @@
+{
+  "language": {
+    "title": "Choose Your Language",
+    "subtitle": "Detected from your device"
+  },
+  "theme": {
+    "title": "Choose Your Theme",
+    "subtitle": "You can change this later in Settings",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "welcome": {
+    "title": "Welcome to Miriel",
+    "subtitle": "Your AI-powered reflection journal",
+    "signUp": "Create Account",
+    "signIn": "I Already Have an Account"
+  },
+  "next": "Next"
+}
