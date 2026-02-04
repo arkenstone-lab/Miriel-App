@@ -4,7 +4,7 @@ import { supabase } from './supabase'
 import { AppError } from './errors'
 
 const BUCKET = 'avatars'
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+export const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2MB
 
 /** Derive file extension from MIME type */
 function extFromMime(mime: string): string {
@@ -18,45 +18,47 @@ function extFromMime(mime: string): string {
 }
 
 /**
- * Open image picker with crop UI, upload selected image to Supabase Storage,
- * and return the public URL. Returns null if the user cancels.
- *
- * - Crop: expo-image-picker allowsEditing + aspect [1,1]
- * - File size limit: 2 MB
+ * Open image picker and return the selected asset.
+ * On native, allowsEditing shows the system crop UI.
+ * On web, allowsEditing is ignored — crop is handled separately.
  */
-export async function pickAndUploadAvatar(userId: string): Promise<string | null> {
+export async function pickImageForAvatar(): Promise<ImagePicker.ImagePickerAsset | null> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
-    allowsEditing: true,
+    allowsEditing: Platform.OS !== 'web',
     aspect: [1, 1],
     quality: 0.7,
   })
 
   if (result.canceled || !result.assets[0]) return null
+  return result.assets[0]
+}
 
-  const asset = result.assets[0]
-  const mimeType = asset.mimeType || 'image/jpeg'
+/**
+ * Upload an image (by URI) to Supabase Storage and return the public URL.
+ * Enforces 2 MB file size limit.
+ */
+export async function uploadAvatar(
+  userId: string,
+  uri: string,
+  mimeType = 'image/jpeg',
+): Promise<string> {
   const ext = extFromMime(mimeType)
   const path = `${userId}/avatar.${ext}`
 
-  // Check file size from asset metadata first
-  if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
-    throw new AppError('PROFILE_003')
-  }
-
   // Convert URI to blob
-  const response = await fetch(asset.uri)
+  const response = await fetch(uri)
   const blob = await response.blob()
 
-  // Double-check size from blob (fileSize may not be available on all platforms)
-  if (blob.size > MAX_FILE_SIZE) {
+  // Check file size (2 MB limit)
+  if (blob.size > MAX_AVATAR_SIZE) {
     throw new AppError('PROFILE_003')
   }
 
-  // On web, convert to ArrayBuffer for reliable Supabase upload
-  // (blob URLs and data URIs can cause issues with direct blob upload)
-  const uploadBody: Blob | ArrayBuffer =
-    Platform.OS === 'web' ? await blob.arrayBuffer() : blob
+  // On web, wrap as File for reliable Supabase Storage upload
+  const uploadBody = Platform.OS === 'web'
+    ? new File([blob], `avatar.${ext}`, { type: mimeType })
+    : blob
 
   const { error } = await supabase.storage
     .from(BUCKET)
@@ -68,7 +70,6 @@ export async function pickAndUploadAvatar(userId: string): Promise<string | null
   if (error) throw new AppError('PROFILE_001', error)
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
-  // Append timestamp to bust cache after re-upload
   return `${data.publicUrl}?t=${Date.now()}`
 }
 
