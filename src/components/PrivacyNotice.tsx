@@ -15,9 +15,9 @@ export function PrivacyNotice({ mode }: PrivacyNoticeProps) {
   if (mode === 'banner' && hasSeenPrivacyNotice) return null
 
   return (
-    <Card className="border-indigo-100 dark:border-indigo-800">
+    <Card className="border-cyan-100 dark:border-gray-700">
       <View className="flex-row items-start mb-2">
-        <FontAwesome name="shield" size={18} color="#4f46e5" style={{ marginTop: 2 }} />
+        <FontAwesome name="shield" size={18} color="#06b6d4" style={{ marginTop: 2 }} />
         <Text className="ml-3 text-base font-semibold text-gray-900 dark:text-gray-100">
           {t('notice.title')}
         </Text>
@@ -27,7 +27,7 @@ export function PrivacyNotice({ mode }: PrivacyNoticeProps) {
       </Text>
       {mode === 'banner' && (
         <TouchableOpacity
-          className="bg-indigo-600 rounded-lg py-2.5 items-center"
+          className="bg-cyan-600 rounded-lg py-2.5 items-center"
           onPress={acknowledgePrivacyNotice}
           activeOpacity={0.7}
         >

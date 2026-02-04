@@ -25,7 +25,7 @@ export function SegmentedControl<T extends string>({
             <Text
               className={`text-sm font-medium ${
                 active
-                  ? 'text-indigo-600 dark:text-indigo-400'
+                  ? 'text-cyan-600 dark:text-cyan-400'
                   : 'text-gray-500 dark:text-gray-400'
               }`}
             >

@@ -18,6 +18,8 @@
     "morningLabel": "Morning — Check to-dos & plan",
     "eveningLabel": "Evening — Write your journal",
     "allowNotifications": "Allow Notifications",
+    "allowAndContinue": "Allow Notifications & Continue",
+    "continueWithout": "Continue Without Notifications",
     "permissionGranted": "Notifications enabled",
     "permissionDeniedInline": "You can enable this later in Settings"
   },

@@ -1,21 +1,24 @@
 import { useState, useRef } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { Link } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
-import { showErrorAlert } from '@/lib/errors'
+import { getErrorMessage } from '@/lib/errors'
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorText, setErrorText] = useState('')
   const passwordRef = useRef<TextInput>(null)
   const signIn = useAuthStore((s) => s.signIn)
   const { t } = useTranslation('auth')
 
   const handleLogin = async () => {
+    setErrorText('')
+
     if (!username || !password) {
-      Alert.alert(t('login.alertTitle'), t('login.alertFillFields'))
+      setErrorText(t('login.alertFillFields'))
       return
     }
 
@@ -23,7 +26,7 @@ export default function LoginScreen() {
     try {
       await signIn(username, password)
     } catch (error: unknown) {
-      showErrorAlert(t('login.failedTitle'), error)
+      setErrorText(getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -48,7 +51,7 @@ export default function LoginScreen() {
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder={t('login.usernamePlaceholder')}
             value={username}
-            onChangeText={setUsername}
+            onChangeText={(v) => { setUsername(v); setErrorText('') }}
             autoCapitalize="none"
             autoComplete="username"
             returnKeyType="next"
@@ -64,7 +67,7 @@ export default function LoginScreen() {
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder={t('login.passwordPlaceholder')}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(v) => { setPassword(v); setErrorText('') }}
             secureTextEntry
             autoComplete="password"
             returnKeyType="done"
@@ -72,8 +75,15 @@ export default function LoginScreen() {
           />
         </View>
 
+        {/* Inline error message */}
+        {errorText !== '' && (
+          <View className="mb-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <Text className="text-sm text-red-600 dark:text-red-400">{errorText}</Text>
+          </View>
+        )}
+
         <TouchableOpacity
-          className={`rounded-lg py-3.5 ${loading ? 'bg-indigo-400' : 'bg-indigo-600'}`}
+          className={`rounded-lg py-3.5 ${loading ? 'bg-cyan-400' : 'bg-cyan-600'}`}
           onPress={handleLogin}
           disabled={loading}
         >
@@ -101,7 +111,7 @@ export default function LoginScreen() {
           <Text className="text-gray-500 dark:text-gray-400">{t('login.noAccount')}</Text>
           <Link href="/(auth)/signup" asChild>
             <TouchableOpacity>
-              <Text className="text-indigo-600 dark:text-indigo-400 font-semibold">{t('login.signUpLink')}</Text>
+              <Text className="text-cyan-600 dark:text-cyan-400 font-semibold">{t('login.signUpLink')}</Text>
             </TouchableOpacity>
           </Link>
         </View>

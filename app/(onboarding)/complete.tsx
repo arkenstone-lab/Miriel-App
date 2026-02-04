@@ -66,7 +66,7 @@ export default function OnboardingCompleteScreen() {
                 </Text>
               </View>
               <View className="flex-row items-center">
-                <FontAwesome name="moon-o" size={16} color={isDark ? '#818cf8' : '#6366f1'} />
+                <FontAwesome name="moon-o" size={16} color={isDark ? '#22d3ee' : '#22d3ee'} />
                 <Text className="ml-3 text-sm text-gray-600 dark:text-gray-300 flex-1">
                   {t('complete.eveningAlarm')}
                 </Text>
@@ -75,7 +75,7 @@ export default function OnboardingCompleteScreen() {
                 </Text>
               </View>
               <View className="flex-row items-center">
-                <FontAwesome name="calendar" size={16} color={isDark ? '#818cf8' : '#4f46e5'} />
+                <FontAwesome name="calendar" size={16} color={isDark ? '#22d3ee' : '#06b6d4'} />
                 <Text className="ml-3 text-sm text-gray-600 dark:text-gray-300 flex-1">
                   {t('complete.weeklyReview')}
                 </Text>
@@ -94,7 +94,7 @@ export default function OnboardingCompleteScreen() {
 
           {/* Start button */}
           <TouchableOpacity
-            className="w-full bg-indigo-600 dark:bg-indigo-500 py-4 rounded-2xl items-center"
+            className="w-full bg-cyan-600 dark:bg-cyan-500 py-4 rounded-2xl items-center"
             onPress={handleStart}
             activeOpacity={0.8}
           >

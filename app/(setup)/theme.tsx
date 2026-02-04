@@ -47,7 +47,7 @@ export default function SetupThemeScreen() {
                   key={item.code}
                   className={`flex-1 items-center py-6 rounded-2xl border-2 ${
                     isSelected
-                      ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-950'
+                      ? 'border-cyan-600 dark:border-cyan-400 bg-cyan-50 dark:bg-gray-800'
                       : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
                   }`}
                   onPress={() => handleSelect(item.code)}
@@ -56,7 +56,7 @@ export default function SetupThemeScreen() {
                   <Text className="text-4xl mb-3">{item.emoji}</Text>
                   <Text className={`text-base font-semibold ${
                     isSelected
-                      ? 'text-indigo-600 dark:text-indigo-400'
+                      ? 'text-cyan-600 dark:text-cyan-400'
                       : 'text-gray-900 dark:text-gray-100'
                   }`}>
                     {t(`theme.${item.key}`)}
@@ -69,12 +69,12 @@ export default function SetupThemeScreen() {
           {/* Page indicators */}
           <View className="flex-row items-center gap-2 mb-8">
             <View className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
-            <View className="w-6 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+            <View className="w-6 h-2 rounded-full bg-cyan-600 dark:bg-cyan-400" />
             <View className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
           </View>
 
           <TouchableOpacity
-            className="w-full bg-indigo-600 dark:bg-indigo-500 py-4 rounded-2xl items-center"
+            className="w-full bg-cyan-600 dark:bg-cyan-500 py-4 rounded-2xl items-center"
             onPress={handleNext}
             activeOpacity={0.8}
           >

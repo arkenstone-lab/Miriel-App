@@ -17,13 +17,13 @@ export function TodoCompletionCard({ completed, total }: TodoCompletionCardProps
         {t('profile.todoCompletion')}
       </Text>
       <View className="flex-row items-center mb-2">
-        <Text className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+        <Text className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">
           {percent}%
         </Text>
       </View>
       <View className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-2">
         <View
-          className="h-full bg-indigo-500 rounded-full"
+          className="h-full bg-cyan-500 rounded-full"
           style={{ width: `${percent}%` }}
         />
       </View>

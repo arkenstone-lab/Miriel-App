@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, TouchableOpacity } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
-import { AppError, showErrorAlert } from '@/lib/errors'
+import { AppError, getErrorMessage } from '@/lib/errors'
 
 const COOLDOWN_SECONDS = 60
 
@@ -14,6 +14,8 @@ export default function VerifyEmailScreen() {
 
   const [resending, setResending] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const [statusText, setStatusText] = useState('')
+  const [statusType, setStatusType] = useState<'success' | 'error'>('success')
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -33,16 +35,19 @@ export default function VerifyEmailScreen() {
     if (!email || resending || cooldown > 0) return
 
     setResending(true)
+    setStatusText('')
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
       })
       if (error) throw new AppError('AUTH_014', error)
-      Alert.alert(t('verify.resendSuccessTitle'), t('verify.resendSuccessMessage'))
+      setStatusType('success')
+      setStatusText(t('verify.resendSuccessMessage'))
       setCooldown(COOLDOWN_SECONDS)
     } catch (error: unknown) {
-      showErrorAlert(t('verify.resendFailedTitle'), error)
+      setStatusType('error')
+      setStatusText(getErrorMessage(error))
     } finally {
       setResending(false)
     }
@@ -65,9 +70,24 @@ export default function VerifyEmailScreen() {
         {t('verify.description', { email: email || '' })}
       </Text>
 
+      {/* Inline status message */}
+      {statusText !== '' && (
+        <View className={`mb-4 px-3 py-2.5 rounded-lg border ${
+          statusType === 'success'
+            ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800'
+            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+        }`}>
+          <Text className={`text-sm ${
+            statusType === 'success'
+              ? 'text-cyan-700 dark:text-cyan-300'
+              : 'text-red-600 dark:text-red-400'
+          }`}>{statusText}</Text>
+        </View>
+      )}
+
       {/* Go to Login */}
       <TouchableOpacity
-        className="bg-indigo-600 py-3.5 rounded-lg items-center mb-4"
+        className="bg-cyan-600 py-3.5 rounded-lg items-center mb-4"
         onPress={() => router.replace('/(auth)/login')}
         activeOpacity={0.8}
       >
@@ -83,7 +103,7 @@ export default function VerifyEmailScreen() {
         onPress={handleResend}
         disabled={resendDisabled}
       >
-        <Text className={`text-sm ${resendDisabled ? 'text-gray-300 dark:text-gray-600' : 'text-indigo-600 dark:text-indigo-400'}`}>
+        <Text className={`text-sm ${resendDisabled ? 'text-gray-300 dark:text-gray-600' : 'text-cyan-600 dark:text-cyan-400'}`}>
           {resending
             ? t('verify.resending')
             : cooldown > 0

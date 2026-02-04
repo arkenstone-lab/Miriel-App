@@ -32,7 +32,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     <View className={`mb-3 max-w-[80%] ${isUser ? 'self-end' : 'self-start'}`}>
       <View
         className={`rounded-2xl px-4 py-3 ${
-          isUser ? 'bg-indigo-600' : 'bg-gray-100 dark:bg-gray-800'
+          isUser ? 'bg-cyan-600' : 'bg-gray-100 dark:bg-gray-800'
         }`}
       >
         <Text
@@ -155,7 +155,7 @@ export default function NewEntryScreen() {
         </Text>
         <View className="flex-row gap-3 mt-2">
           {saveFeedback.tags > 0 && (
-            <Badge label={t('create.tagCount', { count: saveFeedback.tags })} variant="indigo" size="md" />
+            <Badge label={t('create.tagCount', { count: saveFeedback.tags })} variant="cyan" size="md" />
           )}
           {saveFeedback.todos > 0 && (
             <Badge label={t('create.todoCount', { count: saveFeedback.todos })} variant="green" size="md" />
@@ -259,7 +259,7 @@ export default function NewEntryScreen() {
           />
           <TouchableOpacity
             className={`rounded-xl px-5 py-3 ${
-              input.trim() ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'
+              input.trim() ? 'bg-cyan-600' : 'bg-gray-300 dark:bg-gray-600'
             }`}
             onPress={handleSend}
             disabled={!input.trim()}

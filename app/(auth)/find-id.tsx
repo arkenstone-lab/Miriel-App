@@ -1,19 +1,24 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
-import { AppError, showErrorAlert } from '@/lib/errors'
+import { AppError, getErrorMessage } from '@/lib/errors'
 
 export default function FindIdScreen() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorText, setErrorText] = useState('')
+  const [resultText, setResultText] = useState('')
   const router = useRouter()
   const { t } = useTranslation('auth')
 
   const handleFindId = async () => {
+    setErrorText('')
+    setResultText('')
+
     if (!email) {
-      Alert.alert(t('findId.alertTitle'), t('findId.alertFillEmail'))
+      setErrorText(t('findId.alertFillEmail'))
       return
     }
 
@@ -25,12 +30,12 @@ export default function FindIdScreen() {
       if (error) throw new AppError('AUTH_011', error)
 
       if (username) {
-        Alert.alert(t('findId.resultTitle'), t('findId.result', { username }))
+        setResultText(t('findId.result', { username }))
       } else {
-        Alert.alert(t('findId.resultTitle'), t('findId.notFound'))
+        setErrorText(t('findId.notFound'))
       }
     } catch (error: unknown) {
-      showErrorAlert(t('findId.resultTitle'), error)
+      setErrorText(getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -57,7 +62,7 @@ export default function FindIdScreen() {
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
             placeholder="email@example.com"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(v) => { setEmail(v); setErrorText(''); setResultText('') }}
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
@@ -66,8 +71,22 @@ export default function FindIdScreen() {
           />
         </View>
 
+        {/* Inline result message */}
+        {resultText !== '' && (
+          <View className="mb-3 px-3 py-2.5 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg border border-cyan-200 dark:border-cyan-800">
+            <Text className="text-sm text-cyan-700 dark:text-cyan-300">{resultText}</Text>
+          </View>
+        )}
+
+        {/* Inline error message */}
+        {errorText !== '' && (
+          <View className="mb-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <Text className="text-sm text-red-600 dark:text-red-400">{errorText}</Text>
+          </View>
+        )}
+
         <TouchableOpacity
-          className={`rounded-lg py-3.5 mb-4 ${loading ? 'bg-indigo-400' : 'bg-indigo-600'}`}
+          className={`rounded-lg py-3.5 mb-4 ${loading ? 'bg-cyan-400' : 'bg-cyan-600'}`}
           onPress={handleFindId}
           disabled={loading}
         >
@@ -81,7 +100,7 @@ export default function FindIdScreen() {
           onPress={() => router.replace('/(auth)/login')}
           activeOpacity={0.7}
         >
-          <Text className="text-sm text-indigo-600 dark:text-indigo-400">
+          <Text className="text-sm text-cyan-600 dark:text-cyan-400">
             {t('findId.goToLogin')}
           </Text>
         </TouchableOpacity>

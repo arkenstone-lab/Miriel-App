@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react'
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
-import { showErrorAlert } from '@/lib/errors'
+import { getErrorMessage } from '@/lib/errors'
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/
 
@@ -14,6 +14,7 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorText, setErrorText] = useState('')
 
   const emailRef = useRef<TextInput>(null)
   const phoneRef = useRef<TextInput>(null)
@@ -24,21 +25,25 @@ export default function SignupScreen() {
   const signUp = useAuthStore((s) => s.signUp)
   const { t } = useTranslation('auth')
 
+  const passwordMismatch = confirmPassword.length > 0 && password !== confirmPassword
+
   const handleSignup = async () => {
+    setErrorText('')
+
     if (!username || !email || !password) {
-      Alert.alert(t('signup.alertTitle'), t('signup.alertFillFields'))
+      setErrorText(t('signup.alertFillFields'))
       return
     }
     if (!USERNAME_REGEX.test(username)) {
-      Alert.alert(t('signup.alertTitle'), t('signup.alertUsernameFormat'))
+      setErrorText(t('signup.alertUsernameFormat'))
       return
     }
     if (password.length < 6) {
-      Alert.alert(t('signup.alertTitle'), t('signup.alertPasswordShort'))
+      setErrorText(t('signup.alertPasswordShort'))
       return
     }
     if (password !== confirmPassword) {
-      Alert.alert(t('signup.alertTitle'), t('signup.alertPasswordMismatch'))
+      setErrorText(t('signup.alertPasswordMismatch'))
       return
     }
 
@@ -50,7 +55,7 @@ export default function SignupScreen() {
       }
       // else: session created → onAuthStateChange routes to onboarding
     } catch (error: unknown) {
-      showErrorAlert(t('signup.failedTitle'), error)
+      setErrorText(getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -146,22 +151,38 @@ export default function SignupScreen() {
         </View>
 
         {/* Confirm Password */}
-        <View className="mb-6">
+        <View className="mb-4">
           <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('signup.confirmPassword')}</Text>
           <TextInput
             ref={confirmPasswordRef}
-            className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
+            className={`border rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 ${
+              passwordMismatch
+                ? 'border-red-400 dark:border-red-500'
+                : 'border-gray-300 dark:border-gray-600'
+            }`}
             placeholder={t('signup.confirmPasswordPlaceholder')}
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={(v) => { setConfirmPassword(v); setErrorText('') }}
             secureTextEntry
             returnKeyType="done"
             onSubmitEditing={handleSignup}
           />
+          {passwordMismatch && (
+            <Text className="text-xs text-red-500 dark:text-red-400 mt-1">
+              {t('signup.alertPasswordMismatch')}
+            </Text>
+          )}
         </View>
 
+        {/* Inline error message */}
+        {errorText !== '' && (
+          <View className="mb-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <Text className="text-sm text-red-600 dark:text-red-400">{errorText}</Text>
+          </View>
+        )}
+
         <TouchableOpacity
-          className={`rounded-lg py-3.5 ${loading ? 'bg-indigo-400' : 'bg-indigo-600'}`}
+          className={`rounded-lg py-3.5 ${loading ? 'bg-cyan-400' : 'bg-cyan-600'}`}
           onPress={handleSignup}
           disabled={loading}
         >
@@ -174,7 +195,7 @@ export default function SignupScreen() {
           <Text className="text-gray-500 dark:text-gray-400">{t('signup.hasAccount')}</Text>
           <Link href="/(auth)/login" asChild>
             <TouchableOpacity>
-              <Text className="text-indigo-600 dark:text-indigo-400 font-semibold">{t('signup.loginLink')}</Text>
+              <Text className="text-cyan-600 dark:text-cyan-400 font-semibold">{t('signup.loginLink')}</Text>
             </TouchableOpacity>
           </Link>
         </View>

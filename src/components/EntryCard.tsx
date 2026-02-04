@@ -36,7 +36,7 @@ export function EntryCard({ entry, onPress, isSelected = false }: EntryCardProps
   return (
     <Card
       onPress={onPress}
-      className={`mb-3 ${isSelected ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : ''}`}
+      className={`mb-3 ${isSelected ? 'border-cyan-300 dark:border-gray-600 bg-cyan-50 dark:bg-gray-800/50' : ''}`}
     >
       <View className="flex-row justify-between items-center mb-2">
         <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">{entry.date}</Text>
@@ -48,7 +48,7 @@ export function EntryCard({ entry, onPress, isSelected = false }: EntryCardProps
       {entry.tags.length > 0 && (
         <View className="flex-row flex-wrap mt-2.5 gap-1.5">
           {entry.tags.slice(0, 3).map((tag, i) => (
-            <Badge key={i} label={tag} variant="indigo" />
+            <Badge key={i} label={tag} variant="cyan" />
           ))}
           {entry.tags.length > 3 && (
             <Text className="text-xs text-gray-400 dark:text-gray-500 self-center ml-1">
