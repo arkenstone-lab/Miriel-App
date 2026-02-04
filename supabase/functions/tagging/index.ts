@@ -59,7 +59,7 @@ serve(async (req) => {
       })
     }
 
-    const { text } = await req.json()
+    const { text, ai_context } = await req.json()
     if (!text) {
       return new Response(JSON.stringify({ error: 'text is required' }), {
         status: 400,
@@ -75,6 +75,10 @@ serve(async (req) => {
       })
     }
 
+    const systemMessage = ai_context
+      ? `${TAGGING_PROMPT}\n\n--- 사용자 정보 ---\n${ai_context}`
+      : TAGGING_PROMPT
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -84,7 +88,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: TAGGING_PROMPT },
+          { role: 'system', content: systemMessage },
           { role: 'user', content: text },
         ],
         response_format: { type: 'json_object' },

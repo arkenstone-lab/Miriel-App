@@ -55,10 +55,14 @@ export async function deleteTodo(id: string): Promise<void> {
 
 export async function extractTodos(
   text: string,
-  entryId?: string
+  entryId?: string,
+  aiContext?: string
 ): Promise<{ todos: Todo[] }> {
+  const body: Record<string, unknown> = { text, entry_id: entryId }
+  if (aiContext) body.ai_context = aiContext
+
   const { data, error } = await supabase.functions.invoke('extract-todos', {
-    body: { text, entry_id: entryId },
+    body,
   })
 
   if (error) throw new AppError('TODO_005', error)

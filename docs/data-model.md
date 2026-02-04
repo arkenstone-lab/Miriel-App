@@ -58,6 +58,19 @@
 | `due_date` | date | Optional due date |
 | `created_at` | timestamptz | Auto |
 
+### `user_ai_preferences`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid | PK |
+| `user_id` | uuid | FK → auth.users, UNIQUE, cascade delete |
+| `summary_style` | text | 요약 스타일 (예: "간결하게") |
+| `focus_areas` | text[] | 집중 영역 배열 |
+| `custom_instructions` | text | 커스텀 지시 (최대 500자) |
+| `share_persona` | boolean | 닉네임/직업/관심사 AI 전달 여부 (default true) |
+| `created_at` | timestamptz | Auto |
+| `updated_at` | timestamptz | Auto (trigger) |
+
 All tables have RLS enabled. Users can only access their own rows.
 
 ## Migrations
@@ -67,6 +80,7 @@ Located in `supabase/migrations/`:
 1. `001_initial_schema.sql` — Creates entries, summaries, todos tables + RLS + indexes
 2. `002_add_sentences_data.sql` — Adds `sentences_data` JSONB column to summaries
 3. `003_profiles_username.sql` — Creates profiles table + RLS + 3 SECURITY DEFINER RPC functions
+4. `004_user_ai_preferences.sql` — Creates user_ai_preferences table + RLS + updated_at trigger
 
 ## TypeScript Interfaces
 
@@ -76,6 +90,7 @@ Defined in `src/features/<name>/types.ts`. These mirror the database columns:
 - `Summary`, `SummarySentence` — `features/summary/types.ts`
 - `Todo` — `features/todo/types.ts`
 - `StreakData`, `LevelInfo`, `EarnedBadge`, `GamificationStats` — `features/gamification/types.ts`
+- `UserAiPreferences`, `UpsertAiPreferencesInput` — `features/ai-preferences/types.ts`
 
 ## API Layer
 
@@ -108,7 +123,14 @@ Each feature has an `api.ts` with functions that call Supabase:
 | `fetchTodosByEntry(entryId)` | `SELECT` | Todos linked to a specific entry |
 | `updateTodo(id, updates)` | `UPDATE` | Toggle status, edit text |
 | `deleteTodo(id)` | `DELETE` | Delete todo |
-| `extractTodos(text, entryId?)` | Edge Function `extract-todos` | AI todo extraction |
+| `extractTodos(text, entryId?, aiContext?)` | Edge Function `extract-todos` | AI todo extraction |
+
+### AI Preferences API (`features/ai-preferences/api.ts`)
+
+| Function | Method | Description |
+|----------|--------|-------------|
+| `fetchAiPreferences()` | `SELECT` | Get current user's AI preferences (null if none) |
+| `upsertAiPreferences(input)` | `UPSERT` | Create or update AI preferences |
 
 ## React Query Hooks
 
@@ -122,6 +144,7 @@ useSummaries(period, date?) // queryKey: ['summaries', period, date]
 useTodos(status?)          // queryKey: ['todos', status]
 useTodosByEntry(entryId)   // queryKey: ['todos', 'entry', entryId]
 useGamificationStats()     // queryKey: ['gamification']
+useAiPreferences()         // queryKey: ['ai-preferences']
 
 // Mutations (all invalidate relevant queries on success)
 useCreateEntry()
@@ -130,6 +153,7 @@ useDeleteEntry()
 useGenerateSummary()
 useGenerateWeeklySummary()
 useUpdateTodo()
+useUpsertAiPreferences()
 useDeleteTodo()
 ```
 

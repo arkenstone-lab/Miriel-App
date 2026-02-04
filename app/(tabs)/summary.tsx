@@ -3,6 +3,9 @@ import { View, Text, FlatList } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSummaries, useGenerateSummary, useGenerateWeeklySummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { useAiPreferences } from '@/features/ai-preferences/hooks'
+import { buildAiContext } from '@/features/ai-preferences/context'
 import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { SummaryDetailView } from '@/components/SummaryDetailView'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
@@ -82,6 +85,8 @@ export default function SummaryScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { t } = useTranslation('summary')
   const { t: tCommon } = useTranslation('common')
+  const { data: aiPrefs } = useAiPreferences()
+  const { nickname, occupation, interests } = useSettingsStore()
 
   const selectedSummary = summaries?.find((s) => s.id === selectedId)
 
@@ -102,7 +107,8 @@ export default function SummaryScreen() {
   }
 
   const handleGenerate = () => {
-    generateMutation.mutate(undefined)
+    const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
+    generateMutation.mutate(aiContext ? { aiContext } : undefined)
   }
 
   const handleSelect = (summary: Summary) => {

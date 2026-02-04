@@ -123,6 +123,18 @@ interface UserStats {
   total_entries: number;
   updated_at: timestamp;
 }
+
+// UserAiPreferences (AI 개인화 설정)
+interface UserAiPreferences {
+  id: string;
+  user_id: string;           // FK → auth.users (UNIQUE)
+  summary_style: string;     // 요약 스타일 ("간결하게", "구체적으로" 등)
+  focus_areas: string[];     // 집중 영역 ("프로젝트관리", "자기개발" 등)
+  custom_instructions: string; // 사용자 커스텀 지시 (최대 500자)
+  share_persona: boolean;    // 닉네임/직업/관심사를 AI에 전달할지
+  created_at: timestamp;
+  updated_at: timestamp;
+}
 ```
 
 ---
@@ -250,6 +262,7 @@ interface UserStats {
 - [x] 일일 기록 1회 제한 (useTodayEntry 훅 + 기존 기록 편집으로 autoEdit 리다이렉트)
 - [x] 주간 회고 1회 제한 (이번 주 회고 존재 시 생성 버튼 비활성화)
 - [x] 설정 화면 주간 회고 섹션 (요일/시간 — DayPickerModal + TimePickerModal)
+- [x] AI 개인화 (user_ai_preferences 테이블 + 설정 UI + Edge Function ai_context 주입)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -427,6 +440,9 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-04 | 일일 기록 1회 제한 — 기존 기록 편집으로 리다이렉트 | 하루 한 번 기록이라는 제품 철학, 추가 기록 대신 기존 기록 보완 유도 | 제한 없이 다중 기록 허용 |
 | 2026-02-04 | 주간 회고 1회 제한 — 이번 주 월요일 기준 체크 | 중복 생성 방지, getMonday()로 현재 주 시작일 계산 후 period_start 비교 | 제한 없이 다중 생성 허용 |
 | 2026-02-04 | DayPickerModal을 공유 컴포넌트로 구현 | TimePickerModal 패턴 재사용, 온보딩과 설정 화면 모두에서 사용 | 인라인 선택 UI |
+| 2026-02-04 | AI 개인화를 별도 user_ai_preferences 테이블로 구현 | user_metadata는 이미 과밀, 별도 테이블로 프라이버시 분리 + CRUD 단순화 | user_metadata에 추가 |
+| 2026-02-04 | Edge Function에 ai_context를 클라이언트가 전달 (DB 직접 조회 안 함) | Edge Function 수정 최소화, 사용자가 전달 정보 클라이언트에서 제어 | Edge Function에서 DB 직접 조회 |
+| 2026-02-04 | EditModal에 multiline prop 추가 | 커스텀 지시 입력에 여러 줄 필요, 기존 컴포넌트 확장으로 일관된 UX | 별도 TextAreaModal 생성 |
 | | | | |
 
 ---
@@ -525,6 +541,10 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
   → 'true' === 'true' 문자열 비교, autoEditApplied 플래그로 1회만 적용 (무한 루프 방지)
 - 주간 회고 제한: getMonday()로 현재 주 월요일 계산 시 getDay()가 0(일요일)인 경우 -6 보정 필요
   → day === 0 ? -6 : 1 로 처리
+- AI 개인화: buildAiContext()는 prefs가 null이면 undefined 반환 → Edge Function에 ai_context 미포함 (기존 동작 유지)
+  → focus_areas 토글 시 번역된 라벨 문자열로 저장 → 언어 변경 시 기존 선택이 매칭 안 될 수 있음 (데모 범위에서는 무시)
+- user_ai_preferences: UPSERT(onConflict: user_id) 사용 → 첫 저장 시 INSERT, 이후 UPDATE
+  → updated_at 트리거는 update_updated_at_column() 함수 재사용 (001_initial_schema.sql에 정의)
 ```
 
 ---
@@ -539,6 +559,7 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-04 | v0.4 | 리브랜딩 + 에러 코드 시스템 + 비밀번호 확인 (ReflectLog→Miriel, AppError 33코드, 회원가입 UX 개선) | Chris |
 | 2026-02-04 | v0.5 | 초기 설정 플로우 (첫 실행 시 언어→테마→환영 3단계, setup i18n, 라우팅 가드 확장) | Chris |
 | 2026-02-04 | v0.6 | 온보딩 리디자인 + 알림 확장 + 기록/회고 제한 + 웹 알림 | Chris |
+| 2026-02-04 | v0.7 | AI 개인화 (user_ai_preferences 테이블, 설정 UI, Edge Function ai_context 주입, EditModal multiline) | Chris |
 | | | | |
 
 <details>
@@ -743,6 +764,54 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 - `settings.json` (ko/en): 주간 회고 섹션 + 요일 이름 (days/daysShort) + 알림 제목/본문
 - `entry.json` (ko/en): 일일 제한 메시지 (alreadyRecordedToday, redirectingToEdit)
 - `summary.json` (ko/en): 주간 제한 메시지 (alreadyGenerated, alreadyGeneratedDesc)
+
+</details>
+
+<details>
+<summary>v0.7 상세 이력 (클릭하여 펼치기)</summary>
+
+#### AI 개인화 (user_ai_preferences)
+- `supabase/migrations/004_user_ai_preferences.sql`: user_ai_preferences 테이블 (RLS + updated_at 트리거)
+- `src/features/ai-preferences/types.ts`: UserAiPreferences, UpsertAiPreferencesInput 타입
+- `src/features/ai-preferences/api.ts`: fetchAiPreferences (SELECT), upsertAiPreferences (UPSERT)
+- `src/features/ai-preferences/hooks.ts`: useAiPreferences (useQuery), useUpsertAiPreferences (useMutation)
+- `src/features/ai-preferences/context.ts`: buildAiContext() — 프리퍼런스 + 페르소나 → 시스템 프롬프트용 문자열
+
+#### Edge Function 수정 (4개)
+- `supabase/functions/tagging/index.ts`: body에서 `ai_context` 파싱, 시스템 프롬프트 끝에 주입
+- `supabase/functions/extract-todos/index.ts`: 동일 패턴
+- `supabase/functions/generate-summary/index.ts`: 동일 패턴
+- `supabase/functions/generate-weekly/index.ts`: 동일 패턴
+
+#### 클라이언트 API 수정
+- `src/features/entry/api.ts`: requestTagging에 aiContext 파라미터 추가
+- `src/features/todo/api.ts`: extractTodos에 aiContext 파라미터 추가
+- `src/features/summary/api.ts`: generateSummary, generateWeeklySummary에 aiContext 파라미터 추가
+- `src/features/summary/hooks.ts`: mutation 파라미터를 { date/weekStart, aiContext } 객체로 변경
+
+#### EditModal 확장
+- `src/components/ui/EditModal.tsx`: `multiline` prop 추가 (minHeight 100, textAlignVertical top)
+
+#### Settings UI — AI 개인화 섹션
+- `app/settings.tsx`: Notifications 아래 AI Personalization 섹션 추가
+  - share_persona 토글 (닉네임/직업/관심사 AI 전달 여부)
+  - 요약 스타일 (EditModal)
+  - 집중 영역 (6개 칩 토글)
+  - 커스텀 지시 (EditModal multiline, 500자)
+
+#### 호출부 수정
+- `app/entries/new.tsx`: handleSave에서 buildAiContext 호출 → requestTagging/extractTodos에 전달
+- `app/(tabs)/summary.tsx`: handleGenerate에서 buildAiContext 호출 → mutation에 전달
+
+#### i18n (4 파일)
+- `settings.json` (ko/en): aiPersonalization 섹션 (title, sharePersona, summaryStyle, focusAreas, customInstructions, focusOptions 6개)
+- `errors.json` (ko/en): AIPREF_001, AIPREF_002 에러 코드
+
+#### 문서 업데이트
+- `CLAUDE.md`: 데이터 모델(UserAiPreferences), 체크리스트, 결정 로그, 변경 로그
+- `docs/data-model.md`: user_ai_preferences 테이블, API 함수, React Query 훅
+- `docs/ai-features.md`: AI 개인화 아키텍처 설명, 기능 표에 추가
+- `docs/error-codes.md`: AIPREF 에러 코드 섹션
 
 </details>
 
