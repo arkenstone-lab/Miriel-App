@@ -20,6 +20,7 @@ export function EditModal({
   placeholder,
   maxLength,
   secureTextEntry,
+  multiline,
 }: {
   visible: boolean
   title: string
@@ -29,6 +30,7 @@ export function EditModal({
   placeholder?: string
   maxLength?: number
   secureTextEntry?: boolean
+  multiline?: boolean
 }) {
   const [draft, setDraft] = useState(value)
   const { t } = useTranslation('settings')
@@ -77,7 +79,10 @@ export function EditModal({
             {/* Input */}
             <TextInput
               className="border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100 mb-5"
-              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
+              style={[
+                { backgroundColor: isDark ? '#111827' : '#f9fafb' },
+                multiline ? { minHeight: 100, textAlignVertical: 'top' } : undefined,
+              ]}
               placeholder={placeholder}
               placeholderTextColor="#9ca3af"
               value={draft}
@@ -85,8 +90,9 @@ export function EditModal({
               autoFocus
               maxLength={maxLength}
               secureTextEntry={secureTextEntry}
-              returnKeyType="done"
-              onSubmitEditing={handleSave}
+              multiline={multiline}
+              returnKeyType={multiline ? 'default' : 'done'}
+              onSubmitEditing={multiline ? undefined : handleSave}
             />
 
             {/* Buttons */}

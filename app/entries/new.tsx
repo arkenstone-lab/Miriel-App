@@ -16,9 +16,12 @@ import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import { showErrorAlert } from '@/lib/errors'
 import { useChatStore, type ChatMessage } from '@/stores/chatStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { useCreateEntry, useUpdateEntry, useTodayEntry } from '@/features/entry/hooks'
 import { requestTagging } from '@/features/entry/api'
 import { extractTodos } from '@/features/todo/api'
+import { useAiPreferences } from '@/features/ai-preferences/hooks'
+import { buildAiContext } from '@/features/ai-preferences/context'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -56,6 +59,8 @@ export default function NewEntryScreen() {
   const createEntry = useCreateEntry()
   const updateEntry = useUpdateEntry()
   const { data: todayEntry, isLoading: checkingToday } = useTodayEntry()
+  const { data: aiPrefs } = useAiPreferences()
+  const { nickname, occupation, interests } = useSettingsStore()
   const router = useRouter()
   const flatListRef = useRef<FlatList>(null)
   const { t } = useTranslation('entry')
@@ -93,12 +98,15 @@ export default function NewEntryScreen() {
     try {
       const entry = await createEntry.mutateAsync({ raw_text: fullText })
 
+      // Build AI context from preferences + persona
+      const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
+
       // Auto-tag + auto-extract todos in background
       let tagCount = 0
       let todoCount = 0
 
       try {
-        const tagResult = await requestTagging(fullText)
+        const tagResult = await requestTagging(fullText, aiContext)
         if (tagResult.tags.length > 0) {
           await updateEntry.mutateAsync({
             id: entry.id,
@@ -111,7 +119,7 @@ export default function NewEntryScreen() {
       }
 
       try {
-        const todoResult = await extractTodos(fullText, entry.id)
+        const todoResult = await extractTodos(fullText, entry.id, aiContext)
         todoCount = todoResult.todos?.length || 0
       } catch {
         // Todo extraction failed silently

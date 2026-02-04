@@ -71,7 +71,7 @@ serve(async (req) => {
       })
     }
 
-    const { week_start } = await req.json()
+    const { week_start, ai_context } = await req.json()
 
     const start = week_start
       ? new Date(week_start + 'T00:00:00')
@@ -116,6 +116,10 @@ serve(async (req) => {
         .map((e: { id: string; raw_text: string }) => `[ID: ${e.id}]\n${e.raw_text}`)
         .join('\n\n---\n\n')
 
+      const systemMessage = ai_context
+        ? `${WEEKLY_SUMMARY_PROMPT}\n\n--- 사용자 정보 ---\n${ai_context}`
+        : WEEKLY_SUMMARY_PROMPT
+
       try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -126,7 +130,7 @@ serve(async (req) => {
           body: JSON.stringify({
             model: 'gpt-4o',
             messages: [
-              { role: 'system', content: WEEKLY_SUMMARY_PROMPT },
+              { role: 'system', content: systemMessage },
               { role: 'user', content: formatted },
             ],
             response_format: { type: 'json_object' },

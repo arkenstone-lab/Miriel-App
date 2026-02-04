@@ -85,6 +85,15 @@
 
 ---
 
+## AIPREF — AI 개인화 관련
+
+| 코드 | 한국어 메시지 | English Message | 발생 원인 | CS 대응 |
+|------|-------------|-----------------|----------|---------|
+| AIPREF_001 | AI 설정을 불러올 수 없습니다 | Unable to load AI preferences | user_ai_preferences 테이블 조회 실패 | 네트워크 확인, 새로고침 안내 |
+| AIPREF_002 | AI 설정 저장에 실패했습니다 | Failed to save AI preferences | user_ai_preferences upsert 실패 | 네트워크 확인, 다시 시도 안내 |
+
+---
+
 ## 일반 대응 가이드
 
 ### 사용자가 에러 코드를 전달했을 때

@@ -23,10 +23,14 @@ export async function fetchSummaries(
 }
 
 export async function generateSummary(
-  date?: string
+  date?: string,
+  aiContext?: string
 ): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
+  const body: Record<string, unknown> = { date }
+  if (aiContext) body.ai_context = aiContext
+
   const { data, error } = await supabase.functions.invoke('generate-summary', {
-    body: { date },
+    body,
   })
 
   if (error) throw new AppError('SUMMARY_002', error)
@@ -34,10 +38,14 @@ export async function generateSummary(
 }
 
 export async function generateWeeklySummary(
-  weekStart?: string
+  weekStart?: string,
+  aiContext?: string
 ): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
+  const body: Record<string, unknown> = { week_start: weekStart }
+  if (aiContext) body.ai_context = aiContext
+
   const { data, error } = await supabase.functions.invoke('generate-weekly', {
-    body: { week_start: weekStart },
+    body,
   })
 
   if (error) throw new AppError('SUMMARY_003', error)

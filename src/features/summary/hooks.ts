@@ -12,7 +12,8 @@ export function useGenerateSummary() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (date?: string) => generateSummary(date),
+    mutationFn: (params?: { date?: string; aiContext?: string }) =>
+      generateSummary(params?.date, params?.aiContext),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['summaries'] })
     },
@@ -23,7 +24,8 @@ export function useGenerateWeeklySummary() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (weekStart?: string) => generateWeeklySummary(weekStart),
+    mutationFn: (params?: { weekStart?: string; aiContext?: string }) =>
+      generateWeeklySummary(params?.weekStart, params?.aiContext),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['summaries'] })
     },

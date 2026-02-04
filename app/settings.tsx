@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Switch,
   Alert,
   Linking,
+  ActivityIndicator,
 } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
@@ -19,6 +20,7 @@ import { EditModal } from '@/components/ui/EditModal'
 import { TimePickerModal } from '@/components/ui/TimePickerModal'
 import { DayPickerModal } from '@/components/ui/DayPickerModal'
 import { LegalModal } from '@/components/ui/LegalModal'
+import { useAiPreferences, useUpsertAiPreferences } from '@/features/ai-preferences/hooks'
 
 const SUPPORT_LINKS = {
   homepage: 'https://miriel.app',
@@ -54,6 +56,48 @@ export default function SettingsScreen() {
   const [weeklyDayPickerVisible, setWeeklyDayPickerVisible] = useState(false)
   const [weeklyTimePickerVisible, setWeeklyTimePickerVisible] = useState(false)
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null)
+  const [styleModalVisible, setStyleModalVisible] = useState(false)
+  const [instructionsModalVisible, setInstructionsModalVisible] = useState(false)
+
+  // AI Personalization
+  const { data: aiPrefs, isLoading: aiPrefsLoading } = useAiPreferences()
+  const upsertAiPrefs = useUpsertAiPreferences()
+
+  const FOCUS_AREA_KEYS = [
+    'projectMgmt', 'selfDev', 'workEfficiency',
+    'communication', 'health', 'learning',
+  ] as const
+
+  const handleAiPrefToggle = (field: 'share_persona', value: boolean) => {
+    upsertAiPrefs.mutate({ [field]: value })
+  }
+
+  const handleStyleSave = async (value: string) => {
+    try {
+      await upsertAiPrefs.mutateAsync({ summary_style: value })
+    } catch (error: unknown) {
+      showErrorAlert(t('aiPersonalization.title'), error)
+      throw error
+    }
+  }
+
+  const handleInstructionsSave = async (value: string) => {
+    try {
+      await upsertAiPrefs.mutateAsync({ custom_instructions: value })
+    } catch (error: unknown) {
+      showErrorAlert(t('aiPersonalization.title'), error)
+      throw error
+    }
+  }
+
+  const toggleFocusArea = (key: string) => {
+    const label = t(`aiPersonalization.focusOptions.${key}` as any)
+    const current = aiPrefs?.focus_areas || []
+    const next = current.includes(label)
+      ? current.filter((a) => a !== label)
+      : [...current, label]
+    upsertAiPrefs.mutate({ focus_areas: next })
+  }
 
   const languageOptions: { label: string; value: 'system' | Language }[] = [
     { label: t('language.system'), value: 'system' },
@@ -252,6 +296,113 @@ export default function SettingsScreen() {
               </Text>
               <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
             </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* AI Personalization */}
+        <View className="mb-6">
+          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            {t('aiPersonalization.title')}
+          </Text>
+          <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+            {aiPrefsLoading ? (
+              <View className="px-4 py-6 items-center">
+                <ActivityIndicator size="small" color={isDark ? '#818cf8' : '#4f46e5'} />
+              </View>
+            ) : (
+              <>
+                {/* Share Persona Toggle */}
+                <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                  <FontAwesome name="user-circle-o" size={16} color="#9ca3af" />
+                  <View className="ml-3 flex-1">
+                    <Text className="text-sm text-gray-900 dark:text-gray-100">
+                      {t('aiPersonalization.sharePersona')}
+                    </Text>
+                    <Text className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      {t('aiPersonalization.sharePersonaDesc')}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={aiPrefs?.share_persona ?? true}
+                    onValueChange={(v) => handleAiPrefToggle('share_persona', v)}
+                    trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#818cf8' }}
+                    thumbColor={(aiPrefs?.share_persona ?? true) ? '#4f46e5' : '#f4f3f4'}
+                  />
+                </View>
+
+                {/* Summary Style */}
+                <TouchableOpacity
+                  className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+                  onPress={() => setStyleModalVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <FontAwesome name="magic" size={16} color="#9ca3af" />
+                  <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                    {t('aiPersonalization.summaryStyle')}
+                  </Text>
+                  <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100" numberOfLines={1} style={{ maxWidth: 150 }}>
+                    {aiPrefs?.summary_style || t('aiPersonalization.summaryStylePlaceholder')}
+                  </Text>
+                  <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+                </TouchableOpacity>
+
+                {/* Focus Areas */}
+                <View className="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+                  <View className="flex-row items-center mb-2">
+                    <FontAwesome name="crosshairs" size={16} color="#9ca3af" />
+                    <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                      {t('aiPersonalization.focusAreas')}
+                    </Text>
+                  </View>
+                  <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+                    {FOCUS_AREA_KEYS.map((key) => {
+                      const label = t(`aiPersonalization.focusOptions.${key}` as any)
+                      const selected = (aiPrefs?.focus_areas || []).includes(label)
+                      return (
+                        <TouchableOpacity
+                          key={key}
+                          className={`px-3 py-1.5 rounded-full border ${
+                            selected
+                              ? 'bg-indigo-50 dark:bg-indigo-900/40 border-indigo-300 dark:border-indigo-700'
+                              : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                          }`}
+                          onPress={() => toggleFocusArea(key)}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            className={`text-xs font-medium ${
+                              selected
+                                ? 'text-indigo-600 dark:text-indigo-400'
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}
+                          >
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      )
+                    })}
+                  </View>
+                </View>
+
+                {/* Custom Instructions */}
+                <TouchableOpacity
+                  className="flex-row items-center px-4 py-3.5"
+                  onPress={() => setInstructionsModalVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <FontAwesome name="pencil" size={16} color="#9ca3af" />
+                  <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400 flex-1">
+                    {t('aiPersonalization.customInstructions')}
+                  </Text>
+                  <Text className="text-sm text-gray-900 dark:text-gray-100" numberOfLines={1} style={{ maxWidth: 120 }}>
+                    {aiPrefs?.custom_instructions
+                      ? `${aiPrefs.custom_instructions.slice(0, 15)}...`
+                      : '—'}
+                  </Text>
+                  <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
@@ -465,6 +616,29 @@ export default function SettingsScreen() {
         secureTextEntry
         onSave={handlePasswordSave}
         onClose={() => setPasswordModalVisible(false)}
+      />
+
+      {/* Summary Style Modal */}
+      <EditModal
+        visible={styleModalVisible}
+        title={t('aiPersonalization.summaryStyle')}
+        value={aiPrefs?.summary_style ?? ''}
+        placeholder={t('aiPersonalization.summaryStylePlaceholder')}
+        maxLength={100}
+        onSave={handleStyleSave}
+        onClose={() => setStyleModalVisible(false)}
+      />
+
+      {/* Custom Instructions Modal */}
+      <EditModal
+        visible={instructionsModalVisible}
+        title={t('aiPersonalization.customInstructions')}
+        value={aiPrefs?.custom_instructions ?? ''}
+        placeholder={t('aiPersonalization.customInstructionsPlaceholder')}
+        maxLength={500}
+        multiline
+        onSave={handleInstructionsSave}
+        onClose={() => setInstructionsModalVisible(false)}
       />
 
       {/* Legal Modal */}
