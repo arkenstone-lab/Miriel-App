@@ -31,21 +31,28 @@ export function buildAiContext(
     }
   }
 
-  // Summary style
   if (prefs.summary_style) {
-    parts.push(`요약 스타일: ${prefs.summary_style}`)
+    parts.push(`요약 스타일: ${prefs.summary_style.slice(0, 100)}`)
   }
 
-  // Focus areas
   if (prefs.focus_areas && prefs.focus_areas.length > 0) {
-    parts.push(`집중 영역: ${prefs.focus_areas.join(', ')}`)
+    parts.push(`집중 영역: ${prefs.focus_areas.slice(0, 6).join(', ')}`)
   }
 
-  // Custom instructions
   if (prefs.custom_instructions) {
-    parts.push(`추가 지시: ${prefs.custom_instructions}`)
+    let sanitized = prefs.custom_instructions.slice(0, 500)
+    sanitized = sanitized
+      .replace(/ignore\s+(all\s+)?(previous|above|prior)\s+(instructions|rules|prompts)/gi, '')
+      .replace(/system\s*prompt/gi, '')
+      .replace(/you\s+are\s+now/gi, '')
+      .replace(/forget\s+(everything|all)/gi, '')
+    if (sanitized.trim()) {
+      parts.push(`추가 지시: ${sanitized.trim()}`)
+    }
   }
 
   if (parts.length === 0) return undefined
-  return parts.join('\n')
+
+  const result = parts.join('\n')
+  return result.slice(0, 500)
 }

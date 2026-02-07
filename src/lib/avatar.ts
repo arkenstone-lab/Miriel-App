@@ -43,6 +43,11 @@ export async function uploadAvatar(
   uri: string,
   mimeType = 'image/jpeg',
 ): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.id !== userId) {
+    throw new AppError('PROFILE_004')
+  }
+
   const ext = extFromMime(mimeType)
   const path = `${userId}/avatar.${ext}`
 
