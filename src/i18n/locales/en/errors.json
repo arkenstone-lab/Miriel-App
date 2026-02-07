@@ -24,6 +24,7 @@
   "ENTRY_005": { "message": "Failed to update entry. Please try again." },
   "ENTRY_006": { "message": "Failed to delete entry. Please try again." },
   "ENTRY_007": { "message": "Auto-tagging failed. Your entry was saved successfully." },
+  "ENTRY_008": { "message": "Input is too long. Please keep it under 20,000 characters." },
 
   "TODO_001": { "message": "Failed to load todos. Please try again." },
   "TODO_002": { "message": "Failed to load related todos. Please try again." },
@@ -37,12 +38,13 @@
 
   "SETTINGS_001": { "message": "Failed to change email. Please try again." },
   "SETTINGS_002": { "message": "Failed to change phone number. Please try again." },
-  "SETTINGS_003": { "message": "Password must be at least 6 characters." },
+  "SETTINGS_003": { "message": "Failed to save settings. Please try again." },
   "SETTINGS_004": { "message": "Failed to change password. Please try again." },
 
   "PROFILE_001": { "message": "Failed to upload image. Please try again." },
   "PROFILE_002": { "message": "Failed to save profile. Please try again." },
   "PROFILE_003": { "message": "Image exceeds 2 MB. Please choose a smaller image." },
+  "PROFILE_004": { "message": "Permission denied." },
 
   "AIPREF_001": { "message": "Unable to load AI preferences. Please try again." },
   "AIPREF_002": { "message": "Failed to save AI preferences. Please try again." }

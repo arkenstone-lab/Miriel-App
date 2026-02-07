@@ -39,6 +39,7 @@
 | ENTRY_005 | 기록 수정 실패 | Failed to update entry | entries UPDATE 실패 | 재시도 안내 |
 | ENTRY_006 | 기록 삭제 실패 | Failed to delete entry | entries DELETE 실패 | 재시도 안내 |
 | ENTRY_007 | 자동 태깅 실패 | Auto-tagging failed | Edge Function 'tagging' 호출 실패 | 기록은 저장됨, AI 기능 일시 불가 안내 |
+| ENTRY_008 | 입력이 너무 깁니다 | Input is too long | 기록 텍스트가 20,000자 초과 | 텍스트를 줄여서 재시도 안내 |
 
 ---
 
@@ -70,7 +71,7 @@
 |------|-------------------|-------------------|------|-------------|
 | SETTINGS_001 | 이메일 변경 실패 | Failed to change email | auth.updateUser email 변경 실패 | 이메일 형식 확인, 중복 이메일 여부 확인 |
 | SETTINGS_002 | 전화번호 변경 실패 | Failed to change phone | profiles 테이블 phone UPDATE 실패 | 재시도, 형식 확인 안내 |
-| SETTINGS_003 | 비밀번호는 6자 이상 | Password must be 6+ chars | 6자 미만 비밀번호 입력 | 6자 이상 비밀번호 입력 안내 |
+| SETTINGS_003 | 설정 저장 실패 | Failed to save settings | user_metadata 업데이트 실패 (닉네임, 성별, 직업, 관심사, 아바타 등) | 재시도 안내, 네트워크 확인 |
 | SETTINGS_004 | 비밀번호 변경 실패 | Failed to change password | auth.updateUser password 변경 실패 | 재시도 안내 |
 
 ---
@@ -82,6 +83,7 @@
 | PROFILE_001 | 이미지 업로드 실패 | Failed to upload image | Supabase Storage 업로드 실패 | 파일 크기/형식 확인, 네트워크 확인, 재시도 안내 |
 | PROFILE_002 | 프로필 저장 실패 | Failed to save profile | user_metadata 업데이트 실패 | 재시도 안내 |
 | PROFILE_003 | 이미지 크기가 2MB 초과 | Image exceeds 2 MB | 선택한 이미지가 2MB 이상 | 더 작은 이미지 선택 안내, 이미지 압축 후 재시도 |
+| PROFILE_004 | 권한이 없습니다 | Permission denied | 인증된 사용자와 요청 userId 불일치 | 재로그인 안내, 지속 시 개발팀 에스컬레이션 |
 
 ---
 
