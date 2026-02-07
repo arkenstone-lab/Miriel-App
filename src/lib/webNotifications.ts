@@ -1,7 +1,7 @@
 import i18n from '@/i18n'
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null
-let lastFiredKey = ''
+let lastFired: Record<string, string> = {}
 
 /** Request browser notification permission. Returns true if granted. */
 export async function requestWebPermission(): Promise<boolean> {
@@ -43,8 +43,8 @@ export function scheduleWebNotifications(settings: {
     // Morning
     if (hhmm === settings.morningNotificationTime) {
       const key = `morning-${dateKey}`
-      if (lastFiredKey !== key) {
-        lastFiredKey = key
+      if (lastFired.morning !== key) {
+        lastFired.morning = key
         showWebNotification(
           i18n.t('settings:notifications.morningTitle'),
           i18n.t('settings:notifications.morningBody'),
@@ -55,8 +55,8 @@ export function scheduleWebNotifications(settings: {
     // Evening
     if (hhmm === settings.eveningNotificationTime) {
       const key = `evening-${dateKey}`
-      if (lastFiredKey !== key) {
-        lastFiredKey = key
+      if (lastFired.evening !== key) {
+        lastFired.evening = key
         showWebNotification(
           i18n.t('settings:notifications.eveningTitle'),
           i18n.t('settings:notifications.eveningBody'),
@@ -67,8 +67,8 @@ export function scheduleWebNotifications(settings: {
     // Weekly review
     if (ourDay === settings.weeklyReviewDay && hhmm === settings.weeklyReviewTime) {
       const key = `weekly-${dateKey}`
-      if (lastFiredKey !== key) {
-        lastFiredKey = key
+      if (lastFired.weekly !== key) {
+        lastFired.weekly = key
         showWebNotification(
           i18n.t('settings:notifications.weeklyTitle'),
           i18n.t('settings:notifications.weeklyBody'),

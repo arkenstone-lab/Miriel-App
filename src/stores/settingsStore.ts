@@ -237,29 +237,54 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   setNickname: async (name: string) => {
     const trimmed = name.trim()
+    const prev = useSettingsStore.getState().nickname
     set({ nickname: trimmed })
-    await supabase.auth.updateUser({ data: { nickname: trimmed } })
+    const { error } = await supabase.auth.updateUser({ data: { nickname: trimmed } })
+    if (error) {
+      set({ nickname: prev })
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   setGender: async (gender: string) => {
+    const prev = useSettingsStore.getState().gender
     set({ gender })
-    await supabase.auth.updateUser({ data: { gender } })
+    const { error } = await supabase.auth.updateUser({ data: { gender } })
+    if (error) {
+      set({ gender: prev })
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   setOccupation: async (occupation: string) => {
     const trimmed = occupation.trim()
+    const prev = useSettingsStore.getState().occupation
     set({ occupation: trimmed })
-    await supabase.auth.updateUser({ data: { occupation: trimmed } })
+    const { error } = await supabase.auth.updateUser({ data: { occupation: trimmed } })
+    if (error) {
+      set({ occupation: prev })
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   setInterests: async (interests: string[]) => {
+    const prev = useSettingsStore.getState().interests
     set({ interests })
-    await supabase.auth.updateUser({ data: { interests } })
+    const { error } = await supabase.auth.updateUser({ data: { interests } })
+    if (error) {
+      set({ interests: prev })
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   setAvatarUrl: async (url: string) => {
+    const prev = useSettingsStore.getState().avatarUrl
     set({ avatarUrl: url })
-    await supabase.auth.updateUser({ data: { avatarUrl: url } })
+    const { error } = await supabase.auth.updateUser({ data: { avatarUrl: url } })
+    if (error) {
+      set({ avatarUrl: prev })
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   // Batch save — single updateUser call (avoids race conditions)
@@ -270,18 +295,36 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       occupation: data.occupation.trim(),
       interests: data.interests,
     }
+    const prev = {
+      nickname: useSettingsStore.getState().nickname,
+      gender: useSettingsStore.getState().gender,
+      occupation: useSettingsStore.getState().occupation,
+      interests: useSettingsStore.getState().interests,
+    }
     set(payload)
-    await supabase.auth.updateUser({ data: payload })
+    const { error } = await supabase.auth.updateUser({ data: payload })
+    if (error) {
+      set(prev)
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   acknowledgePrivacyNotice: async () => {
     set({ hasSeenPrivacyNotice: true })
-    await supabase.auth.updateUser({ data: { hasSeenPrivacyNotice: true } })
+    const { error } = await supabase.auth.updateUser({ data: { hasSeenPrivacyNotice: true } })
+    if (error) {
+      set({ hasSeenPrivacyNotice: false })
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   acknowledgeOnboarding: async () => {
     set({ hasSeenOnboarding: true })
-    await supabase.auth.updateUser({ data: { hasSeenOnboarding: true } })
+    const { error } = await supabase.auth.updateUser({ data: { hasSeenOnboarding: true } })
+    if (error) {
+      set({ hasSeenOnboarding: false })
+      throw new AppError('SETTINGS_003', error)
+    }
   },
 
   setPhone: async (phone: string) => {

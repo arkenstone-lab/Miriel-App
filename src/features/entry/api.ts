@@ -31,6 +31,8 @@ export async function fetchEntry(id: string): Promise<Entry> {
 }
 
 export async function createEntry(input: CreateEntryInput): Promise<Entry> {
+  if (input.raw_text.length > 20000) throw new AppError('ENTRY_008')
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new AppError('ENTRY_003')
 
@@ -76,6 +78,8 @@ export async function deleteEntry(id: string): Promise<void> {
 }
 
 export async function requestTagging(text: string, aiContext?: string): Promise<{ tags: string[] }> {
+  if (text.length > 20000) throw new AppError('ENTRY_008')
+
   const body: Record<string, unknown> = { text }
   if (aiContext) body.ai_context = aiContext
 
