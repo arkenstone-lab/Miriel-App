@@ -47,6 +47,7 @@
     "selectEntry": "Select an entry",
     "selectSummary": "Select a summary",
     "selectWeekly": "Select a weekly review",
+    "selectMonthly": "Select a monthly review",
     "selectTodoEvidence": "Select a to-do to see its source entry"
   },
   "notFound": {

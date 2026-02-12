@@ -77,6 +77,8 @@ export default function OnboardingScreen() {
       eveningNotificationTime: eveningTime,
       weeklyReviewDay: weeklyDay,
       weeklyReviewTime: weeklyTime,
+      monthlyReviewDay: 1,
+      monthlyReviewTime: '19:00',
     })
     router.push('/(onboarding)/persona' as any)
   }

@@ -11,6 +11,8 @@
     "todoCount": "할일 {{count}}개 추출",
     "saveFailed": "저장 실패",
     "chatCompletion": "기록이 완성됐어요! 아래 버튼을 눌러 저장하세요.",
+    "chatFallback": "더 말씀해주세요!",
+    "aiThinking": "생각 중...",
     "alreadyRecordedToday": "오늘 이미 기록이 있어요",
     "redirectingToEdit": "기존 기록의 편집 화면으로 이동합니다."
   },

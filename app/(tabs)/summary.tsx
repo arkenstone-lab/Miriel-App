@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, FlatList } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useSummaries, useGenerateSummary, useGenerateWeeklySummary } from '@/features/summary/hooks'
+import { useSummaries, useGenerateSummary, useGenerateWeeklySummary, useGenerateMonthlySummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAiPreferences } from '@/features/ai-preferences/hooks'
@@ -17,6 +17,8 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import type { Summary } from '@/features/summary/types'
 
+type Period = 'daily' | 'weekly' | 'monthly'
+
 function formatWeekRange(periodStart: string): string {
   const start = new Date(periodStart + 'T00:00:00')
   const end = new Date(start)
@@ -25,14 +27,25 @@ function formatWeekRange(periodStart: string): string {
   return `${fmt(start)} ~ ${fmt(end)}`
 }
 
+function formatMonthRange(periodStart: string, monthlyReviewDay: number): string {
+  const start = new Date(periodStart + 'T00:00:00')
+  const end = new Date(start)
+  end.setMonth(end.getMonth() + 1)
+  end.setDate(end.getDate() - 1)
+  const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`
+  return `${fmt(start)} ~ ${fmt(end)}`
+}
+
 function SummaryListCard({
   summary,
   period,
+  monthlyReviewDay,
   onPress,
   isSelected,
 }: {
   summary: Summary
-  period: 'daily' | 'weekly'
+  period: Period
+  monthlyReviewDay?: number
   onPress: () => void
   isSelected: boolean
 }) {
@@ -41,10 +54,12 @@ function SummaryListCard({
   const sentenceCount = summary.sentences_data?.length || summary.text.split('\n').filter(Boolean).length
   const countLabel = period === 'daily'
     ? t('daily.summaryCount', { count: sentenceCount })
-    : t('weekly.pointCount', { count: sentenceCount })
+    : t(period === 'weekly' ? 'weekly.pointCount' : 'monthly.pointCount', { count: sentenceCount })
   const dateLabel = period === 'daily'
     ? summary.period_start
-    : formatWeekRange(summary.period_start)
+    : period === 'weekly'
+      ? formatWeekRange(summary.period_start)
+      : formatMonthRange(summary.period_start, monthlyReviewDay ?? 1)
 
   return (
     <Card
@@ -75,27 +90,55 @@ function getMonday(date: Date): string {
   return d.toISOString().split('T')[0]
 }
 
+/** Calculate the month period start (reviewDay of last month or this month) */
+function getMonthlyPeriodStart(reviewDay: number): string {
+  const now = new Date()
+  const today = now.getDate()
+  // If today >= reviewDay, period started this month; otherwise last month
+  if (today >= reviewDay) {
+    return formatDateStr(new Date(now.getFullYear(), now.getMonth(), reviewDay))
+  }
+  return formatDateStr(new Date(now.getFullYear(), now.getMonth() - 1, reviewDay))
+}
+
+/** Calculate the month period end (day before next reviewDay) */
+function getMonthlyPeriodEnd(reviewDay: number): string {
+  const now = new Date()
+  const today = now.getDate()
+  if (today >= reviewDay) {
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, reviewDay - 1)
+    return formatDateStr(end)
+  }
+  const end = new Date(now.getFullYear(), now.getMonth(), reviewDay - 1)
+  return formatDateStr(end)
+}
+
+function formatDateStr(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
+
 export default function SummaryScreen() {
-  const [period, setPeriod] = useState<'daily' | 'weekly'>('daily')
+  const [period, setPeriod] = useState<Period>('daily')
   const { data: summaries, isLoading, error } = useSummaries(period)
   const dailyMutation = useGenerateSummary()
   const weeklyMutation = useGenerateWeeklySummary()
-  const generateMutation = period === 'daily' ? dailyMutation : weeklyMutation
+  const monthlyMutation = useGenerateMonthlySummary()
   const { isDesktop } = useResponsiveLayout()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { t } = useTranslation('summary')
   const { t: tCommon } = useTranslation('common')
   const { data: aiPrefs } = useAiPreferences()
-  const { nickname, occupation, interests } = useSettingsStore()
+  const { nickname, occupation, interests, monthlyReviewDay } = useSettingsStore()
 
   const selectedSummary = summaries?.find((s) => s.id === selectedId)
 
-  const periodOptions: { label: string; value: 'daily' | 'weekly' }[] = [
+  const periodOptions: { label: string; value: Period }[] = [
     { label: t('tab.daily'), value: 'daily' },
     { label: t('tab.weekly'), value: 'weekly' },
+    { label: t('tab.monthly'), value: 'monthly' },
   ]
 
-  const handlePeriodChange = (v: 'daily' | 'weekly') => {
+  const handlePeriodChange = (v: Period) => {
     setPeriod(v)
     setSelectedId(null)
   }
@@ -106,10 +149,22 @@ export default function SummaryScreen() {
     return <ErrorDisplay error={error} />
   }
 
+  const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
+
   const handleGenerate = () => {
-    const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
-    generateMutation.mutate(aiContext ? { aiContext } : undefined)
+    if (period === 'monthly') {
+      const day = monthlyReviewDay || 1
+      const monthStart = getMonthlyPeriodStart(day)
+      const monthEnd = getMonthlyPeriodEnd(day)
+      monthlyMutation.mutate({ monthStart, monthEnd, ...(aiContext ? { aiContext } : {}) })
+    } else if (period === 'weekly') {
+      weeklyMutation.mutate(aiContext ? { aiContext } : undefined)
+    } else {
+      dailyMutation.mutate(aiContext ? { aiContext } : undefined)
+    }
   }
+
+  const generateMutation = period === 'daily' ? dailyMutation : period === 'weekly' ? weeklyMutation : monthlyMutation
 
   const handleSelect = (summary: Summary) => {
     setSelectedId(summary.id)
@@ -121,18 +176,32 @@ export default function SummaryScreen() {
     (s) => s.period_start === currentWeekStart
   )
 
+  // Monthly review 1-per-period limit
+  const currentMonthStart = getMonthlyPeriodStart(monthlyReviewDay || 1)
+  const hasMonthlyThisPeriod = period === 'monthly' && summaries?.some(
+    (s) => s.period_start === currentMonthStart
+  )
+
+  const isLimitReached = hasWeeklyThisWeek || hasMonthlyThisPeriod
+
   const generateLabel = period === 'daily'
     ? (generateMutation.isPending ? t('daily.generating') : t('daily.generateButton'))
-    : hasWeeklyThisWeek
-      ? t('weekly.alreadyGenerated')
-      : (generateMutation.isPending ? t('weekly.generating') : t('weekly.generateButton'))
+    : period === 'weekly'
+      ? hasWeeklyThisWeek
+        ? t('weekly.alreadyGenerated')
+        : (generateMutation.isPending ? t('weekly.generating') : t('weekly.generateButton'))
+      : hasMonthlyThisPeriod
+        ? t('monthly.alreadyGenerated')
+        : (generateMutation.isPending ? t('monthly.generating') : t('monthly.generateButton'))
 
-  const emptyEmoji = period === 'daily' ? '📊' : '📅'
-  const emptyTitle = period === 'daily' ? t('daily.emptyTitle') : t('weekly.emptyTitle')
-  const emptyDesc = period === 'daily' ? t('daily.emptyDescription') : t('weekly.emptyDescription')
+  const emptyEmoji = period === 'daily' ? '📊' : period === 'weekly' ? '📅' : '📆'
+  const emptyTitle = period === 'daily' ? t('daily.emptyTitle') : period === 'weekly' ? t('weekly.emptyTitle') : t('monthly.emptyTitle')
+  const emptyDesc = period === 'daily' ? t('daily.emptyDescription') : period === 'weekly' ? t('weekly.emptyDescription') : t('monthly.emptyDescription')
   const detailPlaceholder = period === 'daily'
     ? tCommon('placeholder.selectSummary')
-    : tCommon('placeholder.selectWeekly')
+    : period === 'weekly'
+      ? tCommon('placeholder.selectWeekly')
+      : tCommon('placeholder.selectMonthly')
 
   const master = (
     <View className="flex-1 bg-gray-50 dark:bg-gray-950">
@@ -144,6 +213,7 @@ export default function SummaryScreen() {
             <SummaryListCard
               summary={item}
               period={period}
+              monthlyReviewDay={monthlyReviewDay}
               onPress={() => handleSelect(item)}
               isSelected={isDesktop && selectedId === item.id}
             />
@@ -160,7 +230,7 @@ export default function SummaryScreen() {
               title={generateLabel}
               onPress={handleGenerate}
               loading={generateMutation.isPending}
-              disabled={hasWeeklyThisWeek}
+              disabled={isLimitReached}
               size="lg"
             />
           </View>
