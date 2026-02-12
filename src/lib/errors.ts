@@ -24,17 +24,46 @@ export class AppError extends Error {
 }
 
 /**
- * Show an Alert with user-friendly error message and error code.
- * If the error is an AppError, uses its translated message + code.
- * Otherwise falls back to the UNKNOWN error message.
+ * Extract a human-readable detail from the original error (Supabase, network, etc.)
+ * Returns undefined if no useful detail is available.
+ */
+function getOriginalDetail(error: AppError): string | undefined {
+  const orig = error.originalError
+  if (!orig) return undefined
+
+  // Supabase errors have a .message property
+  if (typeof orig === 'object' && orig !== null && 'message' in orig) {
+    const msg = (orig as { message: string }).message
+    // Skip generic/duplicate messages
+    if (msg && msg !== error.message && msg.length < 200) {
+      return msg
+    }
+  }
+
+  if (typeof orig === 'string' && orig.length < 200) {
+    return orig
+  }
+
+  return undefined
+}
+
+/**
+ * Show an Alert with user-friendly error message, original cause detail, and error code.
  *
- * Format: "사용자 메시지\n\n(오류 코드: AUTH_001)"
+ * Format:
+ *   "사용자 메시지"
+ *   "상세: Supabase error message"   ← if available
+ *   "(오류 코드: AUTH_001)"
  */
 export function showErrorAlert(title: string, error: unknown): void {
   const codeLabel = i18n.t('errors:codeLabel')
 
   if (error instanceof AppError) {
-    Alert.alert(title, `${error.message}\n\n(${codeLabel}: ${error.code})`)
+    const detail = getOriginalDetail(error)
+    const parts = [error.message]
+    if (detail) parts.push(detail)
+    parts.push(`(${codeLabel}: ${error.code})`)
+    Alert.alert(title, parts.join('\n\n'))
   } else {
     const fallback = i18n.t('errors:UNKNOWN.message')
     Alert.alert(title, fallback)
@@ -42,14 +71,19 @@ export function showErrorAlert(title: string, error: unknown): void {
 }
 
 /**
- * Extract user-friendly error message with error code for inline display.
- * Returns: "사용자 메시지 (오류 코드: AUTH_001)"
+ * Extract user-friendly error message with detail and error code for inline display.
+ *
+ * Returns: "사용자 메시지\n상세: detail\n(오류 코드: AUTH_001)"
  */
 export function getErrorMessage(error: unknown): string {
   const codeLabel = i18n.t('errors:codeLabel')
 
   if (error instanceof AppError) {
-    return `${error.message} (${codeLabel}: ${error.code})`
+    const detail = getOriginalDetail(error)
+    const parts = [error.message]
+    if (detail) parts.push(detail)
+    parts.push(`(${codeLabel}: ${error.code})`)
+    return parts.join('\n')
   }
   return i18n.t('errors:UNKNOWN.message')
 }
