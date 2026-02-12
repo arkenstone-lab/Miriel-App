@@ -92,11 +92,11 @@ export default function EditProfileScreen() {
       await deleteAvatar(user.id)
       setLocalAvatarUrl('')
       await setAvatarUrl('')
-    } catch {
-      // Ignore delete errors
+      Alert.alert('', t('profile.photoRemoved'))
+    } catch (error: unknown) {
+      showErrorAlert('', error)
     } finally {
       setUploading(false)
-      Alert.alert('', t('profile.photoRemoved'))
     }
   }
 
