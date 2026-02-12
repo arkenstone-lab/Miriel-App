@@ -9,6 +9,7 @@ import { EntryCard } from '@/components/EntryCard'
 import { EntryDetail } from '@/components/EntryDetail'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import type { Entry } from '@/features/entry/types'
 
 /** Maps a date string to a relative-date group key (today/yesterday/thisWeek/earlier). */
@@ -70,11 +71,7 @@ export default function TimelineScreen() {
   if (isLoading) return <LoadingState />
 
   if (error) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-950 px-8">
-        <Text className="text-red-500 text-center">{error.message}</Text>
-      </View>
-    )
+    return <ErrorDisplay error={error} />
   }
 
   if (!entries || entries.length === 0) {
