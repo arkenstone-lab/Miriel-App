@@ -3,42 +3,44 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callAI } from '../_shared/ai.ts'
 import { getCorsHeaders, jsonResponse, appendAiContext } from '../_shared/cors.ts'
 
-const SUMMARY_PROMPT = `You are a personal journal summarizer. Create a concise daily summary grounded in the user's entries.
+const MONTHLY_SUMMARY_PROMPT = `You are a personal journal retrospective assistant. Create a meaningful monthly review grounded in the user's entries.
 
 ## Task
-Summarize the day's journal entries into 2-3 sentences. Each sentence MUST cite the Entry IDs it is based on.
+Review the month's journal entries and identify 5-7 key points. Each point must cite the Entry IDs it is based on.
 
 ## Output Schema
 Respond with JSON only:
 {
   "sentences": [
-    { "text": "Summary sentence (max 160 chars)", "entry_ids": ["id1"] }
+    { "text": "Retrospective point (max 250 chars)", "entry_ids": ["id1", "id2"] }
   ]
 }
 
 ## Rules
-- Write 2-3 sentences maximum.
-- Each sentence must be grounded in specific entries — cite 1-3 Entry IDs per sentence.
-- You may ONLY cite IDs that appear in the input (format: [ID: xxx]). Never invent IDs.
-- Keep sentences concise (max 160 characters each) for mobile display.
-- If entries are repetitive, deduplicate and combine.
+- Write 5-7 retrospective points.
+- Each point should capture: what happened + why it matters + what it means for future growth.
+- You may ONLY cite IDs from the provided entries (format: [ID: xxx]). Never invent IDs.
+- Each point must cite 1-3 most representative Entry IDs.
+- Keep each point concise (max 250 characters) for mobile display.
 - Respond in the same language as the majority of the input entries.
-- Focus on what was accomplished, key decisions, and notable events.
-- Tone: neutral, factual, supportive — like a helpful assistant, not a manager.
+- Cover different aspects of the month — accomplishments, patterns, challenges, growth areas.
+- Highlight recurring themes, progress on goals, and notable trends across the month.
+- Tone: reflective, encouraging, big-picture — help the user see their monthly trajectory.
+- If there are clear wins, celebrate them. If there are recurring challenges, suggest awareness.
 
 ## Example
-Input entries about meetings and bug fixes →
-Output: {"sentences":[{"text":"프로젝트 Aurora 관련 회의에서 로그인 버그 원인을 파악하고 수정 방향을 결정했다.","entry_ids":["abc-123"]},{"text":"오후에는 API 문서 작성과 코드 리뷰를 진행했다.","entry_ids":["def-456","ghi-789"]}]}`
+Input: A month of project work, learning, and team collaboration →
+Output: {"sentences":[{"text":"Aurora 프로젝트 MVP가 완성되어 팀 전체가 한 단계 도약했다.","entry_ids":["id-1","id-8","id-15"]},{"text":"매주 꾸준히 기술 블로그를 읽는 습관이 정착되어 3개 새로운 패턴을 실무에 적용했다.","entry_ids":["id-5","id-12"]},{"text":"김대리와의 1:1 미팅을 통해 소통 방식이 개선되었고 코드 리뷰 속도가 2배 빨라졌다.","entry_ids":["id-3","id-10"]}]}`
 
 interface SummarySentence {
   text: string
   entry_ids: string[]
 }
 
-function mockSummary(entries: { id: string; raw_text: string }[]): { sentences: SummarySentence[] } {
+function mockMonthlySummary(entries: { id: string; raw_text: string }[]): { sentences: SummarySentence[] } {
   if (entries.length === 0) return { sentences: [] }
-  const sentences = entries.slice(0, 3).map((entry) => ({
-    text: entry.raw_text.length > 80 ? entry.raw_text.slice(0, 80) + '...' : entry.raw_text,
+  const sentences = entries.slice(0, 7).map((entry) => ({
+    text: entry.raw_text.length > 60 ? entry.raw_text.slice(0, 60) + '...' : entry.raw_text,
     entry_ids: [entry.id],
   }))
   return { sentences }
@@ -68,13 +70,18 @@ serve(async (req) => {
       return jsonResponse({ error: 'Unauthorized' }, corsHeaders, 401)
     }
 
-    const { date, ai_context } = await req.json()
-    const targetDate = date || new Date().toISOString().split('T')[0]
+    const { month_start, month_end, ai_context } = await req.json()
+
+    if (!month_start || !month_end) {
+      return jsonResponse({ error: 'month_start and month_end are required' }, corsHeaders, 400)
+    }
 
     const { data: entries, error: fetchError } = await supabase
       .from('entries')
       .select('id, raw_text')
-      .eq('date', targetDate)
+      .gte('date', month_start)
+      .lte('date', month_end)
+      .order('date', { ascending: true })
       .order('created_at', { ascending: true })
 
     if (fetchError) {
@@ -82,7 +89,7 @@ serve(async (req) => {
     }
 
     if (!entries || entries.length === 0) {
-      return jsonResponse({ error: '해당 날짜에 기록이 없습니다.' }, corsHeaders, 400)
+      return jsonResponse({ error: '해당 기간에 기록이 없습니다.' }, corsHeaders, 400)
     }
 
     let result: { sentences: SummarySentence[] }
@@ -91,11 +98,11 @@ serve(async (req) => {
       .map((e: { id: string; raw_text: string }) => `[ID: ${e.id}]\n${e.raw_text}`)
       .join('\n\n---\n\n')
 
-    if (formatted.length > 20000) {
-      return jsonResponse({ error: 'text exceeds maximum length of 20000 characters' }, corsHeaders, 400)
+    if (formatted.length > 40000) {
+      return jsonResponse({ error: 'text exceeds maximum length of 40000 characters' }, corsHeaders, 400)
     }
 
-    const systemMessage = appendAiContext(SUMMARY_PROMPT, ai_context)
+    const systemMessage = appendAiContext(MONTHLY_SUMMARY_PROMPT, ai_context)
     const content = await callAI(systemMessage, formatted, { temperature: 0.5 })
 
     if (content) {
@@ -106,7 +113,7 @@ serve(async (req) => {
         entry_ids: s.entry_ids.filter(id => validIds.has(id))
       })).filter(s => s.entry_ids.length > 0 || s.text.trim().length > 0)
     } else {
-      result = mockSummary(entries)
+      result = mockMonthlySummary(entries)
     }
 
     const entryLinks = Array.from(
@@ -115,18 +122,19 @@ serve(async (req) => {
 
     const summaryText = result.sentences.map((s) => s.text).join('\n')
 
+    // Delete existing monthly summary for this period
     await supabase
       .from('summaries')
       .delete()
-      .eq('period', 'daily')
-      .eq('period_start', targetDate)
+      .eq('period', 'monthly')
+      .eq('period_start', month_start)
 
     const { data: summary, error: insertError } = await supabase
       .from('summaries')
       .insert({
         user_id: user.id,
-        period: 'daily',
-        period_start: targetDate,
+        period: 'monthly',
+        period_start: month_start,
         text: summaryText,
         entry_links: entryLinks,
         sentences_data: result.sentences,

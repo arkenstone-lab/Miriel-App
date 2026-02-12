@@ -1,7 +1,8 @@
 {
   "tab": {
     "daily": "Daily",
-    "weekly": "Weekly"
+    "weekly": "Weekly",
+    "monthly": "Monthly"
   },
   "daily": {
     "generateButton": "Generate Today's Summary",
@@ -22,6 +23,17 @@
     "periodLabel": "{{range}} Weekly Review",
     "alreadyGenerated": "Review already generated",
     "alreadyGeneratedDesc": "This week's review has already been generated."
+  },
+  "monthly": {
+    "generateButton": "Generate This Month's Review",
+    "generating": "Generating monthly review...",
+    "emptyTitle": "No monthly reviews yet",
+    "emptyDescription": "Build up entries over the month,\nthen generate a review!",
+    "pointCount": "{{count}} points",
+    "label": "Monthly Review",
+    "periodLabel": "{{range}} Monthly Review",
+    "alreadyGenerated": "Review already generated",
+    "alreadyGeneratedDesc": "This month's review has already been generated."
   },
   "evidenceBadge": "{{count}} source entries",
   "loadingEntry": "Loading entry..."
