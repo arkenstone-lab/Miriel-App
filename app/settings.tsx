@@ -19,14 +19,15 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { EditModal } from '@/components/ui/EditModal'
 import { TimePickerModal } from '@/components/ui/TimePickerModal'
 import { DayPickerModal } from '@/components/ui/DayPickerModal'
+import { MonthDayPickerModal } from '@/components/ui/MonthDayPickerModal'
 import { LegalModal } from '@/components/ui/LegalModal'
 import { useAiPreferences, useUpsertAiPreferences } from '@/features/ai-preferences/hooks'
 
 const SUPPORT_LINKS = {
-  homepage: 'https://x.com/miriel_app',
+  homepage: 'https://www.miriel.app',
+  x: 'https://x.com/miriel_app',
   telegram: 'https://t.me/miriel_communtiy',
   discord: 'https://discord.gg/PnHNNtJNjn',
-  x: 'https://x.com/miriel_app',
 } as const
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -40,8 +41,10 @@ export default function SettingsScreen() {
     setTheme, setLanguage, setNickname, setPhone, setEmail, changePassword,
     notificationsEnabled, morningNotificationTime, eveningNotificationTime,
     weeklyReviewDay, weeklyReviewTime,
+    monthlyReviewDay, monthlyReviewTime,
     setNotificationsEnabled, setMorningNotificationTime, setEveningNotificationTime,
     setWeeklyReviewDay, setWeeklyReviewTime,
+    setMonthlyReviewDay, setMonthlyReviewTime,
   } = useSettingsStore()
   const { user, signOut } = useAuthStore()
   const { colorScheme } = useColorScheme()
@@ -55,6 +58,8 @@ export default function SettingsScreen() {
   const [eveningPickerVisible, setEveningPickerVisible] = useState(false)
   const [weeklyDayPickerVisible, setWeeklyDayPickerVisible] = useState(false)
   const [weeklyTimePickerVisible, setWeeklyTimePickerVisible] = useState(false)
+  const [monthlyDayPickerVisible, setMonthlyDayPickerVisible] = useState(false)
+  const [monthlyTimePickerVisible, setMonthlyTimePickerVisible] = useState(false)
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null)
   const [styleModalVisible, setStyleModalVisible] = useState(false)
   const [instructionsModalVisible, setInstructionsModalVisible] = useState(false)
@@ -296,6 +301,48 @@ export default function SettingsScreen() {
               </Text>
               <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
             </TouchableOpacity>
+            {/* Monthly Review Section Divider */}
+            <View className={`px-4 py-2 bg-gray-50 dark:bg-gray-800 ${!notificationsEnabled ? 'opacity-40' : ''}`}>
+              <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase">
+                {t('notifications.monthlyReviewSection')}
+              </Text>
+            </View>
+            {/* Monthly Day */}
+            <TouchableOpacity
+              className={`flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 ${
+                !notificationsEnabled ? 'opacity-40' : ''
+              }`}
+              disabled={!notificationsEnabled}
+              onPress={() => setMonthlyDayPickerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="calendar-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                {t('notifications.monthlyDay')}
+              </Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {monthlyReviewDay}{t('notifications.monthlyDayUnit')}
+              </Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {/* Monthly Time */}
+            <TouchableOpacity
+              className={`flex-row items-center px-4 py-3.5 ${
+                !notificationsEnabled ? 'opacity-40' : ''
+              }`}
+              disabled={!notificationsEnabled}
+              onPress={() => setMonthlyTimePickerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="clock-o" size={16} color="#9ca3af" />
+              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+                {t('notifications.monthlyTime')}
+              </Text>
+              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
+                {formatTimeDisplay(monthlyReviewTime)}
+              </Text>
+              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -515,6 +562,15 @@ export default function SettingsScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              onPress={() => Linking.openURL(SUPPORT_LINKS.x)}
+              activeOpacity={0.7}
+            >
+              <Text style={{ fontSize: 16, color: '#9ca3af', fontWeight: '700', width: 16, textAlign: 'center' }}>𝕏</Text>
+              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.x')}</Text>
+              <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
               onPress={() => Linking.openURL(SUPPORT_LINKS.telegram)}
               activeOpacity={0.7}
             >
@@ -523,21 +579,12 @@ export default function SettingsScreen() {
               <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
+              className="flex-row items-center px-4 py-3.5"
               onPress={() => Linking.openURL(SUPPORT_LINKS.discord)}
               activeOpacity={0.7}
             >
               <FontAwesome name="comments-o" size={16} color="#9ca3af" />
               <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.discord')}</Text>
-              <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-3.5"
-              onPress={() => Linking.openURL(SUPPORT_LINKS.x)}
-              activeOpacity={0.7}
-            >
-              <Text style={{ fontSize: 16, color: '#9ca3af', fontWeight: '700', width: 16, textAlign: 'center' }}>𝕏</Text>
-              <Text className="ml-3 text-sm text-gray-900 dark:text-gray-100 flex-1">{t('support.x')}</Text>
               <FontAwesome name="external-link" size={12} color={isDark ? '#6b7280' : '#d1d5db'} />
             </TouchableOpacity>
           </View>
@@ -570,10 +617,20 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Version */}
-        <Text className="text-center text-xs text-gray-400 dark:text-gray-500 mt-4 mb-8">
+        {/* Version & Branding */}
+        <Text className="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
           {t('version')} 0.1.0
         </Text>
+        <TouchableOpacity
+          onPress={() => Linking.openURL('http://arkenstone-labs.com/')}
+          activeOpacity={0.7}
+          className="mb-8 mt-1"
+        >
+          <Text className="text-center text-xs text-gray-400 dark:text-gray-500">
+            Made by{' '}
+            <Text className="text-gray-500 dark:text-gray-400 underline">Arkenstone Labs</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Nickname Edit Modal */}
@@ -676,6 +733,20 @@ export default function SettingsScreen() {
         value={weeklyReviewTime}
         onSave={setWeeklyReviewTime}
         onClose={() => setWeeklyTimePickerVisible(false)}
+      />
+      <MonthDayPickerModal
+        visible={monthlyDayPickerVisible}
+        title={t('notifications.monthlyDayPickerTitle')}
+        value={monthlyReviewDay}
+        onSave={setMonthlyReviewDay}
+        onClose={() => setMonthlyDayPickerVisible(false)}
+      />
+      <TimePickerModal
+        visible={monthlyTimePickerVisible}
+        title={t('notifications.monthlyTimePickerTitle')}
+        value={monthlyReviewTime}
+        onSave={setMonthlyReviewTime}
+        onClose={() => setMonthlyTimePickerVisible(false)}
       />
     </ScrollView>
   )

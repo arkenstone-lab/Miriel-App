@@ -39,7 +39,7 @@
 |--------|------|-------|
 | `id` | uuid | PK |
 | `user_id` | uuid | FK → auth.users |
-| `period` | text | `'daily'` or `'weekly'` |
+| `period` | text | `'daily'`, `'weekly'`, or `'monthly'` |
 | `period_start` | date | Start date of the period |
 | `text` | text | Full summary text |
 | `entry_links` | uuid[] | Referenced entry IDs |
@@ -107,6 +107,12 @@ Each feature has an `api.ts` with functions that call Supabase:
 | `deleteEntry(id)` | `DELETE` | Delete entry |
 | `requestTagging(text, aiContext?)` | Edge Function `tagging` | AI tag extraction |
 
+### Chat API (`features/entry/chatApi.ts`)
+
+| Function | Method | Description |
+|----------|--------|-------------|
+| `chatWithAI(params)` | Edge Function `chat` | AI multi-turn conversation for journaling |
+
 ### Summary API (`features/summary/api.ts`)
 
 | Function | Method | Description |
@@ -114,6 +120,7 @@ Each feature has an `api.ts` with functions that call Supabase:
 | `fetchSummaries(period, date?)` | `SELECT` | List summaries by period type |
 | `generateSummary(date?, aiContext?)` | Edge Function `generate-summary` | Generate daily summary via AI |
 | `generateWeeklySummary(weekStart?, aiContext?)` | Edge Function `generate-weekly` | Generate weekly review via AI |
+| `generateMonthlySummary(monthStart, monthEnd, aiContext?)` | Edge Function `generate-monthly` | Generate monthly review via AI |
 
 ### Todo API (`features/todo/api.ts`)
 
@@ -152,6 +159,7 @@ useUpdateEntry()
 useDeleteEntry()
 useGenerateSummary()
 useGenerateWeeklySummary()
+useGenerateMonthlySummary()
 useUpdateTodo()
 useUpsertAiPreferences()
 useDeleteTodo()
@@ -159,7 +167,7 @@ useDeleteTodo()
 
 ## Supabase Edge Functions
 
-Located in `supabase/functions/`. Each runs on Deno runtime and calls OpenAI GPT-4o:
+Located in `supabase/functions/`. Each runs on Deno runtime via `_shared/ai.ts` provider abstraction:
 
 | Function | Input | Output |
 |----------|-------|--------|
@@ -167,6 +175,8 @@ Located in `supabase/functions/`. Each runs on Deno runtime and calls OpenAI GPT
 | `extract-todos` | `{ text, entry_id?, ai_context? }` | `{ todos: Todo[] }` |
 | `generate-summary` | `{ date?, ai_context? }` | `{ summary, sentences }` |
 | `generate-weekly` | `{ week_start?, ai_context? }` | `{ summary, sentences }` |
+| `generate-monthly` | `{ month_start, month_end, ai_context? }` | `{ summary, sentences }` |
+| `chat` | `{ messages[], time_of_day, pending_todos, language, ai_context? }` | `{ message, is_complete, phase, session_summary? }` |
 
 ## ProcessedEntry Schema
 

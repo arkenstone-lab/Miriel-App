@@ -62,6 +62,7 @@
 | SUMMARY_001 | 요약 목록을 불러오지 못함 | Failed to load summaries | summaries SELECT 쿼리 실패 | 재시도, 네트워크 확인 안내 |
 | SUMMARY_002 | 일간 요약 생성 실패 | Failed to generate daily summary | Edge Function 'generate-summary' 호출 실패 | 재시도, 오늘 기록이 있는지 확인 안내 |
 | SUMMARY_003 | 주간 요약 생성 실패 | Failed to generate weekly summary | Edge Function 'generate-weekly' 호출 실패 | 재시도, 해당 주 기록이 있는지 확인 안내 |
+| SUMMARY_004 | 월간 요약 생성 실패 | Failed to generate monthly summary | Edge Function 'generate-monthly' 호출 실패 | 재시도, 해당 기간 기록이 있는지 확인 안내 |
 
 ---
 
@@ -93,6 +94,14 @@
 |------|-------------|-----------------|----------|---------|
 | AIPREF_001 | AI 설정을 불러올 수 없습니다 | Unable to load AI preferences | user_ai_preferences 테이블 조회 실패 | 네트워크 확인, 새로고침 안내 |
 | AIPREF_002 | AI 설정 저장에 실패했습니다 | Failed to save AI preferences | user_ai_preferences upsert 실패 | 네트워크 확인, 다시 시도 안내 |
+
+---
+
+## CHAT — AI 대화 관련
+
+| 코드 | 한국어 메시지 | English Message | 발생 원인 | CS 대응 |
+|------|-------------|-----------------|----------|---------|
+| CHAT_001 | AI 대화 응답을 받지 못했습니다 | Failed to get AI chat response | chat Edge Function 호출 실패 | 네트워크 확인, 새로고침 안내. 자동 fallback으로 정적 질문 전환됨 |
 
 ---
 

@@ -1,7 +1,7 @@
 export interface Summary {
   id: string
   user_id: string
-  period: 'daily' | 'weekly'
+  period: 'daily' | 'weekly' | 'monthly'
   period_start: string
   text: string
   entry_links: string[]

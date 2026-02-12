@@ -47,6 +47,7 @@
     "selectEntry": "기록을 선택해주세요",
     "selectSummary": "요약을 선택해주세요",
     "selectWeekly": "주간 회고를 선택해주세요",
+    "selectMonthly": "월간 회고를 선택해주세요",
     "selectTodoEvidence": "할 일을 선택하면 근거 기록이 표시됩니다"
   },
   "notFound": {
