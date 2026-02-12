@@ -20,7 +20,7 @@ export function showWebNotification(title: string, body: string) {
 
 /**
  * Schedule web notifications via polling (checks every 30s).
- * Fires morning, evening, and weekly review notifications when time matches.
+ * Fires morning, evening, weekly review, and monthly review notifications when time matches.
  * Only works while the tab is open (demo-level).
  */
 export function scheduleWebNotifications(settings: {
@@ -28,6 +28,8 @@ export function scheduleWebNotifications(settings: {
   eveningNotificationTime: string
   weeklyReviewDay: number   // 0=Mon..6=Sun
   weeklyReviewTime: string
+  monthlyReviewDay: number  // 1~28
+  monthlyReviewTime: string
 }) {
   cancelWebNotifications()
 
@@ -72,6 +74,18 @@ export function scheduleWebNotifications(settings: {
         showWebNotification(
           i18n.t('settings:notifications.weeklyTitle'),
           i18n.t('settings:notifications.weeklyBody'),
+        )
+      }
+    }
+
+    // Monthly review
+    if (now.getDate() === settings.monthlyReviewDay && hhmm === settings.monthlyReviewTime) {
+      const key = `monthly-${dateKey}`
+      if (lastFired.monthly !== key) {
+        lastFired.monthly = key
+        showWebNotification(
+          i18n.t('settings:notifications.monthlyTitle'),
+          i18n.t('settings:notifications.monthlyBody'),
         )
       }
     }

@@ -29,6 +29,8 @@ interface NotificationSettings {
   eveningNotificationTime: string
   weeklyReviewDay: number
   weeklyReviewTime: string
+  monthlyReviewDay: number
+  monthlyReviewTime: string
 }
 
 interface SettingsState {
@@ -52,6 +54,8 @@ interface SettingsState {
   eveningNotificationTime: string  // "HH:mm"
   weeklyReviewDay: number          // 0=Mon..6=Sun
   weeklyReviewTime: string         // "HH:mm"
+  monthlyReviewDay: number         // 1~28 (day of month)
+  monthlyReviewTime: string        // "HH:mm"
   hasCompletedSetup: boolean
   // Flags
   initialized: boolean
@@ -82,6 +86,8 @@ interface SettingsState {
   setEveningNotificationTime: (time: string) => Promise<void>
   setWeeklyReviewDay: (day: number) => Promise<void>
   setWeeklyReviewTime: (time: string) => Promise<void>
+  setMonthlyReviewDay: (day: number) => Promise<void>
+  setMonthlyReviewTime: (time: string) => Promise<void>
   saveNotificationSettings: (settings: NotificationSettings) => Promise<void>
 }
 
@@ -103,6 +109,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   eveningNotificationTime: '21:00',
   weeklyReviewDay: 6,
   weeklyReviewTime: '19:00',
+  monthlyReviewDay: 1,
+  monthlyReviewTime: '19:00',
   initialized: false,
   userDataLoaded: false,
 
@@ -146,6 +154,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       eveningNotificationTime: metadata?.eveningNotificationTime || '21:00',
       weeklyReviewDay: metadata?.weeklyReviewDay ?? 6,
       weeklyReviewTime: metadata?.weeklyReviewTime || '19:00',
+      monthlyReviewDay: metadata?.monthlyReviewDay ?? 1,
+      monthlyReviewTime: metadata?.monthlyReviewTime || '19:00',
     })
 
     // Fetch profile data (username, phone) from profiles table
@@ -209,6 +219,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       eveningNotificationTime: '21:00',
       weeklyReviewDay: 6,
       weeklyReviewTime: '19:00',
+      monthlyReviewDay: 1,
+      monthlyReviewTime: '19:00',
       userDataLoaded: false,
     })
   },
@@ -379,28 +391,48 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   setMorningNotificationTime: async (time: string) => {
     set({ morningNotificationTime: time })
-    await supabase.auth.updateUser({ data: { morningNotificationTime: time } })
+    const { error } = await supabase.auth.updateUser({ data: { morningNotificationTime: time } })
+    if (error) throw new AppError('SETTINGS_003', error)
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setEveningNotificationTime: async (time: string) => {
     set({ eveningNotificationTime: time })
-    await supabase.auth.updateUser({ data: { eveningNotificationTime: time } })
+    const { error } = await supabase.auth.updateUser({ data: { eveningNotificationTime: time } })
+    if (error) throw new AppError('SETTINGS_003', error)
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setWeeklyReviewDay: async (day: number) => {
     set({ weeklyReviewDay: day })
-    await supabase.auth.updateUser({ data: { weeklyReviewDay: day } })
+    const { error } = await supabase.auth.updateUser({ data: { weeklyReviewDay: day } })
+    if (error) throw new AppError('SETTINGS_003', error)
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setWeeklyReviewTime: async (time: string) => {
     set({ weeklyReviewTime: time })
-    await supabase.auth.updateUser({ data: { weeklyReviewTime: time } })
+    const { error } = await supabase.auth.updateUser({ data: { weeklyReviewTime: time } })
+    if (error) throw new AppError('SETTINGS_003', error)
+    const state = useSettingsStore.getState()
+    if (state.notificationsEnabled) await rescheduleAllNotifications(state)
+  },
+
+  setMonthlyReviewDay: async (day: number) => {
+    set({ monthlyReviewDay: day })
+    const { error } = await supabase.auth.updateUser({ data: { monthlyReviewDay: day } })
+    if (error) throw new AppError('SETTINGS_003', error)
+    const state = useSettingsStore.getState()
+    if (state.notificationsEnabled) await rescheduleAllNotifications(state)
+  },
+
+  setMonthlyReviewTime: async (time: string) => {
+    set({ monthlyReviewTime: time })
+    const { error } = await supabase.auth.updateUser({ data: { monthlyReviewTime: time } })
+    if (error) throw new AppError('SETTINGS_003', error)
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
@@ -412,16 +444,21 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       eveningNotificationTime: settings.eveningNotificationTime,
       weeklyReviewDay: settings.weeklyReviewDay,
       weeklyReviewTime: settings.weeklyReviewTime,
+      monthlyReviewDay: settings.monthlyReviewDay,
+      monthlyReviewTime: settings.monthlyReviewTime,
     })
-    await supabase.auth.updateUser({
+    const { error } = await supabase.auth.updateUser({
       data: {
         notificationsEnabled: settings.notificationsEnabled,
         morningNotificationTime: settings.morningNotificationTime,
         eveningNotificationTime: settings.eveningNotificationTime,
         weeklyReviewDay: settings.weeklyReviewDay,
         weeklyReviewTime: settings.weeklyReviewTime,
+        monthlyReviewDay: settings.monthlyReviewDay,
+        monthlyReviewTime: settings.monthlyReviewTime,
       },
     })
+    if (error) throw new AppError('SETTINGS_003', error)
     if (settings.notificationsEnabled) {
       await rescheduleAllNotifications(settings)
     }
@@ -434,6 +471,8 @@ async function rescheduleAllNotifications(state: {
   eveningNotificationTime: string
   weeklyReviewDay: number
   weeklyReviewTime: string
+  monthlyReviewDay: number
+  monthlyReviewTime: string
 }) {
   if (Platform.OS === 'web') {
     const { scheduleWebNotifications } = await import('@/lib/webNotifications')

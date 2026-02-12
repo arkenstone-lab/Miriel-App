@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   View,
   Text,
@@ -7,11 +7,12 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Animated,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
 } from 'react-native'
 import { useRouter } from 'expo-router'
+import { useQueryClient } from '@tanstack/react-query'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import { showErrorAlert } from '@/lib/errors'
@@ -20,14 +21,97 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useCreateEntry, useUpdateEntry, useTodayEntry } from '@/features/entry/hooks'
 import { requestTagging } from '@/features/entry/api'
 import { extractTodos } from '@/features/todo/api'
+import { useTodos } from '@/features/todo/hooks'
+import { generateSummary } from '@/features/summary/api'
 import { useAiPreferences } from '@/features/ai-preferences/hooks'
 import { buildAiContext } from '@/features/ai-preferences/context'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { LoadingState } from '@/components/ui/LoadingState'
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+const TYPING_SPEED = 18 // ms per character
+
+function ThinkingDots() {
+  const opacity = useRef(new Animated.Value(0.3)).current
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 500, useNativeDriver: true }),
+      ]),
+    )
+    loop.start()
+    return () => loop.stop()
+  }, [])
+
+  return (
+    <View className="mb-3 max-w-[80%] self-start">
+      <View className="rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
+        <Animated.Text
+          style={{ opacity }}
+          className="text-base leading-6 text-gray-400 dark:text-gray-500"
+        >
+          •••
+        </Animated.Text>
+      </View>
+    </View>
+  )
+}
+
+function TypingBubble({ text, onComplete }: { text: string; onComplete: () => void }) {
+  const [displayed, setDisplayed] = useState('')
+  const indexRef = useRef(0)
+
+  useEffect(() => {
+    indexRef.current = 0
+    setDisplayed('')
+    const timer = setInterval(() => {
+      indexRef.current += 1
+      if (indexRef.current >= text.length) {
+        setDisplayed(text)
+        clearInterval(timer)
+        onComplete()
+      } else {
+        setDisplayed(text.slice(0, indexRef.current))
+      }
+    }, TYPING_SPEED)
+    return () => clearInterval(timer)
+  }, [text])
+
+  return (
+    <View className="mb-3 max-w-[80%] self-start">
+      <View className="rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
+        <Text className="text-base leading-6 text-gray-900 dark:text-gray-100">
+          {displayed}
+          {displayed.length < text.length && (
+            <Text className="text-gray-400 dark:text-gray-500">▌</Text>
+          )}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+function MessageBubble({
+  message,
+  animate,
+  onAnimationComplete,
+}: {
+  message: ChatMessage
+  animate?: boolean
+  onAnimationComplete?: () => void
+}) {
   const isUser = message.role === 'user'
+
+  if (message.id === 'thinking') {
+    return <ThinkingDots />
+  }
+
+  if (!isUser && animate && onAnimationComplete) {
+    return <TypingBubble text={message.text} onComplete={onAnimationComplete} />
+  }
+
   return (
     <View className={`mb-3 max-w-[80%] ${isUser ? 'self-end' : 'self-start'}`}>
       <View
@@ -55,16 +139,45 @@ export default function NewEntryScreen() {
     todos: number
   } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const { messages, isComplete, addUserMessage, getFullText, reset, mode, setMode } = useChatStore()
+  const {
+    messages,
+    isComplete,
+    isAiThinking,
+    addUserMessage,
+    getFullText,
+    reset,
+    initChat,
+    mode,
+    setMode,
+  } = useChatStore()
   const createEntry = useCreateEntry()
   const updateEntry = useUpdateEntry()
+  const queryClient = useQueryClient()
   const { data: todayEntry, isLoading: checkingToday } = useTodayEntry()
   const { data: aiPrefs } = useAiPreferences()
-  const { nickname, occupation, interests } = useSettingsStore()
+  const { data: pendingTodosData } = useTodos('pending')
+  const { nickname, occupation, interests, language } = useSettingsStore()
   const router = useRouter()
   const flatListRef = useRef<FlatList>(null)
+  const [animatingId, setAnimatingId] = useState<string | null>(null)
+  const prevMessageCountRef = useRef(0)
   const { t } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
+
+  // Track when a new AI message arrives → trigger typing animation
+  useEffect(() => {
+    if (messages.length > prevMessageCountRef.current) {
+      const latest = messages[messages.length - 1]
+      if (latest && latest.role === 'assistant' && latest.id !== 'thinking') {
+        setAnimatingId(latest.id)
+      }
+    }
+    prevMessageCountRef.current = messages.length
+  }, [messages])
+
+  const handleAnimationComplete = useCallback(() => {
+    setAnimatingId(null)
+  }, [])
 
   // Redirect to edit if today's entry already exists
   useEffect(() => {
@@ -73,14 +186,29 @@ export default function NewEntryScreen() {
     }
   }, [checkingToday, todayEntry])
 
+  // Initialize AI chat on mount
   useEffect(() => {
     reset()
+    const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
+    const todos = (pendingTodosData || []).map((t) => ({
+      text: t.text,
+      status: t.status,
+      due_date: t.due_date || undefined,
+    }))
+    initChat({
+      pendingTodos: todos,
+      aiContext,
+      language: language || 'en',
+    })
   }, [])
 
-  const handleSend = () => {
-    if (!input.trim()) return
-    addUserMessage(input.trim())
+  const isBusy = isAiThinking || animatingId !== null
+
+  const handleSend = async () => {
+    if (!input.trim() || isBusy) return
+    const text = input.trim()
     setInput('')
+    await addUserMessage(text)
   }
 
   const handleChatKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
@@ -101,7 +229,7 @@ export default function NewEntryScreen() {
       // Build AI context from preferences + persona
       const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
 
-      // Auto-tag + auto-extract todos in background
+      // Auto-tag + auto-extract todos + auto-summary
       let tagCount = 0
       let todoCount = 0
 
@@ -118,12 +246,17 @@ export default function NewEntryScreen() {
         // Tagging failed silently
       }
 
-      try {
-        const todoResult = await extractTodos(fullText, entry.id, aiContext)
-        todoCount = todoResult.todos?.length || 0
-      } catch {
-        // Todo extraction failed silently
-      }
+      // Todos + daily summary — fire in parallel, non-blocking
+      const todoPromise = extractTodos(fullText, entry.id, aiContext)
+        .then((result) => { todoCount = result.todos?.length || 0 })
+        .catch(() => {})
+
+      const today = new Date().toISOString().split('T')[0]
+      const summaryPromise = generateSummary(today, aiContext)
+        .then(() => { queryClient.invalidateQueries({ queryKey: ['summaries'] }) })
+        .catch(() => {})
+
+      await Promise.all([todoPromise, summaryPromise])
 
       setSaveFeedback({ tags: tagCount, todos: todoCount })
       setIsSaving(false)
@@ -231,7 +364,13 @@ export default function NewEntryScreen() {
         ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MessageBubble message={item} />}
+        renderItem={({ item }) => (
+          <MessageBubble
+            message={item}
+            animate={item.id === animatingId}
+            onAnimationComplete={handleAnimationComplete}
+          />
+        )}
         contentContainerStyle={{ padding: 16 }}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
       />
@@ -253,16 +392,17 @@ export default function NewEntryScreen() {
             value={input}
             onChangeText={setInput}
             multiline
-            onSubmitEditing={handleSend}
+            editable={!isBusy}
+            onSubmitEditing={() => handleSend()}
             blurOnSubmit={false}
             onKeyPress={handleChatKeyPress}
           />
           <TouchableOpacity
             className={`rounded-xl px-5 py-3 ${
-              input.trim() ? 'bg-cyan-600' : 'bg-gray-300 dark:bg-gray-600'
+              input.trim() && !isBusy ? 'bg-cyan-600' : 'bg-gray-300 dark:bg-gray-600'
             }`}
-            onPress={handleSend}
-            disabled={!input.trim()}
+            onPress={() => handleSend()}
+            disabled={!input.trim() || isBusy}
           >
             <Text className="text-white font-semibold">{tCommon('action.send')}</Text>
           </TouchableOpacity>
