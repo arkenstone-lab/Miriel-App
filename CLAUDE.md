@@ -54,7 +54,7 @@
 - **Backend**: Supabase Edge Functions
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (ID/비밀번호 — profiles 테이블로 username↔email 매핑)
-- **AI**: OpenAI API (GPT-4o) - 요약/태깅용
+- **AI**: Gemini 2.0 Flash (기본) / OpenAI GPT-4o — AI_PROVIDER 환경변수로 전환, `_shared/ai.ts` 추상화
 - **배포**: EAS Build (iOS/Android) + Expo Web (PC)
 - **크로스플랫폼**: PC(웹) + iOS + Android 단일 코드베이스
 
@@ -85,7 +85,7 @@ interface Entry {
 interface Summary {
   id: string;
   user_id: string;
-  period: 'daily' | 'weekly';
+  period: 'daily' | 'weekly' | 'monthly';
   period_start: string;   // YYYY-MM-DD
   text: string;
   entry_links: string[];  // Entry IDs
@@ -268,6 +268,13 @@ interface UserAiPreferences {
 - [x] 온보딩 알림 유도 개선 (Step 3 메인 버튼이 권한 요청 직접 유도 + 웹 자동 활성화)
 - [x] 셋업 세션 정리 (환영 화면에서 기존 세션 signOut 후 auth 이동 — 자동 로그인 버그 수정)
 - [x] 홈 탭 설정 아이콘 (모바일 헤더 우측 톱니바퀴 아이콘)
+- [x] AI Provider 추상화 (_shared/ai.ts + cors.ts, Gemini 2.0 Flash 기본, OpenAI 대체)
+- [x] 기존 4개 Edge Function 리팩토링 (인라인 코드 → _shared/ import)
+- [x] 월간 회고 (generate-monthly Edge Function + 요약 탭 Monthly 토글 + 1회 제한)
+- [x] 월간 회고 설정 (monthlyReviewDay 1~28 + 알림 스케줄링)
+- [x] AI 대화형 체크인 (chat Edge Function + callAIMultiTurn + 3단계 Plan→Detail→Reflection)
+- [x] 일간 요약 자동 생성 (기록 저장 시 fire-and-forget으로 generate-summary 호출)
+- [x] raw_text Phase 마커 ([Plan]/[Detail]/[Reflection] 구조화)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -453,6 +460,15 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-05 | 온보딩 Step 3 메인 버튼으로 알림 권한 유도 | 별도 버튼은 무시하기 쉬움, 메인 CTA가 직접 유도해야 전환율 높음 | 별도 알림 허용 버튼 |
 | 2026-02-05 | 웹 알림 권한은 앱 레벨에서 항상 활성화 | 브라우저 이전 거부 시 재요청 불가, 데모용 폴링 방식이므로 앱 내부만 켜면 충분 | 브라우저 권한 결과에 의존 |
 | 2026-02-05 | 셋업 환영 화면에서 signOut 후 auth 이동 | 기존 세션이 남아있으면 라우팅 가드가 auth에서 tabs로 리다이렉트하는 버그 | 세션 체크 없이 이동 |
+| 2026-02-12 | AI Provider 추상화 (_shared/ai.ts + cors.ts) | 4개 Edge Function의 getCorsHeaders/callOpenAI/ai_context 처리 중복 제거, 모델 전환을 환경변수 1개로 가능하게 | 각 함수에 인라인 유지 |
+| 2026-02-12 | 기본 AI Provider를 Gemini 2.0 Flash로 전환 | 비용 효율 + 빠른 응답, OpenAI는 AI_PROVIDER=openai로 대체 가능 | OpenAI GPT-4o 유지 |
+| 2026-02-12 | 월간 회고 추가 (generate-monthly) | 일간→주간→월간 회고 사이클로 리텐션 루프 완성, 데모 임팩트 강화 | 월간 회고 없이 주간까지만 |
+| 2026-02-12 | monthlyReviewDay (1~28)로 월간 회고 기간 설정 | 모든 유저가 월초에 시작하지 않으므로, 사용자가 시작 날짜 지정 | 고정 월초(1일) |
+| 2026-02-12 | 월간 알림을 DATE 트리거로 구현 (네이티브) | expo-notifications에 MONTHLY 트리거 없음, 다음 발생일에 1회 예약 | 없음 (MONTHLY 지원 안 함) |
+| 2026-02-12 | AI 대화형 체크인 (chat Edge Function + callAIMultiTurn) | 정적 질문 → AI 맥락 기반 동적 질문, 3단계(Plan/Detail/Reflection) 대화로 깊이 있는 기록 유도 | 정적 질문 유지 |
+| 2026-02-12 | 일간 요약 자동 생성 (기록 저장 시 fire-and-forget) | 사용자가 수동으로 요약 생성할 필요 없음, Summary 탭 진입 시 바로 확인 가능 | 수동 트리거 유지 |
+| 2026-02-12 | raw_text에 Phase 마커 추가 ([Plan]/[Detail]/[Reflection]) | 요약 AI가 기록의 구조를 파악할 수 있어 품질 향상, 추후 단계별 분석 가능 | 평문 텍스트 유지 |
+| 2026-02-12 | chat 실패 시 정적 질문 fallback | AI 장애 시에도 기록 작성 가능, 사용자 경험 무중단 | 에러 표시 후 중단 |
 | | | | |
 
 ---
@@ -566,6 +582,21 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
   → 네이티브는 기존 대로 권한 결과에 의존
 - PowerShell Set-Content 인코딩 경고: PowerShell로 UTF-8 파일 수정 시 한국어/이모지 깨짐 + LF→CRLF 변환
   → 일괄 치환 작업은 반드시 Edit 도구 사용, PowerShell 사용 금지
+- Edge Function _shared/ import: Deno 환경에서 상대 경로 `../` 사용, `.ts` 확장자 필수
+  → `import { callAI } from '../_shared/ai.ts'`
+- Gemini API JSON 모드: `generationConfig.responseMimeType: 'application/json'` 설정으로 JSON 응답 강제
+  → OpenAI의 `response_format: { type: 'json_object' }`에 대응
+- 월간 알림 (expo-notifications): MONTHLY 트리거 타입 없음
+  → DATE 트리거로 다음 발생일 1회 예약, 알림 재스케줄링 시마다 갱신
+- monthlyReviewDay 범위: 1~28로 제한 (29~31은 월마다 존재하지 않을 수 있음)
+  → MonthDayPickerModal에서 28개 버튼 그리드로 선택
+- chat Edge Function: stateless — 클라이언트가 매 턴마다 전체 히스토리 전달
+  → messages 최대 20개 제한 (서버에서 검증)
+  → AI 실패 시 chatStore가 자동으로 정적 질문 fallback
+- callAIMultiTurn: Gemini는 role='model', OpenAI는 role='assistant'
+  → 각 provider에서 role 변환 처리 (model↔assistant)
+- 일간 요약 자동 생성: 기록 저장 시 fire-and-forget으로 호출
+  → 실패해도 사용자에게 영향 없음, React Query 캐시 무효화로 Summary 탭 자동 반영
 ```
 
 ---
@@ -582,6 +613,8 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-04 | v0.6 | 온보딩 리디자인 + 알림 확장 + 기록/회고 제한 + 웹 알림 | Chris |
 | 2026-02-04 | v0.7 | AI 개인화 (user_ai_preferences 테이블, 설정 UI, Edge Function ai_context 주입, EditModal multiline) | Chris |
 | 2026-02-05 | v0.8 | 테마 Cyan 전환 + 인라인 에러 + 온보딩/셋업 UX 개선 + 홈 설정 아이콘 | Chris |
+| 2026-02-12 | v0.9 | AI Provider 추상화 + Gemini 전환 + 월간 회고 (Edge Function, UI, 알림, 설정) | Chris |
+| 2026-02-12 | v0.10 | AI 대화형 체크인 + 일간 요약 자동 생성 + Phase 마커 (chat Edge Function, callAIMultiTurn, chatStore 리라이트) | Chris |
 | | | | |
 
 <details>

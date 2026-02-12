@@ -3,7 +3,7 @@ import { AppError } from '@/lib/errors'
 import type { Summary, SummarySentence } from './types'
 
 export async function fetchSummaries(
-  period: 'daily' | 'weekly' = 'daily',
+  period: 'daily' | 'weekly' | 'monthly' = 'daily',
   date?: string
 ): Promise<Summary[]> {
   let query = supabase
@@ -49,5 +49,21 @@ export async function generateWeeklySummary(
   })
 
   if (error) throw new AppError('SUMMARY_003', error)
+  return data as { summary: Summary; sentences: SummarySentence[] }
+}
+
+export async function generateMonthlySummary(
+  monthStart: string,
+  monthEnd: string,
+  aiContext?: string
+): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
+  const body: Record<string, unknown> = { month_start: monthStart, month_end: monthEnd }
+  if (aiContext) body.ai_context = aiContext
+
+  const { data, error } = await supabase.functions.invoke('generate-monthly', {
+    body,
+  })
+
+  if (error) throw new AppError('SUMMARY_004', error)
   return data as { summary: Summary; sentences: SummarySentence[] }
 }

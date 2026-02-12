@@ -11,6 +11,8 @@
     "todoCount": "{{count}} to-dos extracted",
     "saveFailed": "Save Failed",
     "chatCompletion": "Your entry is ready! Press the button below to save.",
+    "chatFallback": "Tell me more!",
+    "aiThinking": "Thinking...",
     "alreadyRecordedToday": "You already have an entry for today",
     "redirectingToEdit": "Redirecting to edit your existing entry."
   },

@@ -1,7 +1,8 @@
 {
   "tab": {
     "daily": "일간",
-    "weekly": "주간"
+    "weekly": "주간",
+    "monthly": "월간"
   },
   "daily": {
     "generateButton": "오늘 요약 생성",
@@ -22,6 +23,17 @@
     "periodLabel": "{{range}} 주간 회고",
     "alreadyGenerated": "이번 주 회고 완료",
     "alreadyGeneratedDesc": "이번 주 회고는 이미 생성되었습니다."
+  },
+  "monthly": {
+    "generateButton": "이번 달 회고 생성",
+    "generating": "월간 회고 생성 중...",
+    "emptyTitle": "아직 월간 회고가 없어요",
+    "emptyDescription": "한 달간 기록을 쌓은 후\n월간 회고를 생성해보세요!",
+    "pointCount": "{{count}}개 포인트",
+    "label": "월간 회고",
+    "periodLabel": "{{range}} 월간 회고",
+    "alreadyGenerated": "이번 달 회고 완료",
+    "alreadyGeneratedDesc": "이번 달 회고는 이미 생성되었습니다."
   },
   "evidenceBadge": "근거 기록 {{count}}개",
   "loadingEntry": "기록 로딩 중..."

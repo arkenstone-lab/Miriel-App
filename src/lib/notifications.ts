@@ -59,11 +59,13 @@ export async function scheduleNotifications(
     eveningNotificationTime: eveningTime,
     weeklyReviewDay: 6,
     weeklyReviewTime: '19:00',
+    monthlyReviewDay: 1,
+    monthlyReviewTime: '19:00',
   })
 }
 
 /**
- * Schedule daily morning + evening + weekly review notifications.
+ * Schedule daily morning + evening + weekly review + monthly review notifications.
  * Cancels all existing scheduled notifications first.
  */
 export async function scheduleAllNotifications(settings: {
@@ -71,6 +73,8 @@ export async function scheduleAllNotifications(settings: {
   eveningNotificationTime: string
   weeklyReviewDay: number   // 0=Mon..6=Sun
   weeklyReviewTime: string
+  monthlyReviewDay: number  // 1~28
+  monthlyReviewTime: string
 }) {
   if (Platform.OS === 'web') return
 
@@ -79,6 +83,7 @@ export async function scheduleAllNotifications(settings: {
   const morning = parseTime(settings.morningNotificationTime)
   const evening = parseTime(settings.eveningNotificationTime)
   const weekly = parseTime(settings.weeklyReviewTime)
+  const monthly = parseTime(settings.monthlyReviewTime)
 
   // Morning check-in (daily)
   await Notifications.scheduleNotificationAsync({
@@ -127,6 +132,35 @@ export async function scheduleAllNotifications(settings: {
       minute: weekly.minute,
     },
   })
+
+  // Monthly review — schedule for next occurrence of the review day
+  // expo-notifications doesn't have MONTHLY trigger, so we use a date-based trigger
+  const nextMonthlyDate = getNextMonthlyDate(settings.monthlyReviewDay, monthly.hour, monthly.minute)
+  if (nextMonthlyDate) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: i18n.t('settings:notifications.monthlyTitle'),
+        body: i18n.t('settings:notifications.monthlyBody'),
+        sound: 'default',
+        ...(Platform.OS === 'android' && { channelId: 'checkin-reminders' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: nextMonthlyDate,
+      },
+    })
+  }
+}
+
+/** Get the next Date for a monthly review notification */
+function getNextMonthlyDate(dayOfMonth: number, hour: number, minute: number): Date | null {
+  const now = new Date()
+  // Try this month
+  const thisMonth = new Date(now.getFullYear(), now.getMonth(), dayOfMonth, hour, minute, 0)
+  if (thisMonth > now) return thisMonth
+  // Next month
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, dayOfMonth, hour, minute, 0)
+  return nextMonth
 }
 
 /** Cancel all scheduled notifications */
