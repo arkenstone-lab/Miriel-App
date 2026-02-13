@@ -3,33 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callAI } from '../_shared/ai.ts'
 import { getCorsHeaders, jsonResponse, appendAiContext } from '../_shared/cors.ts'
 
-const TAGGING_PROMPT = `You are a structured data extraction assistant for a personal journal app.
-
-## Task
-Extract explicit entities from the user's journal entry. Only extract items that are clearly mentioned — do NOT guess or infer.
-
-## Output Schema
-Respond with JSON only:
-{
-  "projects": ["string"],
-  "people": ["string"],
-  "issues": ["string"]
-}
-
-## Rules
-- **Projects**: Named initiatives, products, clients, or workstreams. Look for capitalized names, quoted terms, or phrases preceded by "프로젝트"/"project".
-- **People**: Real names or referenced colleagues/contacts. Exclude pronouns (나/우리/I/we/they).
-- **Issues**: Problems, risks, bugs, or blockers. Phrase as short noun phrases (e.g., "로그인 오류", "deployment delay").
-- Each array: unique items only, trimmed, max 10 items.
-- If nothing found for a category, return an empty array.
-- Respond in the same language as the input text.
-
-## Examples
-Input: "오늘 프로젝트 Aurora 회의에서 김대리와 로그인 버그에 대해 논의했다"
-Output: {"projects":["Aurora"],"people":["김대리"],"issues":["로그인 버그"]}
-
-Input: "Had a call with Sarah about the API migration delay"
-Output: {"projects":["API migration"],"people":["Sarah"],"issues":["API migration delay"]}`
+// Prompt loaded from Supabase Edge Function secrets
+const TAGGING_PROMPT = Deno.env.get('TAGGING_PROMPT') ?? ''
 
 interface TaggingResult {
   projects: string[]

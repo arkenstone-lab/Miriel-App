@@ -3,31 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callAI } from '../_shared/ai.ts'
 import { getCorsHeaders, jsonResponse, appendAiContext } from '../_shared/cors.ts'
 
-const TODO_PROMPT = `You are a task extraction assistant for a personal journal app.
-
-## Task
-Extract actionable to-do items from the user's journal entry.
-
-## Output Schema
-Respond with JSON only:
-{
-  "todos": [
-    { "text": "Actionable task as a verb phrase", "due_hint": "deadline hint or empty string" }
-  ]
-}
-
-## Rules
-- Extract only clear action items — phrases like "해야 한다", "할 예정", "하기로 했다", "need to", "should", "will do", "plan to".
-- Exclude tasks that are clearly already completed ("했다", "완료", "finished", "done").
-- Phrase each todo as an actionable verb phrase (e.g., "Send draft to Minji", "API 문서 마감하기").
-- If a deadline is mentioned, put it in due_hint (e.g., "내일", "Friday", "다음주 수요일"). Otherwise empty string.
-- Maximum 5 todos per entry.
-- Remove duplicates.
-- Respond in the same language as the input text.
-
-## Example
-Input: "내일까지 보고서 초안을 완성해야 한다. 김대리에게 리뷰 요청할 것. 어제 발표 준비는 끝냈다."
-Output: {"todos":[{"text":"보고서 초안 완성하기","due_hint":"내일"},{"text":"김대리에게 리뷰 요청하기","due_hint":""}]}`
+// Prompt loaded from Supabase Edge Function secrets
+const TODO_PROMPT = Deno.env.get('TODO_PROMPT') ?? ''
 
 interface TodoExtractionResult {
   todos: { text: string; due_hint: string }[]

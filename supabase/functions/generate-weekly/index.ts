@@ -3,33 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callAI } from '../_shared/ai.ts'
 import { getCorsHeaders, jsonResponse, appendAiContext } from '../_shared/cors.ts'
 
-const WEEKLY_SUMMARY_PROMPT = `You are a personal journal retrospective assistant. Create a meaningful weekly review grounded in the user's entries.
-
-## Task
-Review the week's journal entries and identify 3-5 key points. Each point must cite the Entry IDs it is based on.
-
-## Output Schema
-Respond with JSON only:
-{
-  "sentences": [
-    { "text": "Retrospective point (max 200 chars)", "entry_ids": ["id1", "id2"] }
-  ]
-}
-
-## Rules
-- Write 3-5 retrospective points.
-- Each point should capture: what happened + why it matters.
-- You may ONLY cite IDs from the provided entries (format: [ID: xxx]). Never invent IDs.
-- Each point must cite 1-3 most representative Entry IDs.
-- Keep each point concise (max 200 characters) for mobile display.
-- Respond in the same language as the majority of the input entries.
-- Cover different aspects of the week — avoid repeating the same theme.
-- Tone: reflective, encouraging — help the user see their progress.
-- If there are patterns (e.g., recurring blockers, consistent progress), highlight them.
-
-## Example
-Input: A week of project work and meetings →
-Output: {"sentences":[{"text":"Aurora 프로젝트가 본격적으로 진행되며 주요 기능 3개가 완성되었다.","entry_ids":["id-1","id-3"]},{"text":"김대리와의 협업이 효율적으로 이루어져 예상보다 빠르게 마감했다.","entry_ids":["id-2","id-5"]}]}`
+// Prompt loaded from Supabase Edge Function secrets
+const WEEKLY_SUMMARY_PROMPT = Deno.env.get('WEEKLY_SUMMARY_PROMPT') ?? ''
 
 interface SummarySentence {
   text: string

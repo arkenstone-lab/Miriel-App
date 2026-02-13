@@ -5,48 +5,27 @@ import { getCorsHeaders, jsonResponse, appendAiContext } from '../_shared/cors.t
 const MAX_MESSAGES = 20
 const MAX_EXCHANGES = 10
 
+// Chat system prompt loaded from Supabase Edge Function secrets
+// Dynamically builds prompt with time-of-day context, pending todos, and language preference
 function buildSystemPrompt(
   timeOfDay: string,
   pendingTodos: { text: string; status: string; due_date?: string }[],
   language: string,
 ): string {
+  const basePrompt = Deno.env.get('CHAT_SYSTEM_PROMPT') ?? ''
   const lang = language === 'ko' ? 'Korean' : 'English'
   const todoSection =
     pendingTodos.length > 0
       ? `\n\nUser's pending to-dos:\n${pendingTodos.map((t) => `- ${t.text}${t.due_date ? ` (due: ${t.due_date})` : ''}`).join('\n')}`
       : ''
 
-  return `You are Miriel, a friendly personal journal assistant. You help users reflect on their day through a warm, brief conversation.
-
-## Conversation Structure
-Guide the conversation through 3 phases:
-1. **Plan** (1-2 exchanges): Ask about goals/plans. ${timeOfDay === 'morning' ? 'Focus on what they want to accomplish today.' : 'Ask what they worked on or what happened today.'}
-2. **Detail** (2-3 exchanges): Dig into specifics — what went well, challenges, key moments.
-3. **Reflection** (1-2 exchanges): Help them find meaning — lessons learned, feelings, what to carry forward.
-
-## Rules
-- Ask ONE question at a time. Keep responses to 1-3 sentences.
-- Be a supportive friend, not a manager. Never feel like surveillance.
-- Naturally reference their pending to-dos when relevant (ask about progress, blockers) — don't force it.
-- After 5-7 exchanges total, start wrapping up. Maximum ${MAX_EXCHANGES} exchanges.
-- When ending, give brief encouragement.
-- Respond in ${lang}.
-- IMPORTANT: Always respond with valid JSON only.${todoSection}
-
-## Output Format (JSON)
-{
-  "message": "Your conversational response",
-  "is_complete": false,
-  "phase": "plan" | "detail" | "reflection"
-}
-
-When ending the conversation (is_complete: true), add a session_summary field:
-{
-  "message": "Closing encouragement message",
-  "is_complete": true,
-  "phase": "reflection",
-  "session_summary": "Brief 1-2 sentence summary of what the user shared"
-}`
+  return basePrompt
+    .replace('{{TIME_CONTEXT}}', timeOfDay === 'morning'
+      ? 'Focus on what they want to accomplish today.'
+      : 'Ask what they worked on or what happened today.')
+    .replace('{{MAX_EXCHANGES}}', String(MAX_EXCHANGES))
+    .replace('{{LANGUAGE}}', lang)
+    + todoSection
 }
 
 function getFallbackResponse(

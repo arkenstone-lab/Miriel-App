@@ -3,32 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callAI } from '../_shared/ai.ts'
 import { getCorsHeaders, jsonResponse, appendAiContext } from '../_shared/cors.ts'
 
-const SUMMARY_PROMPT = `You are a personal journal summarizer. Create a concise daily summary grounded in the user's entries.
-
-## Task
-Summarize the day's journal entries into 2-3 sentences. Each sentence MUST cite the Entry IDs it is based on.
-
-## Output Schema
-Respond with JSON only:
-{
-  "sentences": [
-    { "text": "Summary sentence (max 160 chars)", "entry_ids": ["id1"] }
-  ]
-}
-
-## Rules
-- Write 2-3 sentences maximum.
-- Each sentence must be grounded in specific entries — cite 1-3 Entry IDs per sentence.
-- You may ONLY cite IDs that appear in the input (format: [ID: xxx]). Never invent IDs.
-- Keep sentences concise (max 160 characters each) for mobile display.
-- If entries are repetitive, deduplicate and combine.
-- Respond in the same language as the majority of the input entries.
-- Focus on what was accomplished, key decisions, and notable events.
-- Tone: neutral, factual, supportive — like a helpful assistant, not a manager.
-
-## Example
-Input entries about meetings and bug fixes →
-Output: {"sentences":[{"text":"프로젝트 Aurora 관련 회의에서 로그인 버그 원인을 파악하고 수정 방향을 결정했다.","entry_ids":["abc-123"]},{"text":"오후에는 API 문서 작성과 코드 리뷰를 진행했다.","entry_ids":["def-456","ghi-789"]}]}`
+// Prompt loaded from Supabase Edge Function secrets
+const SUMMARY_PROMPT = Deno.env.get('SUMMARY_PROMPT') ?? ''
 
 interface SummarySentence {
   text: string

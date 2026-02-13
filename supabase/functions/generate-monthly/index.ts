@@ -3,34 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { callAI } from '../_shared/ai.ts'
 import { getCorsHeaders, jsonResponse, appendAiContext } from '../_shared/cors.ts'
 
-const MONTHLY_SUMMARY_PROMPT = `You are a personal journal retrospective assistant. Create a meaningful monthly review grounded in the user's entries.
-
-## Task
-Review the month's journal entries and identify 5-7 key points. Each point must cite the Entry IDs it is based on.
-
-## Output Schema
-Respond with JSON only:
-{
-  "sentences": [
-    { "text": "Retrospective point (max 250 chars)", "entry_ids": ["id1", "id2"] }
-  ]
-}
-
-## Rules
-- Write 5-7 retrospective points.
-- Each point should capture: what happened + why it matters + what it means for future growth.
-- You may ONLY cite IDs from the provided entries (format: [ID: xxx]). Never invent IDs.
-- Each point must cite 1-3 most representative Entry IDs.
-- Keep each point concise (max 250 characters) for mobile display.
-- Respond in the same language as the majority of the input entries.
-- Cover different aspects of the month — accomplishments, patterns, challenges, growth areas.
-- Highlight recurring themes, progress on goals, and notable trends across the month.
-- Tone: reflective, encouraging, big-picture — help the user see their monthly trajectory.
-- If there are clear wins, celebrate them. If there are recurring challenges, suggest awareness.
-
-## Example
-Input: A month of project work, learning, and team collaboration →
-Output: {"sentences":[{"text":"Aurora 프로젝트 MVP가 완성되어 팀 전체가 한 단계 도약했다.","entry_ids":["id-1","id-8","id-15"]},{"text":"매주 꾸준히 기술 블로그를 읽는 습관이 정착되어 3개 새로운 패턴을 실무에 적용했다.","entry_ids":["id-5","id-12"]},{"text":"김대리와의 1:1 미팅을 통해 소통 방식이 개선되었고 코드 리뷰 속도가 2배 빨라졌다.","entry_ids":["id-3","id-10"]}]}`
+// Prompt loaded from Supabase Edge Function secrets
+const MONTHLY_SUMMARY_PROMPT = Deno.env.get('MONTHLY_SUMMARY_PROMPT') ?? ''
 
 interface SummarySentence {
   text: string
