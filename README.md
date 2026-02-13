@@ -1,42 +1,112 @@
 # Miriel
 
-내가 쓴 기록을 바탕으로, AI가 '근거 링크'가 있는 회고를 정리해주는 저널
+**AI-powered journal that turns your daily notes into evidence-backed reflections.**
 
-## 기술 스택
+Write for 3 minutes a day. Miriel organizes, summarizes, and connects your records — so every insight links back to what you actually wrote.
 
-- **Framework**: Expo (React Native) + Expo Router + TypeScript
-- **스타일링**: NativeWind (Tailwind CSS for React Native)
-- **Backend**: Supabase Edge Functions (Deno)
-- **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth (ID/비밀번호 — profiles 테이블로 username↔email 매핑)
-- **AI**: OpenAI API (GPT-4o) - 요약/태깅/할일 추출
-- **상태관리**: React Query (서버 상태) + Zustand (클라이언트 상태)
-- **플랫폼**: PC(웹) + iOS + Android 단일 코드베이스
+## Why Miriel?
 
-## 시작하기
+| Problem | Solution |
+|---------|----------|
+| Writing feels like a chore — logs don't stick | Chatbot-guided check-in: answer 3 questions, done in 3 minutes |
+| Notes pile up but never get reviewed | AI generates daily/weekly/monthly summaries automatically |
+| "What should I reflect on?" | Every summary sentence links to the original entry |
 
-### 1. 의존성 설치
+## Key Features
 
+- **Conversational Check-in** — AI-guided 3-phase dialogue (Plan → Detail → Reflection) adapts questions to your context
+- **Auto-tagging** — Projects, people, and issues extracted from your entries
+- **Evidence-linked Summaries** — Daily, weekly, and monthly reviews where every insight traces back to your words
+- **Smart To-dos** — Action items auto-extracted from entries with source linking
+- **Streak & Gamification** — Levels, XP, badges, and streak tracking to build a journaling habit
+- **AI Personalization** — Customize summary style, focus areas, and instructions to match your workflow
+- **Cross-platform** — Single codebase for Web (PC), iOS, and Android
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Expo (React Native) + Expo Router + TypeScript |
+| Styling | NativeWind (Tailwind CSS for RN) + Dark mode |
+| i18n | i18next — Korean / English, auto-detect system locale |
+| State | React Query (server) + Zustand (client) |
+| Backend | Supabase Edge Functions (Deno) |
+| Database | Supabase (PostgreSQL) with RLS |
+| Auth | Username-based login + email verification |
+| AI | Gemini 2.0 Flash (primary) / OpenAI GPT-4o (fallback) |
+| Notifications | expo-notifications (native) + Web Notification API |
+
+## Architecture
+
+```
+app/                          # Expo Router (file-based routing)
+├── (setup)/                  # First-time device setup (language → theme → welcome)
+├── (auth)/                   # Login, signup, find-id, find-password, verify-email
+├── (onboarding)/             # Post-login onboarding (growth cycle → preferences → notifications)
+├── (tabs)/                   # Main app — 5 tabs
+│   ├── index.tsx             # Dashboard (streak, level, recent summary)
+│   ├── timeline.tsx          # Entry list by date
+│   ├── summary.tsx           # Daily / Weekly / Monthly summaries
+│   ├── todos.tsx             # AI-extracted to-dos
+│   └── profile.tsx           # User profile + gamification stats
+├── entries/                  # Entry detail + create/edit
+├── settings.tsx              # Account, notifications, AI preferences
+└── edit-profile.tsx          # Avatar + persona editor
+
+src/
+├── components/               # 22 UI components (layout, dashboard, primitives)
+├── features/                 # 5 domain modules (entry, summary, todo, gamification, ai-preferences)
+├── stores/                   # 3 Zustand stores (auth, settings, chat)
+├── i18n/                     # 12 namespaces × 2 languages
+└── lib/                      # Supabase client, notifications, error handling
+
+supabase/
+├── migrations/               # 4 SQL migrations with RLS policies
+└── functions/                # 6 Edge Functions + shared AI abstraction
+    ├── chat/                 # Multi-turn AI dialogue for entry creation
+    ├── tagging/              # Auto-tag extraction
+    ├── extract-todos/        # Action item extraction
+    ├── generate-summary/     # Daily summary
+    ├── generate-weekly/      # Weekly review
+    └── generate-monthly/     # Monthly review
+```
+
+## Responsive Design
+
+| Environment | Navigation | Layout |
+|-------------|-----------|--------|
+| Desktop (1024px+) | Sidebar | Master-Detail 2-panel |
+| Mobile (~1023px) | Bottom tabs + FAB | Single panel (full screen) |
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Supabase project ([supabase.com](https://supabase.com))
+- Gemini API key or OpenAI API key
+
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
-### 2. 환경변수 설정
-
-프로젝트 루트에 `.env` 파일을 만들고 아래 값을 채워주세요.
-
+### 2. Environment variables
+Create `.env` in the project root:
 ```
-EXPO_PUBLIC_SUPABASE_URL=<Supabase 프로젝트 URL>
-EXPO_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon public key>
+EXPO_PUBLIC_SUPABASE_URL=<your Supabase project URL>
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<your Supabase anon key>
 ```
 
-> Supabase credentials는 팀 내부 채널을 통해 공유받으세요.
-> OpenAI API 키는 Supabase Edge Functions의 환경변수로 설정합니다.
+Set Edge Function secrets in Supabase Dashboard:
+```
+GEMINI_API_KEY=<your Gemini API key>
+# or
+OPENAI_API_KEY=<your OpenAI API key>
+AI_PROVIDER=gemini  # or "openai"
+```
 
-### 3. DB 스키마 설정
-
-Supabase 대시보드 > SQL Editor에서 아래 파일을 순서대로 실행해주세요.
-
+### 3. Database setup
+Run migrations in order via Supabase SQL Editor:
 ```
 supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_add_sentences_data.sql
@@ -44,115 +114,14 @@ supabase/migrations/003_profiles_username.sql
 supabase/migrations/004_user_ai_preferences.sql
 ```
 
-### 4. Supabase Auth 설정
-
-앱은 이메일 인증 ON/OFF 양쪽 모두 지원합니다:
-
-- **Confirm email OFF**: 회원가입 → 즉시 세션 생성 → profiles 테이블에 바로 INSERT → 온보딩 진입
-- **Confirm email ON**: 회원가입 → verify-email 화면 → 이메일 인증 후 첫 로그인 시 profiles 자동 생성
-
-Supabase 대시보드 > Authentication > Providers > Email에서 원하는 모드를 선택하세요.
-
-### 5. 개발 서버 실행
-
+### 4. Run
 ```bash
-# 플랫폼 선택 메뉴 (w: 웹, i: iOS, a: Android)
-npx expo start
-
-# 또는 직접 플랫폼 지정
-npx expo start --web
-npx expo start --ios
-npx expo start --android
+npx expo start        # Platform selection menu
+npx expo start --web  # Web directly
 ```
 
-## 프로젝트 구조
+## License
 
-```
-app/                              # Expo Router (파일 기반 라우팅)
-├── _layout.tsx                   # 루트 레이아웃 (인증 분기)
-├── (auth)/                       # 인증 화면
-│   ├── login.tsx                 # 로그인 (아이디 + 비밀번호)
-│   ├── signup.tsx                # 회원가입 (아이디/이메일/전화번호/비밀번호)
-│   ├── find-id.tsx               # 아이디 찾기 (이메일 → 아이디 조회)
-│   ├── find-password.tsx         # 비밀번호 찾기 (비밀번호 재설정 메일)
-│   └── verify-email.tsx          # 이메일 인증 안내
-├── (tabs)/                       # 탭 네비게이션 (메인 앱)
-│   ├── _layout.tsx               # 탭 설정 (4개 탭)
-│   ├── index.tsx                 # 타임라인
-│   ├── summary.tsx               # 일간 요약
-│   ├── weekly.tsx                # 주간 회고
-│   └── todos.tsx                 # 할 일 목록
-└── entries/                      # 기록 상세/작성
-    ├── new.tsx                   # 새 기록 (챗봇 + 빠른 입력)
-    └── [id].tsx                  # 기록 상세 (편집/삭제)
+Copyright (c) 2026 Arkenstone Lab. All rights reserved.
 
-src/
-├── components/
-│   ├── layout/                   # 반응형 레이아웃
-│   │   ├── AppShell.tsx          # 앱 래퍼 (사이드바/탭 자동 전환)
-│   │   ├── MasterDetailLayout.tsx # Desktop 2패널 레이아웃
-│   │   └── SidebarNav.tsx        # Desktop 사이드바 네비게이션
-│   ├── ui/                       # 공통 UI 컴포넌트
-│   │   ├── Button.tsx
-│   │   ├── Card.tsx
-│   │   ├── Badge.tsx
-│   │   ├── EditModal.tsx
-│   │   ├── SegmentedControl.tsx
-│   │   ├── TimePickerModal.tsx
-│   │   ├── LegalModal.tsx
-│   │   ├── EmptyState.tsx
-│   │   └── LoadingState.tsx
-│   ├── EntryCard.tsx             # 타임라인 카드
-│   ├── EntryDetail.tsx           # 기록 상세 뷰
-│   ├── SummaryDetailView.tsx     # 요약 상세 (일간/주간 공유)
-│   ├── EvidenceChip.tsx          # 근거 링크 칩
-│   └── TodoItem.tsx              # 할 일 아이템
-├── features/                     # 기능별 API + hooks
-│   ├── entry/                    # 기록 (types, api, hooks)
-│   ├── summary/                  # 요약 (types, api, hooks)
-│   ├── todo/                     # 할 일 (types, api, hooks)
-│   └── ai-preferences/           # AI 개인화 (types, api, hooks, context)
-├── hooks/
-│   └── useResponsiveLayout.ts    # 반응형 분기 (isDesktop/isMobile)
-├── lib/
-│   ├── supabase.ts               # Supabase 클라이언트 초기화
-│   ├── notifications.ts          # 로컬 푸시 알림 (expo-notifications)
-│   ├── avatar.ts                 # 아바타 업로드/삭제 (Supabase Storage)
-│   └── constants.ts              # 체크인 질문 상수
-└── stores/
-    ├── authStore.ts              # 인증 상태 (Zustand)
-    ├── chatStore.ts              # 챗봇 상태 (Zustand)
-    └── settingsStore.ts          # 설정 상태 (Zustand — 테마/언어/유저데이터)
-
-supabase/
-├── migrations/                   # DB 스키마
-│   ├── 001_initial_schema.sql    # entries, summaries, todos + RLS
-│   ├── 002_add_sentences_data.sql # summaries에 sentences_data JSONB 추가
-│   ├── 003_profiles_username.sql # profiles 테이블 + RPC 함수 3개
-│   └── 004_user_ai_preferences.sql # AI 개인화 설정 테이블
-└── functions/                    # Edge Functions (Deno)
-    ├── tagging/                  # 자동 태깅 (프로젝트/사람/이슈 추출)
-    ├── generate-summary/         # 일간 요약 생성 + 문장별 근거 링크
-    ├── generate-weekly/          # 주간 회고 생성 + 근거 링크
-    └── extract-todos/            # 할 일 자동 추출
-```
-
-## 주요 기능
-
-- **ID 기반 인증**: 아이디(username) + 비밀번호 로그인, 아이디/비밀번호 찾기, 이메일 인증(선택) 지원
-- **챗봇 기록 작성**: 아침/저녁 체크인 질문으로 3분 안에 기록 완성 + 빠른 입력 모드
-- **자동 태깅**: 프로젝트/사람/이슈 자동 추출 (AI)
-- **일간 요약**: AI가 하루 기록을 요약 + 문장별 근거 링크(EvidenceChip)
-- **주간 회고**: 한 주 핵심 3~5개 포인트 + 근거 링크
-- **할 일 추출**: 기록에서 action item 자동 추출 + 완료 관리 + 근거 Entry 링크
-- **AI 개인화**: 요약 스타일, 집중 영역, 커스텀 지시로 AI 출력 맞춤화 + 프로필 정보 공유 토글
-- **반응형 레이아웃**: Desktop(사이드바 + 2패널) / Mobile(하단 탭) 자동 전환
-- **기록 관리**: 기록 상세 보기, 편집, 삭제 + 관련 할일/요약 표시
-- **계정 관리**: 이메일/전화번호/비밀번호 변경, 프로필 편집(아바타/닉네임/페르소나)
-
-## 반응형 레이아웃
-
-| 환경 | 네비게이션 | 레이아웃 |
-|------|-----------|---------|
-| Desktop (1024px+) | 좌측 사이드바 | MasterDetail 2패널 |
-| Mobile (~1023px) | 하단 탭 바 | 단일 패널 (풀 스크린) |
+See [LICENSE](LICENSE) for details.
