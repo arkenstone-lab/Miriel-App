@@ -49,7 +49,10 @@ export default function FindPasswordScreen() {
         email = data
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      const redirectTo = Platform.OS === 'web'
+        ? `${window.location.origin}/reset-password`
+        : 'miriel://reset-password'
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
       if (error) throw new AppError('AUTH_013', error)
 
       setResultText(t('findPassword.success', { email: maskEmail(email) }))

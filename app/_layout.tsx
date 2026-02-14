@@ -85,6 +85,10 @@ export default function RootLayout() {
     const inAuthGroup = segments[0] === '(auth)'
     const inOnboarding = segments[0] === '(onboarding)'
     const inSetup = segments[0] === '(setup)'
+    const inResetPassword = segments[0] === 'reset-password'
+
+    // 0. reset-password is a special route — skip all guards
+    if (inResetPassword) return
 
     // 1. Setup not completed → send to setup (highest priority)
     if (!hasCompletedSetup && !inSetup) {
@@ -157,6 +161,10 @@ export default function RootLayout() {
           title: t('screen.editProfile'),
           presentation: 'modal',
         }}
+      />
+      <Stack.Screen
+        name="reset-password"
+        options={{ headerShown: false }}
       />
       <Stack.Screen name="+not-found" />
     </Stack>

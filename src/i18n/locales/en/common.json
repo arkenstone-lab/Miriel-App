@@ -3,7 +3,8 @@
     "newEntry": "New Entry",
     "entryDetail": "Entry Detail",
     "settings": "Settings",
-    "editProfile": "Edit Profile"
+    "editProfile": "Edit Profile",
+    "resetPassword": "Reset Password"
   },
   "tab": {
     "home": "Home",

@@ -25,6 +25,12 @@ When a user reports an error code, look it up below to identify the cause and re
 | AUTH_012 | 계정 조회 실패 | Failed to find account | Find Password account lookup failure | Verify username/email, retry |
 | AUTH_013 | 재설정 이메일 전송 실패 | Failed to send reset email | resetPasswordForEmail call failure | Verify email, retry |
 | AUTH_014 | 인증 이메일 재전송 실패 | Failed to resend verification | auth.resend call failure (possible rate limit) | Wait 60 seconds and retry |
+| AUTH_015 | 아이디 안내 이메일 전송 실패 | Failed to send username email | send-find-id-email Edge Function failure | Retry |
+| AUTH_016 | 새 비밀번호 설정 실패 | Failed to set new password | auth.updateUser password change failure | Retry |
+| AUTH_017 | 이메일 인증 미확인 | Email verification not confirmed | validate-email-token failed or token expired | Re-verify email |
+| AUTH_018 | 인증 코드 전송 실패 | Failed to send verification code | send-verification-code Edge Function failure | Retry |
+| AUTH_019 | 인증 코드 불일치 | Invalid verification code | Wrong code entered | Check code, retry |
+| AUTH_020 | 인증 코드 만료 | Verification code expired | Code older than 10 minutes | Request new code |
 
 ---
 

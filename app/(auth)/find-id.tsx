@@ -11,7 +11,7 @@ export default function FindIdScreen() {
   const [errorText, setErrorText] = useState('')
   const [resultText, setResultText] = useState('')
   const router = useRouter()
-  const { t } = useTranslation('auth')
+  const { t, i18n } = useTranslation('auth')
 
   const handleFindId = async () => {
     setErrorText('')
@@ -24,16 +24,27 @@ export default function FindIdScreen() {
 
     setLoading(true)
     try {
-      const { data: username, error } = await supabase.rpc('get_username_by_email', {
-        p_email: email,
+      const { data, error } = await supabase.functions.invoke('send-find-id-email', {
+        body: { email: email.trim(), lang: i18n.language },
       })
-      if (error) throw new AppError('AUTH_011', error)
 
-      if (username) {
-        setResultText(t('findId.result', { username }))
-      } else {
+      if (error) throw new AppError('AUTH_015', error)
+
+      if (data?.error === 'not_found') {
         setErrorText(t('findId.notFound'))
+        return
       }
+
+      if (data?.error) throw new AppError('AUTH_015', data.error)
+
+      // Fallback: RESEND_API_KEY not set, username returned directly
+      if (data?.fallback && data?.username) {
+        setResultText(t('findId.result', { username: data.username }))
+        return
+      }
+
+      // Email sent successfully
+      setResultText(t('findId.emailSent') + '\n' + t('findId.emailSentDesc'))
     } catch (error: unknown) {
       setErrorText(getErrorMessage(error))
     } finally {

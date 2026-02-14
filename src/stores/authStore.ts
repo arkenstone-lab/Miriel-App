@@ -6,8 +6,8 @@ import type { Session, User } from '@supabase/supabase-js'
 interface SignUpParams {
   username: string
   email: string
-  phone?: string
   password: string
+  verificationToken: string
 }
 
 interface AuthState {
@@ -15,8 +15,8 @@ interface AuthState {
   user: User | null
   initialized: boolean
   initialize: () => Promise<void>
-  signIn: (username: string, password: string) => Promise<void>
-  signUp: (params: SignUpParams) => Promise<{ needsEmailVerification: boolean }>
+  signIn: (usernameOrEmail: string, password: string) => Promise<void>
+  signUp: (params: SignUpParams) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -41,20 +41,37 @@ export const useAuthStore = create<AuthState>((set) => ({
     })
   },
 
-  signIn: async (username: string, password: string) => {
-    // Resolve username → email via RPC (needs auth.users access)
-    const { data: email, error: rpcError } = await supabase.rpc('get_email_by_username', {
-      p_username: username,
-    })
-    if (rpcError) throw new AppError('AUTH_002', rpcError)
-    if (!email) throw new AppError('AUTH_001')
+  signIn: async (usernameOrEmail: string, password: string) => {
+    let email: string
+
+    if (usernameOrEmail.includes('@')) {
+      // Direct email login
+      email = usernameOrEmail.trim().toLowerCase()
+    } else {
+      // Resolve username → email via RPC
+      const { data, error: rpcError } = await supabase.rpc('get_email_by_username', {
+        p_username: usernameOrEmail,
+      })
+      if (rpcError) throw new AppError('AUTH_002', rpcError)
+      if (!data) throw new AppError('AUTH_001')
+      email = data
+    }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new AppError('AUTH_003', error)
   },
 
-  signUp: async ({ username, email, phone, password }: SignUpParams) => {
-    // Check username availability via direct query (SELECT RLS = true, no RPC needed)
+  signUp: async ({ username, email, password, verificationToken }: SignUpParams) => {
+    // Validate email verification token server-side
+    const { data: tokenData, error: tokenError } = await supabase.functions.invoke(
+      'validate-email-token',
+      { body: { email: email.trim().toLowerCase(), verification_token: verificationToken } },
+    )
+    if (tokenError || !tokenData?.valid) {
+      throw new AppError('AUTH_017')
+    }
+
+    // Check username availability
     const { data: existing, error: checkError } = await supabase
       .from('profiles')
       .select('id')
@@ -64,14 +81,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (checkError) throw new AppError('AUTH_004', checkError)
     if (existing) throw new AppError('AUTH_005')
 
-    // Create auth user — store username/phone in user_metadata for deferred profile creation
+    // Create auth user with email confirmation disabled (already verified via code)
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
       options: {
         data: {
           pendingUsername: username.toLowerCase(),
-          pendingPhone: phone || null,
         },
       },
     })
@@ -90,14 +106,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { error: profileError } = await supabase.from('profiles').insert({
         id: userId,
         username: username.toLowerCase(),
-        phone: phone || null,
       })
       if (profileError) throw new AppError('AUTH_009', profileError)
-      return { needsEmailVerification: false }
     }
-
     // No session (email confirmation ON) — profile created on first login via loadUserData
-    return { needsEmailVerification: true }
   },
 
   signOut: async () => {

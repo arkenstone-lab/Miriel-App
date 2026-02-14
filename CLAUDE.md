@@ -136,6 +136,18 @@ interface UserAiPreferences {
   created_at: timestamp;
   updated_at: timestamp;
 }
+
+// EmailVerification (이메일 인증 코드 — 회원가입 시 사용)
+interface EmailVerification {
+  id: string;
+  email: string;
+  code: string;               // 6자리 숫자
+  verification_token?: string; // 인증 성공 시 발급, signUp 시 검증용
+  verified: boolean;
+  ip_address?: string;         // rate limit용
+  expires_at: timestamp;       // 생성 후 10분
+  created_at: timestamp;
+}
 ```
 
 ---
@@ -179,6 +191,7 @@ interface UserAiPreferences {
 - 네비게이션: Expo Router (파일 기반 라우팅, `/app` 디렉토리)
 - 에러 처리: `AppError(code)` + 화면별 표시 방식 분리 — auth 화면은 `getErrorMessage()` 인라인 텍스트, 그 외는 `showErrorAlert()` Alert. 에러 코드 카탈로그는 `docs/error-codes.md` 참조
 - i18n: 모든 UI 문자열은 `src/i18n/locales/{ko,en}/` JSON에서 관리, 컴포넌트에서 `useTranslation()` 사용, 하드코딩 금지
+- **Git history: All commit messages, PR titles, branch names, and changelog entries must be written in English.** Korean is allowed only in inline code comments and user-facing i18n strings. Decision logs and dev notes in CLAUDE.md may remain in Korean.
 
 ---
 
@@ -277,6 +290,13 @@ interface UserAiPreferences {
 - [x] 일간 요약 자동 생성 (기록 저장 시 fire-and-forget으로 generate-summary 호출)
 - [x] raw_text Phase 마커 ([Plan]/[Detail]/[Reflection] 구조화)
 - [x] ~~AI 프롬프트 분리~~ → 인라인 복원 (3637d4c 패턴, 각 Edge Function에 프롬프트 직접 포함)
+- [x] 회원가입 멀티스텝 리디자인 (이메일 인증 코드 3스텝 + Edge Function 3개 + IP rate limit)
+- [x] 로그인 username/email 듀얼 지원 + 로고 이미지 추가
+- [x] 비밀번호 재설정 화면 (reset-password.tsx + PASSWORD_RECOVERY 이벤트 처리)
+- [x] 비밀번호 변경 모달 (ChangePasswordModal — 현재/신규/확인 3필드)
+- [x] 아이디 찾기 Edge Function 연동 (send-find-id-email + 이메일 발송/폴백)
+- [x] 이메일 템플릿 Arkenstone Labs 브랜딩 + 인증 코드 템플릿
+- [x] 설정 화면 전화번호 UI 제거 (코드 유지, UI만 숨김)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -296,6 +316,10 @@ interface UserAiPreferences {
 | `generate-weekly` | `WEEKLY_SUMMARY_PROMPT` | 주간 회고 (3-5포인트 + entry_ids) |
 | `generate-monthly` | `MONTHLY_SUMMARY_PROMPT` | 월간 회고 (5-7포인트 + entry_ids) |
 | `chat` | `buildChatSystemPrompt()` | 3단계 대화형 체크인 |
+| `send-verification-code` | — | 이메일 인증 코드 발송 (6자리, 10분 만료, IP+이메일 rate limit) |
+| `verify-email-code` | — | 인증 코드 검증 → verification_token 발급 |
+| `validate-email-token` | — | signUp 전 토큰 재검증 (서버사이드) |
+| `send-find-id-email` | — | 아이디 찾기 이메일 발송 (Resend API) |
 
 ---
 
@@ -460,6 +484,13 @@ interface UserAiPreferences {
 | 2026-02-14 | ~~AI 프롬프트를 gitignored 파일로 분리~~ → 인라인 복원 | 3637d4c (AI 전문가 작업) 형태를 기준점으로 유지, 보안 처리 포함 인라인이 더 안정적 | _shared/ 추상화 (리팩토링 리스크) |
 | 2026-02-14 | _shared/ 모듈 제거 + OpenAI GPT-4o 직접 호출로 복원 | 3637d4c 커밋의 보안 강화 + 프롬프트 체계화를 그대로 유지, 6개 Edge Function 일관된 인라인 패턴 | Gemini + _shared/ 추상화 유지 |
 | 2026-02-14 | 오프라인 저장/동기화는 데모 후로 연기, 현재는 롤백 패턴만 적용 | 서버 우선+로컬 폴백(C)은 추후 로컬 우선(B)으로 전환 시 코드 전량 폐기 → 이중 작업. 데모 일정(D-5) 고려 시 롤백만으로 충분 | 서버 우선+로컬 폴백(C안) |
+| 2026-02-15 | 회원가입을 멀티스텝(이메일→코드→계정)으로 전환 | 미국 서비스 표준 UX, 이메일 본인 인증으로 spam 계정 방지, Supabase Confirm Email OFF | 단일 폼 유지 |
+| 2026-02-15 | 자체 이메일 인증 코드 (email_verifications 테이블 + Edge Function 3개) | Supabase 내장 이메일 인증 링크 대신 6자리 코드 UX가 모바일 친화적, verification_token으로 서버사이드 검증 | Supabase 내장 Confirm Email |
+| 2026-02-15 | IP 기반 rate limit 추가 (10회/10분/IP) | 이메일당 3회 제한만으로는 다른 이메일로 폭탄 가능, IP 제한으로 DDoS 방어 | 이메일 rate limit만 |
+| 2026-02-15 | 로그인에 username + email 듀얼 지원 | @ 포함 시 이메일 직접 로그인, 없으면 username→email RPC 조회. US 서비스 표준 | username만 지원 |
+| 2026-02-15 | 전화번호를 설정 UI에서 제거 | 가입/설정에서 불필요, 코드는 유지하여 추후 복원 가능 | 전화번호 유지 |
+| 2026-02-15 | 이메일 템플릿에 Arkenstone Labs 브랜딩 | 제품(Miriel)과 회사(Arkenstone Labs) 브랜드 분리, footer에 "Miriel by Arkenstone Labs" | Miriel만 표시 |
+| 2026-02-15 | 로고 이미지를 128px 리사이즈 버전으로 분리 (logo-128.png) | 원본 icon.png(2048x2048)를 그대로 사용하면 화면에서 과도하게 큼, 로고용 경량 에셋 별도 관리 | 원본 직접 사용 |
 | | | | |
 
 ---
@@ -591,6 +622,15 @@ interface UserAiPreferences {
   → 새 개발자 clone 후 `cp prompts.example.ts prompts.ts` 필수 (없으면 Deno "Module not found" 에러)
   → prompts.example.ts와 prompts.ts는 동일한 export 이름/시그니처 유지 필수
   → 새 프롬프트 추가 시 양쪽 파일 동시 수정 (example에는 placeholder + JSDoc)
+- email_verifications 테이블: RLS enabled + 정책 없음 = service_role만 접근 가능 (Edge Function에서만 사용)
+  → 클라이언트(anon key)에서 직접 접근 불가, 반드시 Edge Function 경유
+- send-verification-code IP 추출: x-forwarded-for (첫 번째 값) 또는 cf-connecting-ip 사용
+  → 로컬 개발 시 'unknown'으로 fallback, IP rate limit 우회됨
+- Supabase Confirm Email OFF 필수: 자체 코드 인증으로 대체, ON이면 signUp 후 session=null로 자동 로그인 안 됨
+- 로고 에셋: icon.png(2048x2048)는 앱 아이콘용, logo-128.png(128x128)는 화면 표시용
+  → `@/`는 src/를 가리키므로 assets/는 상대경로 `../../assets/images/` 사용 필수
+- verification_token: signUp 직전 validate-email-token으로 서버사이드 재검증
+  → 클라이언트에서 토큰 조작 방지, 토큰도 expires_at 이내에만 유효
 ```
 
 ---
@@ -609,6 +649,7 @@ interface UserAiPreferences {
 | 2026-02-05 | v0.8 | 테마 Cyan 전환 + 인라인 에러 + 온보딩/셋업 UX 개선 + 홈 설정 아이콘 | Chris |
 | 2026-02-12 | v0.9 | 월간 회고 + AI 대화형 체크인 + 일간 요약 자동 생성 (Edge Function, UI, 알림, 설정) | Chris |
 | 2026-02-14 | v0.10 | Edge Function 아키텍처 3637d4c 기준 복원 (OpenAI GPT-4o 인라인, _shared/ 제거, 보안 강화 패턴 통일) | Chris |
+| 2026-02-15 | v0.11 | Multi-step signup redesign + email verification code + password reset + dual login (username/email) + Arkenstone Labs branding | Chris |
 | | | | |
 
 <details>

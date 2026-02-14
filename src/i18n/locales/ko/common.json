@@ -3,7 +3,8 @@
     "newEntry": "새 기록",
     "entryDetail": "기록 상세",
     "settings": "설정",
-    "editProfile": "프로필 수정"
+    "editProfile": "프로필 수정",
+    "resetPassword": "비밀번호 재설정"
   },
   "tab": {
     "home": "홈",

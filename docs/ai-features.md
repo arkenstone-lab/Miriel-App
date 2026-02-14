@@ -181,7 +181,8 @@ All summaries must be traceable back to the original entries:
 
 | Category | File Paths |
 |----------|-----------|
-| Edge Functions | `supabase/functions/{tagging,extract-todos,generate-summary,generate-weekly,generate-monthly,chat}/index.ts` |
+| Edge Functions (AI) | `supabase/functions/{tagging,extract-todos,generate-summary,generate-weekly,generate-monthly,chat}/index.ts` |
+| Edge Functions (Auth) | `supabase/functions/{send-verification-code,verify-email-code,validate-email-token,send-find-id-email}/index.ts` |
 | Client API | `src/features/{entry,summary,todo,ai-preferences}/api.ts`, `src/features/entry/chatApi.ts` |
 | React Query hooks | `src/features/{entry,summary,todo,ai-preferences}/hooks.ts` |
 | AI schema | `src/features/entry/schema.ts` |

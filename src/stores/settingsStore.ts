@@ -79,7 +79,7 @@ interface SettingsState {
   // Account actions
   setPhone: (phone: string) => Promise<void>
   setEmail: (email: string) => Promise<void>
-  changePassword: (password: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   // Notification actions
   setNotificationsEnabled: (enabled: boolean) => Promise<void>
   setMorningNotificationTime: (time: string) => Promise<void>
@@ -356,8 +356,19 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     if (error) throw new AppError('SETTINGS_001', error)
   },
 
-  changePassword: async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password })
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    // Verify current password by attempting sign in
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user?.email) throw new AppError('SETTINGS_004')
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    })
+    if (signInError) throw new AppError('SETTINGS_005', signInError)
+
+    // Update to new password
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) throw new AppError('SETTINGS_004', error)
   },
 

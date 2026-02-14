@@ -71,7 +71,22 @@
 | `created_at` | timestamptz | Auto |
 | `updated_at` | timestamptz | Auto (trigger) |
 
-All tables have RLS enabled. Users can only access their own rows.
+### `email_verifications`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid | PK |
+| `email` | text | Target email address |
+| `code` | text | 6-digit verification code |
+| `verification_token` | uuid | Issued on successful verification, used for signUp validation |
+| `verified` | boolean | Default false, set true on code match |
+| `ip_address` | text | Client IP for rate limiting |
+| `expires_at` | timestamptz | Code expiry (10 min from creation) |
+| `created_at` | timestamptz | Auto |
+
+RLS enabled, **no policies** = service_role only (Edge Functions access via SUPABASE_SERVICE_ROLE_KEY).
+
+All user-facing tables have RLS enabled. Users can only access their own rows.
 
 ## Migrations
 
@@ -83,6 +98,7 @@ Located in `supabase/migrations/`:
 4. `004_user_ai_preferences.sql` — Creates user_ai_preferences table + RLS + updated_at trigger
 5. `005_security_hardening.sql` — Security policies
 6. `006_monthly_review.sql` — Monthly review feature
+7. `007_email_verifications.sql` — Email verification codes for signup (RLS, no policies = service_role only)
 
 ## TypeScript Interfaces
 

@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react'
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native'
 import { Link } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { getErrorMessage } from '@/lib/errors'
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('')
+  const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState('')
@@ -17,14 +17,14 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setErrorText('')
 
-    if (!username || !password) {
+    if (!usernameOrEmail || !password) {
       setErrorText(t('login.alertFillFields'))
       return
     }
 
     setLoading(true)
     try {
-      await signIn(username, password)
+      await signIn(usernameOrEmail, password)
     } catch (error: unknown) {
       setErrorText(getErrorMessage(error))
     } finally {
@@ -38,6 +38,10 @@ export default function LoginScreen() {
       className="flex-1 bg-white dark:bg-gray-950"
     >
       <View className="flex-1 justify-center px-8">
+        <Image
+          source={require('../../assets/images/logo-128.png')}
+          className="w-16 h-16 self-center mb-3 rounded-2xl"
+        />
         <Text className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
           Miriel
         </Text>
@@ -46,12 +50,12 @@ export default function LoginScreen() {
         </Text>
 
         <View className="mb-4">
-          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.username')}</Text>
+          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.usernameOrEmail')}</Text>
           <TextInput
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
-            placeholder={t('login.usernamePlaceholder')}
-            value={username}
-            onChangeText={(v) => { setUsername(v); setErrorText('') }}
+            placeholder={t('login.usernameOrEmailPlaceholder')}
+            value={usernameOrEmail}
+            onChangeText={(v) => { setUsernameOrEmail(v); setErrorText('') }}
             autoCapitalize="none"
             autoComplete="username"
             returnKeyType="next"

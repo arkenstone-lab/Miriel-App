@@ -16,6 +16,12 @@
   "AUTH_012": { "message": "Failed to find account. Please check your information and try again." },
   "AUTH_013": { "message": "Failed to send password reset email. Please try again." },
   "AUTH_014": { "message": "Failed to resend verification email. Please try again later." },
+  "AUTH_015": { "message": "Failed to send username email. Please try again." },
+  "AUTH_016": { "message": "Failed to set new password. Please try again." },
+  "AUTH_017": { "message": "Email verification not confirmed. Please check your verification code." },
+  "AUTH_018": { "message": "Failed to send verification code. Please try again." },
+  "AUTH_019": { "message": "Invalid verification code. Please check and try again." },
+  "AUTH_020": { "message": "Verification code has expired. Please request a new one." },
 
   "ENTRY_001": { "message": "Failed to load entries. Please try again." },
   "ENTRY_002": { "message": "Failed to load entry. Please try again." },
@@ -41,6 +47,7 @@
   "SETTINGS_002": { "message": "Failed to change phone number. Please try again." },
   "SETTINGS_003": { "message": "Failed to save settings. Please try again." },
   "SETTINGS_004": { "message": "Failed to change password. Please try again." },
+  "SETTINGS_005": { "message": "Current password is incorrect." },
 
   "PROFILE_001": { "message": "Failed to upload image. Please try again." },
   "PROFILE_002": { "message": "Failed to save profile. Please try again." },

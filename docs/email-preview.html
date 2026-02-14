@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miriel Email Template Preview</title>
+<style>
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1f2937; }
+  .toolbar { position: sticky; top: 0; z-index: 10; background: #111827; padding: 16px 24px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #374151; flex-wrap: wrap; }
+  .toolbar h1 { color: #22d3ee; font-size: 16px; margin: 0; flex: 1; }
+  .toolbar select, .toolbar input { padding: 8px 12px; border-radius: 8px; border: 1px solid #4b5563; background: #374151; color: #f3f4f6; font-size: 14px; }
+  .toolbar input { width: 160px; }
+  .toolbar label { color: #9ca3af; font-size: 13px; }
+  .preview-container { display: flex; gap: 24px; padding: 24px; justify-content: center; flex-wrap: wrap; }
+  .preview-frame { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.3); max-width: 520px; width: 100%; }
+  .frame-label { background: #374151; color: #d1d5db; font-size: 12px; font-weight: 600; padding: 8px 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Miriel Email Preview</h1>
+  <label>Template:
+    <select id="templateSelect" onchange="render()">
+      <option value="findId">Find ID</option>
+      <option value="verificationCode" selected>Verification Code</option>
+    </select>
+  </label>
+  <label>Username: <input type="text" id="usernameInput" value="chris_kim" oninput="render()"></label>
+  <label>Code: <input type="text" id="codeInput" value="482951" oninput="render()" maxlength="6"></label>
+  <label>Lang:
+    <select id="langSelect" onchange="render()">
+      <option value="both">Both</option>
+      <option value="ko">한국어</option>
+      <option value="en">English</option>
+    </select>
+  </label>
+</div>
+
+<div class="preview-container" id="previewContainer"></div>
+
+<script>
+// ===== Find ID Template =====
+const FIND_ID_TEMPLATES = {
+  ko: {
+    subject: 'Miriel — 아이디 안내',
+    heading: 'Miriel — 아이디 안내',
+    greeting: '안녕하세요, 요청하신 아이디 정보입니다.',
+    label: '회원님의 아이디',
+    footer: '본인이 요청하지 않으셨다면, 계정이 노출되었을 수 있습니다. 즉시 비밀번호를 변경하시고, 문제가 지속되면 support@miriel.app으로 문의해주세요.',
+  },
+  en: {
+    subject: 'Miriel — Your Username',
+    heading: 'Miriel — Your Username',
+    greeting: 'Hello, here is the username you requested.',
+    label: 'Your Username',
+    footer: 'If you did not request this, your account may be compromised. Please change your password immediately and contact support@miriel.app if the issue persists.',
+  },
+};
+
+function buildFindIdHtml(lang, username) {
+  const t = FIND_ID_TEMPLATES[lang];
+  return `
+  <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 20px;">
+    <h2 style="color:#0891b2;margin-bottom:24px;">${t.heading}</h2>
+    <p style="color:#374151;font-size:16px;line-height:1.6;">${t.greeting}</p>
+    <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:20px;margin:24px 0;text-align:center;">
+      <p style="color:#6b7280;font-size:14px;margin:0 0 8px;">${t.label}</p>
+      <p style="color:#0891b2;font-size:24px;font-weight:700;margin:0;">${username}</p>
+    </div>
+    <p style="color:#6b7280;font-size:14px;line-height:1.5;">${t.footer}</p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0 16px;">
+    <p style="color:#9ca3af;font-size:12px;text-align:center;">Miriel by Arkenstone Labs — miriel.app</p>
+  </div>`;
+}
+
+// ===== Verification Code Template =====
+const VERIFICATION_TEMPLATES = {
+  ko: {
+    subject: 'Miriel - 인증 코드',
+    heading: 'Miriel 이메일 인증',
+    greeting: '안녕하세요! 아래 인증 코드를 입력해주세요.',
+    codeLabel: '인증 코드',
+    expiry: '이 코드는 10분간 유효합니다.',
+    footer: '본인이 요청하지 않으셨다면 이 메일을 무시해주세요.',
+  },
+  en: {
+    subject: 'Miriel - Verification Code',
+    heading: 'Miriel Email Verification',
+    greeting: 'Hello! Please enter the verification code below.',
+    codeLabel: 'Verification Code',
+    expiry: 'This code is valid for 10 minutes.',
+    footer: 'If you did not request this, please ignore this email.',
+  },
+};
+
+function buildVerificationHtml(lang, code) {
+  const t = VERIFICATION_TEMPLATES[lang];
+  return `
+  <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 20px;">
+    <h2 style="color:#0891b2;margin-bottom:24px;">${t.heading}</h2>
+    <p style="color:#374151;font-size:16px;line-height:1.6;">${t.greeting}</p>
+    <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
+      <p style="color:#6b7280;font-size:14px;margin:0 0 8px;">${t.codeLabel}</p>
+      <p style="color:#0891b2;font-size:36px;font-weight:700;letter-spacing:8px;margin:0;">${code}</p>
+    </div>
+    <p style="color:#6b7280;font-size:14px;line-height:1.5;">${t.expiry}</p>
+    <p style="color:#9ca3af;font-size:13px;line-height:1.5;margin-top:16px;">${t.footer}</p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0 16px;">
+    <p style="color:#9ca3af;font-size:12px;text-align:center;">Miriel by Arkenstone Labs — miriel.app</p>
+  </div>`;
+}
+
+function render() {
+  const template = document.getElementById('templateSelect').value;
+  const username = document.getElementById('usernameInput').value || 'username';
+  const code = document.getElementById('codeInput').value || '000000';
+  const lang = document.getElementById('langSelect').value;
+  const container = document.getElementById('previewContainer');
+
+  const langs = lang === 'both' ? ['ko', 'en'] : [lang];
+
+  if (template === 'findId') {
+    container.innerHTML = langs.map(l => `
+      <div class="preview-frame">
+        <div class="frame-label">${l === 'ko' ? '한국어 (Korean)' : 'English'} — Subject: "${FIND_ID_TEMPLATES[l].subject}"</div>
+        <div style="background:#f9fafb;">${buildFindIdHtml(l, username)}</div>
+      </div>
+    `).join('');
+  } else {
+    container.innerHTML = langs.map(l => `
+      <div class="preview-frame">
+        <div class="frame-label">${l === 'ko' ? '한국어 (Korean)' : 'English'} — Subject: "${VERIFICATION_TEMPLATES[l].subject}"</div>
+        <div style="background:#f9fafb;">${buildVerificationHtml(l, code)}</div>
+      </div>
+    `).join('');
+  }
+}
+
+render();
+</script>
+</body>
+</html>

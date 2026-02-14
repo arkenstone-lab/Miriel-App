@@ -14,9 +14,10 @@ import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore } from '@/stores/authStore'
-import { AppError, showErrorAlert } from '@/lib/errors'
+import { showErrorAlert } from '@/lib/errors'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { EditModal } from '@/components/ui/EditModal'
+import { ChangePasswordModal } from '@/components/ui/ChangePasswordModal'
 import { TimePickerModal } from '@/components/ui/TimePickerModal'
 import { DayPickerModal } from '@/components/ui/DayPickerModal'
 import { MonthDayPickerModal } from '@/components/ui/MonthDayPickerModal'
@@ -37,8 +38,8 @@ export default function SettingsScreen() {
   const { t } = useTranslation('settings')
   const { t: tPrivacy } = useTranslation('privacy')
   const {
-    theme, language, nickname, username, phone,
-    setTheme, setLanguage, setNickname, setPhone, setEmail, changePassword,
+    theme, language, nickname, username,
+    setTheme, setLanguage, setNickname, setEmail,
     notificationsEnabled, morningNotificationTime, eveningNotificationTime,
     weeklyReviewDay, weeklyReviewTime,
     monthlyReviewDay, monthlyReviewTime,
@@ -52,7 +53,6 @@ export default function SettingsScreen() {
 
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false)
   const [emailModalVisible, setEmailModalVisible] = useState(false)
-  const [phoneModalVisible, setPhoneModalVisible] = useState(false)
   const [passwordModalVisible, setPasswordModalVisible] = useState(false)
   const [morningPickerVisible, setMorningPickerVisible] = useState(false)
   const [eveningPickerVisible, setEveningPickerVisible] = useState(false)
@@ -145,31 +145,6 @@ export default function SettingsScreen() {
     } catch (error: unknown) {
       showErrorAlert(t('account.title'), error)
       throw error // Keep modal open on error
-    }
-  }
-
-  const handlePhoneSave = async (newPhone: string) => {
-    try {
-      await setPhone(newPhone)
-      Alert.alert('', t('account.phoneChanged'))
-    } catch (error: unknown) {
-      showErrorAlert(t('account.title'), error)
-      throw error
-    }
-  }
-
-  const handlePasswordSave = async (newPassword: string) => {
-    if (newPassword.length < 6) {
-      const err = new AppError('SETTINGS_003')
-      showErrorAlert(t('account.title'), err)
-      throw err
-    }
-    try {
-      await changePassword(newPassword)
-      Alert.alert('', t('account.passwordChanged'))
-    } catch (error: unknown) {
-      showErrorAlert(t('account.title'), error)
-      throw error
     }
   }
 
@@ -491,19 +466,6 @@ export default function SettingsScreen() {
               <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">{user?.email ?? '—'}</Text>
               <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
             </TouchableOpacity>
-            {/* Phone */}
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
-              onPress={() => setPhoneModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <FontAwesome name="phone" size={16} color="#9ca3af" />
-              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.phone')}</Text>
-              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
-                {phone || t('account.phonePlaceholder')}
-              </Text>
-              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
-            </TouchableOpacity>
             {/* Password */}
             <TouchableOpacity
               className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
@@ -654,24 +616,9 @@ export default function SettingsScreen() {
         onClose={() => setEmailModalVisible(false)}
       />
 
-      {/* Phone Edit Modal */}
-      <EditModal
-        visible={phoneModalVisible}
-        title={t('account.phone')}
-        value={phone}
-        placeholder={t('account.phonePlaceholder')}
-        onSave={handlePhoneSave}
-        onClose={() => setPhoneModalVisible(false)}
-      />
-
-      {/* Password Edit Modal */}
-      <EditModal
+      {/* Password Change Modal */}
+      <ChangePasswordModal
         visible={passwordModalVisible}
-        title={t('account.password')}
-        value=""
-        placeholder={t('account.newPasswordPlaceholder')}
-        secureTextEntry
-        onSave={handlePasswordSave}
         onClose={() => setPasswordModalVisible(false)}
       />
 
