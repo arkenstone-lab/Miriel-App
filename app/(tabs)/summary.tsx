@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { View, Text, FlatList } from 'react-native'
+import { useState, useMemo, useEffect } from 'react'
+import { View, Text, FlatList, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSummaries, useGenerateSummary, useGenerateWeeklySummary, useGenerateMonthlySummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
@@ -153,7 +153,7 @@ export default function SummaryScreen() {
   const { t } = useTranslation('summary')
   const { t: tCommon } = useTranslation('common')
   const { data: aiPrefs } = useAiPreferences()
-  const { nickname, occupation, interests, monthlyReviewDay } = useSettingsStore()
+  const { username, occupation, interests, monthlyReviewDay } = useSettingsStore()
 
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -189,7 +189,7 @@ export default function SummaryScreen() {
     return <ErrorDisplay error={error} />
   }
 
-  const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
+  const aiContext = buildAiContext(aiPrefs, { username, occupation, interests })
 
   const handleGenerate = () => {
     if (period === 'monthly') {
@@ -205,6 +205,16 @@ export default function SummaryScreen() {
   }
 
   const generateMutation = period === 'daily' ? dailyMutation : period === 'weekly' ? weeklyMutation : monthlyMutation
+
+  // Show alert on daily generation limit
+  useEffect(() => {
+    if (dailyMutation.error) {
+      const err = dailyMutation.error as any
+      if (err?.status === 429) {
+        Alert.alert(t('daily.limitTitle'), t('daily.limitMessage'))
+      }
+    }
+  }, [dailyMutation.error])
 
   const handleSelect = (summary: Summary) => {
     setSelectedId(summary.id)

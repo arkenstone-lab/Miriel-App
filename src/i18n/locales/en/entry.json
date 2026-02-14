@@ -9,12 +9,21 @@
     "savedTitle": "Entry saved!",
     "tagCount": "{{count}} tags",
     "todoCount": "{{count}} to-dos extracted",
+    "aiSummary": "AI Summary",
+    "summaryReady": "Daily summary ready",
     "saveFailed": "Save Failed",
     "chatCompletion": "Your entry is ready! Press the button below to save.",
     "chatFallback": "Tell me more!",
     "aiThinking": "Thinking...",
     "alreadyRecordedToday": "You already have an entry for today",
-    "redirectingToEdit": "Redirecting to edit your existing entry."
+    "redirectingToEdit": "Redirecting to edit your existing entry.",
+    "draftFound": "You have an unfinished conversation",
+    "draftFoundDesc": "Would you like to continue where you left off?",
+    "draftResume": "Resume",
+    "draftNew": "Start Fresh",
+    "leaveTitle": "Leave conversation?",
+    "leaveMessage": "Your conversation will be saved. You can continue later.",
+    "leaveConfirm": "Leave"
   },
   "detail": {
     "notFound": "Entry not found.",
@@ -24,6 +33,12 @@
     "editFailed": "Edit Failed",
     "extractedTodos": "Extracted To-dos",
     "dailySummary": "Daily Summary",
-    "retryMessage": "Please try again."
+    "retryMessage": "Please try again.",
+    "syncButton": "Regenerate Summary",
+    "syncing": "Regenerating...",
+    "syncSuccess": "Summary & to-dos updated!",
+    "syncFailed": "Regeneration failed",
+    "syncLimitReached": "Daily limit reached ({{count}}/{{max}})",
+    "syncRemaining": "{{remaining}} of {{max}} remaining today"
   }
 }

@@ -22,11 +22,10 @@ export default function PersonaScreen() {
   const isDesktop = width >= 768
 
   const {
-    nickname, gender, occupation, interests,
+    gender, occupation, interests,
     savePersona, acknowledgeOnboarding,
   } = useSettingsStore()
 
-  const [localNickname, setLocalNickname] = useState(nickname)
   const [localGender, setLocalGender] = useState(gender)
   const [localOccupation, setLocalOccupation] = useState(occupation)
   const [localInterests, setLocalInterests] = useState<string[]>(interests)
@@ -39,7 +38,6 @@ export default function PersonaScreen() {
 
   const handleDone = async () => {
     await savePersona({
-      nickname: localNickname,
       gender: localGender,
       occupation: localOccupation,
       interests: localInterests,
@@ -68,22 +66,6 @@ export default function PersonaScreen() {
           <Text className="text-base text-gray-500 dark:text-gray-400 text-center mb-8">
             {t('persona.subtitle')}
           </Text>
-
-          {/* Nickname */}
-          <View className="mb-5">
-            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              {t('persona.nickname')}
-            </Text>
-            <TextInput
-              className="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
-              placeholder={t('persona.nicknamePlaceholder')}
-              placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-              value={localNickname}
-              onChangeText={setLocalNickname}
-              maxLength={20}
-              returnKeyType="next"
-            />
-          </View>
 
           {/* Gender */}
           <View className="mb-5">

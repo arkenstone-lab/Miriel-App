@@ -3,7 +3,7 @@ import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import i18n from '@/i18n'
 import { getLocales } from 'expo-localization'
-import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { AppError } from '@/lib/errors'
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -17,7 +17,6 @@ const KEYS = {
 } as const
 
 interface PersonaData {
-  nickname: string
   gender: string
   occupation: string
   interests: string[]
@@ -37,18 +36,17 @@ interface SettingsState {
   // Device settings (AsyncStorage)
   theme: ThemeMode
   language: Language | null
-  // User data (Supabase user_metadata)
-  nickname: string
+  // User data (user_metadata via API)
   gender: string
   occupation: string
   interests: string[]
   avatarUrl: string
   hasSeenPrivacyNotice: boolean
   hasSeenOnboarding: boolean
-  // Profile data (Supabase profiles table)
+  // Profile data (merged into users table)
   username: string
   phone: string
-  // Notification settings (Supabase user_metadata)
+  // Notification settings (user_metadata)
   notificationsEnabled: boolean
   morningNotificationTime: string  // "HH:mm"
   eveningNotificationTime: string  // "HH:mm"
@@ -65,10 +63,9 @@ interface SettingsState {
   setTheme: (theme: ThemeMode) => Promise<void>
   setLanguage: (lang: Language | null) => Promise<void>
   completeSetup: () => Promise<void>
-  // User data actions (Supabase user_metadata)
-  loadUserData: (metadata: Record<string, any>, userId: string) => void
+  // User data actions
+  loadUserData: (metadata: Record<string, any>, extra: { username: string; phone: string }) => void
   clearUserData: () => void
-  setNickname: (name: string) => Promise<void>
   setGender: (gender: string) => Promise<void>
   setOccupation: (occupation: string) => Promise<void>
   setInterests: (interests: string[]) => Promise<void>
@@ -91,10 +88,17 @@ interface SettingsState {
   saveNotificationSettings: (settings: NotificationSettings) => Promise<void>
 }
 
+/** Helper: update user_metadata via API */
+async function updateMetadata(data: Record<string, unknown>): Promise<void> {
+  await apiFetch('/auth/user', {
+    method: 'PUT',
+    body: JSON.stringify({ data }),
+  })
+}
+
 export const useSettingsStore = create<SettingsState>((set) => ({
   theme: 'system',
   language: null,
-  nickname: '',
   gender: '',
   occupation: '',
   interests: [],
@@ -139,10 +143,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     }
   },
 
-  loadUserData: (metadata: Record<string, any>, userId: string) => {
-    // Load user_metadata fields immediately
+  loadUserData: (metadata: Record<string, any>, extra: { username: string; phone: string }) => {
     set({
-      nickname: metadata?.nickname || '',
       gender: metadata?.gender || '',
       occupation: metadata?.occupation || '',
       interests: metadata?.interests || [],
@@ -156,56 +158,14 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       weeklyReviewTime: metadata?.weeklyReviewTime || '19:00',
       monthlyReviewDay: metadata?.monthlyReviewDay ?? 1,
       monthlyReviewTime: metadata?.monthlyReviewTime || '19:00',
+      username: extra.username || '',
+      phone: extra.phone || '',
+      userDataLoaded: true,
     })
-
-    // Fetch profile data (username, phone) from profiles table
-    supabase
-      .from('profiles')
-      .select('username, phone')
-      .eq('id', userId)
-      .maybeSingle()
-      .then(async ({ data, error }) => {
-        if (error) {
-          set({ userDataLoaded: true })
-          return
-        }
-
-        if (data) {
-          set({
-            username: data.username || '',
-            phone: data.phone || '',
-            userDataLoaded: true,
-          })
-          return
-        }
-
-        // Profile doesn't exist — create from pending metadata (post email verification)
-        if (metadata?.pendingUsername) {
-          const { error: insertError } = await supabase.from('profiles').insert({
-            id: userId,
-            username: metadata.pendingUsername,
-            phone: metadata.pendingPhone || null,
-          })
-          if (!insertError) {
-            await supabase.auth.updateUser({
-              data: { pendingUsername: null, pendingPhone: null },
-            })
-            set({
-              username: metadata.pendingUsername,
-              phone: metadata.pendingPhone || '',
-              userDataLoaded: true,
-            })
-            return
-          }
-        }
-
-        set({ userDataLoaded: true })
-      })
   },
 
   clearUserData: () => {
     set({
-      nickname: '',
       gender: '',
       occupation: '',
       interests: [],
@@ -247,22 +207,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     await AsyncStorage.setItem(KEYS.hasCompletedSetup, 'true')
   },
 
-  setNickname: async (name: string) => {
-    const trimmed = name.trim()
-    const prev = useSettingsStore.getState().nickname
-    set({ nickname: trimmed })
-    const { error } = await supabase.auth.updateUser({ data: { nickname: trimmed } })
-    if (error) {
-      set({ nickname: prev })
-      throw new AppError('SETTINGS_003', error)
-    }
-  },
-
   setGender: async (gender: string) => {
     const prev = useSettingsStore.getState().gender
     set({ gender })
-    const { error } = await supabase.auth.updateUser({ data: { gender } })
-    if (error) {
+    try {
+      await updateMetadata({ gender })
+    } catch (error) {
       set({ gender: prev })
       throw new AppError('SETTINGS_003', error)
     }
@@ -272,8 +222,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const trimmed = occupation.trim()
     const prev = useSettingsStore.getState().occupation
     set({ occupation: trimmed })
-    const { error } = await supabase.auth.updateUser({ data: { occupation: trimmed } })
-    if (error) {
+    try {
+      await updateMetadata({ occupation: trimmed })
+    } catch (error) {
       set({ occupation: prev })
       throw new AppError('SETTINGS_003', error)
     }
@@ -282,8 +233,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setInterests: async (interests: string[]) => {
     const prev = useSettingsStore.getState().interests
     set({ interests })
-    const { error } = await supabase.auth.updateUser({ data: { interests } })
-    if (error) {
+    try {
+      await updateMetadata({ interests })
+    } catch (error) {
       set({ interests: prev })
       throw new AppError('SETTINGS_003', error)
     }
@@ -292,30 +244,29 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setAvatarUrl: async (url: string) => {
     const prev = useSettingsStore.getState().avatarUrl
     set({ avatarUrl: url })
-    const { error } = await supabase.auth.updateUser({ data: { avatarUrl: url } })
-    if (error) {
+    try {
+      await updateMetadata({ avatarUrl: url })
+    } catch (error) {
       set({ avatarUrl: prev })
       throw new AppError('SETTINGS_003', error)
     }
   },
 
-  // Batch save — single updateUser call (avoids race conditions)
   savePersona: async (data: PersonaData) => {
     const payload = {
-      nickname: data.nickname.trim(),
       gender: data.gender,
       occupation: data.occupation.trim(),
       interests: data.interests,
     }
     const prev = {
-      nickname: useSettingsStore.getState().nickname,
       gender: useSettingsStore.getState().gender,
       occupation: useSettingsStore.getState().occupation,
       interests: useSettingsStore.getState().interests,
     }
     set(payload)
-    const { error } = await supabase.auth.updateUser({ data: payload })
-    if (error) {
+    try {
+      await updateMetadata(payload)
+    } catch (error) {
       set(prev)
       throw new AppError('SETTINGS_003', error)
     }
@@ -323,8 +274,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   acknowledgePrivacyNotice: async () => {
     set({ hasSeenPrivacyNotice: true })
-    const { error } = await supabase.auth.updateUser({ data: { hasSeenPrivacyNotice: true } })
-    if (error) {
+    try {
+      await updateMetadata({ hasSeenPrivacyNotice: true })
+    } catch (error) {
       set({ hasSeenPrivacyNotice: false })
       throw new AppError('SETTINGS_003', error)
     }
@@ -332,8 +284,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   acknowledgeOnboarding: async () => {
     set({ hasSeenOnboarding: true })
-    const { error } = await supabase.auth.updateUser({ data: { hasSeenOnboarding: true } })
-    if (error) {
+    try {
+      await updateMetadata({ hasSeenOnboarding: true })
+    } catch (error) {
       set({ hasSeenOnboarding: false })
       throw new AppError('SETTINGS_003', error)
     }
@@ -341,35 +294,43 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   setPhone: async (phone: string) => {
     const trimmed = phone.trim()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error } = await supabase
-      .from('profiles')
-      .update({ phone: trimmed || null })
-      .eq('id', user.id)
-    if (error) throw new AppError('SETTINGS_002', error)
-    set({ phone: trimmed })
+    try {
+      await apiFetch('/auth/user', {
+        method: 'PUT',
+        body: JSON.stringify({ phone: trimmed || null }),
+      })
+      set({ phone: trimmed })
+    } catch (error) {
+      throw new AppError('SETTINGS_002', error)
+    }
   },
 
   setEmail: async (email: string) => {
-    const { error } = await supabase.auth.updateUser({ email })
-    if (error) throw new AppError('SETTINGS_001', error)
+    try {
+      await apiFetch('/auth/user', {
+        method: 'PUT',
+        body: JSON.stringify({ email }),
+      })
+    } catch (error) {
+      throw new AppError('SETTINGS_001', error)
+    }
   },
 
   changePassword: async (currentPassword: string, newPassword: string) => {
-    // Verify current password by attempting sign in
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user?.email) throw new AppError('SETTINGS_004')
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: currentPassword,
-    })
-    if (signInError) throw new AppError('SETTINGS_005', signInError)
-
-    // Update to new password
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (error) throw new AppError('SETTINGS_004', error)
+    try {
+      await apiFetch('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      })
+    } catch (err: any) {
+      if (err.body?.error === 'incorrect_current_password') {
+        throw new AppError('SETTINGS_005', err)
+      }
+      throw new AppError('SETTINGS_004', err)
+    }
   },
 
   setNotificationsEnabled: async (enabled: boolean) => {
@@ -384,7 +345,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         if (!granted) return
       }
       set({ notificationsEnabled: true })
-      await supabase.auth.updateUser({ data: { notificationsEnabled: true } })
+      await updateMetadata({ notificationsEnabled: true })
       const state = useSettingsStore.getState()
       await rescheduleAllNotifications(state)
     } else {
@@ -396,54 +357,72 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         await cancelAllNotifications()
       }
       set({ notificationsEnabled: false })
-      await supabase.auth.updateUser({ data: { notificationsEnabled: false } })
+      await updateMetadata({ notificationsEnabled: false })
     }
   },
 
   setMorningNotificationTime: async (time: string) => {
     set({ morningNotificationTime: time })
-    const { error } = await supabase.auth.updateUser({ data: { morningNotificationTime: time } })
-    if (error) throw new AppError('SETTINGS_003', error)
+    try {
+      await updateMetadata({ morningNotificationTime: time })
+    } catch (error) {
+      throw new AppError('SETTINGS_003', error)
+    }
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setEveningNotificationTime: async (time: string) => {
     set({ eveningNotificationTime: time })
-    const { error } = await supabase.auth.updateUser({ data: { eveningNotificationTime: time } })
-    if (error) throw new AppError('SETTINGS_003', error)
+    try {
+      await updateMetadata({ eveningNotificationTime: time })
+    } catch (error) {
+      throw new AppError('SETTINGS_003', error)
+    }
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setWeeklyReviewDay: async (day: number) => {
     set({ weeklyReviewDay: day })
-    const { error } = await supabase.auth.updateUser({ data: { weeklyReviewDay: day } })
-    if (error) throw new AppError('SETTINGS_003', error)
+    try {
+      await updateMetadata({ weeklyReviewDay: day })
+    } catch (error) {
+      throw new AppError('SETTINGS_003', error)
+    }
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setWeeklyReviewTime: async (time: string) => {
     set({ weeklyReviewTime: time })
-    const { error } = await supabase.auth.updateUser({ data: { weeklyReviewTime: time } })
-    if (error) throw new AppError('SETTINGS_003', error)
+    try {
+      await updateMetadata({ weeklyReviewTime: time })
+    } catch (error) {
+      throw new AppError('SETTINGS_003', error)
+    }
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setMonthlyReviewDay: async (day: number) => {
     set({ monthlyReviewDay: day })
-    const { error } = await supabase.auth.updateUser({ data: { monthlyReviewDay: day } })
-    if (error) throw new AppError('SETTINGS_003', error)
+    try {
+      await updateMetadata({ monthlyReviewDay: day })
+    } catch (error) {
+      throw new AppError('SETTINGS_003', error)
+    }
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
 
   setMonthlyReviewTime: async (time: string) => {
     set({ monthlyReviewTime: time })
-    const { error } = await supabase.auth.updateUser({ data: { monthlyReviewTime: time } })
-    if (error) throw new AppError('SETTINGS_003', error)
+    try {
+      await updateMetadata({ monthlyReviewTime: time })
+    } catch (error) {
+      throw new AppError('SETTINGS_003', error)
+    }
     const state = useSettingsStore.getState()
     if (state.notificationsEnabled) await rescheduleAllNotifications(state)
   },
@@ -459,8 +438,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       monthlyReviewDay: settings.monthlyReviewDay,
       monthlyReviewTime: settings.monthlyReviewTime,
     })
-    const { error } = await supabase.auth.updateUser({
-      data: {
+    try {
+      await updateMetadata({
         notificationsEnabled: settings.notificationsEnabled,
         morningNotificationTime: settings.morningNotificationTime,
         eveningNotificationTime: settings.eveningNotificationTime,
@@ -468,9 +447,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         weeklyReviewTime: settings.weeklyReviewTime,
         monthlyReviewDay: settings.monthlyReviewDay,
         monthlyReviewTime: settings.monthlyReviewTime,
-      },
-    })
-    if (error) {
+      })
+    } catch (error) {
       set({
         notificationsEnabled: prev.notificationsEnabled,
         morningNotificationTime: prev.morningNotificationTime,

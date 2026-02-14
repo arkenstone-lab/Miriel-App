@@ -9,6 +9,7 @@ import { StreakCard } from '@/components/dashboard/StreakCard'
 import { LevelProgressCard } from '@/components/dashboard/LevelProgressCard'
 import { BadgeGrid } from '@/components/dashboard/BadgeGrid'
 import { RecentSummaryCard } from '@/components/dashboard/RecentSummaryCard'
+import { WeeklyReviewCard } from '@/components/dashboard/WeeklyReviewCard'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { TodayReminderBanner } from '@/components/dashboard/TodayReminderBanner'
 import { WeeklyActivityChart } from '@/components/dashboard/WeeklyActivityChart'
@@ -19,7 +20,7 @@ export default function DashboardScreen() {
   const { data: entries } = useEntries()
   const { data: stats, isLoading } = useGamificationStats()
   const { isDesktop } = useResponsiveLayout()
-  const { nickname } = useSettingsStore()
+  const { username } = useSettingsStore()
   const { t } = useTranslation('dashboard')
   const { t: tCommon } = useTranslation('common')
 
@@ -32,8 +33,8 @@ export default function DashboardScreen() {
       : hour < 18
       ? t('greeting.afternoon')
       : t('greeting.evening')
-  const greeting = nickname
-    ? t('greeting.withName', { greeting: timeGreeting, name: nickname })
+  const greeting = username
+    ? t('greeting.withName', { greeting: timeGreeting, name: username })
     : timeGreeting
 
   const d = new Date()
@@ -65,6 +66,7 @@ export default function DashboardScreen() {
               <QuickActions />
               <WeeklyActivityChart entries={entries || []} />
               <RecentSummaryCard />
+              <WeeklyReviewCard />
             </View>
 
             {/* Right column */}
@@ -102,6 +104,7 @@ export default function DashboardScreen() {
         <QuickActions />
         <WeeklyActivityChart entries={entries || []} />
         <RecentSummaryCard />
+        <WeeklyReviewCard />
         <StatsRow
           totalEntries={stats.totalEntries}
           todosCompleted={stats.todosCompleted}

@@ -96,14 +96,8 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Find ID / Find Password links */}
-        <View className="flex-row justify-center mt-4" style={{ gap: 16 }}>
-          <Link href="/(auth)/find-id" asChild>
-            <TouchableOpacity>
-              <Text className="text-sm text-gray-500 dark:text-gray-400">{t('login.findId')}</Text>
-            </TouchableOpacity>
-          </Link>
-          <Text className="text-sm text-gray-300 dark:text-gray-600">|</Text>
+        {/* Find Password link */}
+        <View className="flex-row justify-center mt-4">
           <Link href="/(auth)/find-password" asChild>
             <TouchableOpacity>
               <Text className="text-sm text-gray-500 dark:text-gray-400">{t('login.findPassword')}</Text>

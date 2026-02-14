@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, ScrollView, TextInput, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useQueryClient } from '@tanstack/react-query'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +9,10 @@ import { showErrorAlert } from '@/lib/errors'
 import { useEntry, useUpdateEntry, useDeleteEntry } from '@/features/entry/hooks'
 import { useTodosByEntry, useUpdateTodo } from '@/features/todo/hooks'
 import { useSummaries } from '@/features/summary/hooks'
+import { generateSummary } from '@/features/summary/api'
+import { useAiPreferences } from '@/features/ai-preferences/hooks'
+import { buildAiContext } from '@/features/ai-preferences/context'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import { Badge } from '@/components/ui/Badge'
@@ -23,6 +28,9 @@ export default function EntryDetailScreen() {
   const updateEntry = useUpdateEntry()
   const deleteEntry = useDeleteEntry()
   const updateTodo = useUpdateTodo()
+  const queryClient = useQueryClient()
+  const { data: aiPrefs } = useAiPreferences()
+  const { username, occupation, interests } = useSettingsStore()
   const { t } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
   const { colorScheme } = useColorScheme()
@@ -31,6 +39,8 @@ export default function EntryDetailScreen() {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
   const [autoEditApplied, setAutoEditApplied] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null)
 
   if (isLoading) return <LoadingState />
 
@@ -78,6 +88,33 @@ export default function EntryDetailScreen() {
       setIsEditing(false)
     } catch (e: unknown) {
       showErrorAlert(t('detail.editFailed'), e)
+    }
+  }
+
+  const handleSync = async () => {
+    if (!entry || isSyncing) return
+    setIsSyncing(true)
+    setSyncFeedback(null)
+    try {
+      const aiContext = buildAiContext(aiPrefs, { username, occupation, interests })
+      const result = await generateSummary(entry.date, aiContext)
+      queryClient.invalidateQueries({ queryKey: ['summaries'] })
+      queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: ['entry', id] })
+      const remaining = (result.max_count || 3) - (result.gen_count || 1)
+      setSyncFeedback(
+        t('detail.syncSuccess') + ' ' + t('detail.syncRemaining', { remaining, max: result.max_count || 3 })
+      )
+      setTimeout(() => setSyncFeedback(null), 4000)
+    } catch (e: any) {
+      if (e?.status === 429 || e?.body?.error === 'daily_summary_limit_reached') {
+        const body = e?.body || {}
+        setSyncFeedback(t('detail.syncLimitReached', { count: body.gen_count || 3, max: body.max_count || 3 }))
+      } else {
+        showErrorAlert(t('detail.syncFailed'), e)
+      }
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -201,6 +238,25 @@ export default function EntryDetailScreen() {
                 <FontAwesome name="chevron-right" size={12} color={isDark ? '#22d3ee' : '#67e8f9'} />
               </View>
             </Card>
+          </View>
+        )}
+
+        {/* Sync / Regenerate Summary + Todos */}
+        {!isEditing && (
+          <View className="mb-6">
+            <Button
+              title={isSyncing ? t('detail.syncing') : t('detail.syncButton')}
+              variant="secondary"
+              size="sm"
+              onPress={handleSync}
+              loading={isSyncing}
+              disabled={isSyncing}
+            />
+            {syncFeedback && (
+              <Text className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                {syncFeedback}
+              </Text>
+            )}
           </View>
         )}
       </View>

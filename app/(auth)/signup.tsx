@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import { Link, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
-import { supabase } from '@/lib/supabase'
+import { apiPublicFetch } from '@/lib/api'
+import { getApiUrl } from '@/lib/api'
 import { getErrorMessage } from '@/lib/errors'
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/
@@ -12,6 +13,10 @@ type Step = 1 | 2 | 3
 
 export default function SignupScreen() {
   const [step, setStep] = useState<Step>(1)
+
+  // Invite code requirement (fetched from server)
+  const [inviteRequired, setInviteRequired] = useState(false)
+  const [inviteCode, setInviteCode] = useState('')
 
   // Step 1
   const [email, setEmail] = useState('')
@@ -42,6 +47,16 @@ export default function SignupScreen() {
 
   const passwordMismatch = confirmPassword.length > 0 && password !== confirmPassword
 
+  // Check if invite code is required
+  useEffect(() => {
+    fetch(`${getApiUrl()}/health`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.invite_required) setInviteRequired(true)
+      })
+      .catch(() => {})
+  }, [])
+
   // Resend cooldown timer
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -51,6 +66,10 @@ export default function SignupScreen() {
 
   const handleSendCode = async () => {
     setErrorText('')
+    if (inviteRequired && !inviteCode.trim()) {
+      setErrorText(t('signup.step1.alertInviteCodeRequired'))
+      return
+    }
     if (!email || !email.includes('@')) {
       setErrorText(t('signup.step1.alertInvalidEmail'))
       return
@@ -58,14 +77,10 @@ export default function SignupScreen() {
 
     setSendingCode(true)
     try {
-      const { data, error } = await supabase.functions.invoke('send-verification-code', {
-        body: { email: email.trim().toLowerCase(), lang: i18n.language },
+      const data = await apiPublicFetch<{ error?: string }>('/auth/send-verification-code', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim().toLowerCase(), lang: i18n.language }),
       })
-
-      if (error) {
-        setErrorText(t('signup.step1.sendFailed'))
-        return
-      }
 
       if (data?.error === 'email_already_registered') {
         setErrorText(t('signup.step1.emailAlreadyRegistered'))
@@ -99,14 +114,10 @@ export default function SignupScreen() {
 
     setVerifyingCode(true)
     try {
-      const { data, error } = await supabase.functions.invoke('verify-email-code', {
-        body: { email: email.trim().toLowerCase(), code: code.trim() },
+      const data = await apiPublicFetch<{ error?: string; verified?: boolean; verification_token?: string }>('/auth/verify-email-code', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
       })
-
-      if (error) {
-        setErrorText(t('signup.step2.verifyFailed'))
-        return
-      }
 
       if (data?.error === 'invalid_code') {
         setErrorText(t('signup.step2.invalidCode'))
@@ -140,10 +151,11 @@ export default function SignupScreen() {
     setErrorText('')
     setSendingCode(true)
     try {
-      const { data, error } = await supabase.functions.invoke('send-verification-code', {
-        body: { email: email.trim().toLowerCase(), lang: i18n.language },
+      const data = await apiPublicFetch<{ error?: string }>('/auth/send-verification-code', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim().toLowerCase(), lang: i18n.language }),
       })
-      if (!error && !data?.error) {
+      if (!data?.error) {
         setResendCooldown(60)
         setCode('')
       } else {
@@ -178,7 +190,13 @@ export default function SignupScreen() {
 
     setLoading(true)
     try {
-      await signUp({ username, email: email.trim().toLowerCase(), password, verificationToken })
+      await signUp({
+        username,
+        email: email.trim().toLowerCase(),
+        password,
+        verificationToken,
+        ...(inviteRequired ? { inviteCode: inviteCode.trim() } : {}),
+      })
       // session created → onAuthStateChange routes to onboarding
     } catch (error: unknown) {
       setErrorText(getErrorMessage(error))
@@ -243,6 +261,28 @@ export default function SignupScreen() {
               {t('signup.step1.description')}
             </Text>
 
+            {/* Invite Code (shown only when required) */}
+            {inviteRequired && (
+              <View className="mb-4">
+                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('signup.inviteCode')}
+                </Text>
+                <TextInput
+                  className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
+                  placeholder={t('signup.inviteCodePlaceholder')}
+                  value={inviteCode}
+                  onChangeText={(v) => { setInviteCode(v); setErrorText('') }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoFocus
+                  returnKeyType="next"
+                />
+                <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  {t('signup.inviteCodeHint')}
+                </Text>
+              </View>
+            )}
+
             <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('signup.email')}
@@ -255,7 +295,7 @@ export default function SignupScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoComplete="email"
-                autoFocus
+                autoFocus={!inviteRequired}
                 returnKeyType="done"
                 onSubmitEditing={handleSendCode}
               />

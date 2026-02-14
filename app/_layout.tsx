@@ -60,10 +60,13 @@ export default function RootLayout() {
     }
   }, [userDataLoaded])
 
-  // Load / clear user-specific data from Supabase user_metadata
+  // Load / clear user-specific data from API user_metadata
   useEffect(() => {
     if (user) {
-      loadUserData(user.user_metadata || {}, user.id)
+      loadUserData(user.user_metadata || {}, {
+        username: user.username || '',
+        phone: user.phone || '',
+      })
     } else {
       clearUserData()
     }

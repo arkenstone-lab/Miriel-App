@@ -11,7 +11,9 @@
     "emptyDescription": "Write some entries first,\nthen generate a summary!",
     "summaryCount": "{{count}} points",
     "label": "Daily Summary",
-    "periodLabel": "{{date}} Daily Summary"
+    "periodLabel": "{{date}} Daily Summary",
+    "limitTitle": "Limit Reached",
+    "limitMessage": "You've reached the daily summary generation limit (3 per day)."
   },
   "weekly": {
     "generateButton": "Generate This Week's Review",

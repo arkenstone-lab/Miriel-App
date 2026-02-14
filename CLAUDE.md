@@ -21,7 +21,7 @@
 
 ### ✅ 반드시 구현 (Do)
 1. **빠른 입력**: 텍스트 중심 웹 입력
-2. **대화형 작성**: 챗봇 질문(아침/저녁 체크인)으로 Entry 생성
+2. **대화형 작성**: 챗봇 질문(AI 체크인)으로 Entry 생성
 3. **자동 정리**: 날짜/프로젝트/사람/이슈 태깅 (반자동 OK)
 4. **일간 요약**: AI 생성 + 근거 링크
 5. **주간 회고**: 핵심 3~5개 요약 + 근거 링크
@@ -52,34 +52,41 @@
 - **스타일링**: NativeWind (Tailwind CSS for RN), 다크 모드 지원 (`darkMode: 'class'`)
 - **i18n**: i18next + react-i18next + expo-localization (한국어/영어, 시스템 로케일 자동 감지)
 - **상태관리**: React Query (서버 상태) + Zustand (클라이언트: auth, chat, settings)
-- **Backend**: Supabase Edge Functions
-- **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth (ID/비밀번호 — profiles 테이블로 username↔email 매핑)
-- **AI**: OpenAI GPT-4o — 각 Edge Function에 인라인 callOpenAI (3x retry + 보안 처리)
-- **배포**: EAS Build (iOS/Android) + Expo Web (PC)
+- **Backend**: Cloudflare Worker (Hono.js, ~25 라우트) — `worker/` 디렉토리
+- **Database**: Cloudflare D1 (SQLite)
+- **Auth**: Custom JWT (bcryptjs + Web Crypto API HMAC-SHA256) — access 1시간 + refresh 30일
+- **Storage**: Cloudflare R2 (아바타 이미지)
+- **AI**: OpenAI GPT-4o — Worker 내 인라인 callOpenAI (3x retry + 보안 처리)
+- **Email**: Resend API (인증 코드, 비밀번호 리셋, 아이디 찾기)
+- **배포**: EAS Build (iOS/Android) + Expo Web (PC) + Cloudflare Workers (API)
 - **크로스플랫폼**: PC(웹) + iOS + Android 단일 코드베이스
 
 ---
 
-## 데이터 모델
+## 데이터 모델 (D1 / SQLite)
 
 ```typescript
-// Profile (사용자 프로필 — username↔email 매핑)
-interface Profile {
-  id: string;                // FK → auth.users
-  username: string;          // 3~20자, 영문/숫자/_ — 로그인 ID
+// Users (auth.users + profiles 합병 — D1 TEXT 기반)
+interface User {
+  id: string;                // TEXT PK (crypto.randomUUID)
+  email: string;             // UNIQUE
+  username: string;          // UNIQUE, 3~20자, 영문/숫자/_
+  password_hash: string;     // bcryptjs 8 rounds
   phone?: string;
-  created_at: timestamp;
+  user_metadata: string;     // JSON TEXT (nickname, gender, occupation, interests, avatar, onboarding, notifications 등)
+  created_at: string;        // ISO datetime
 }
 
 // Entry (기록)
 interface Entry {
   id: string;
-  user_id: string;
-  date: string;           // YYYY-MM-DD
+  user_id: string;           // FK → users
+  date: string;              // YYYY-MM-DD
   raw_text: string;
-  tags: string[];         // ["프로젝트:A", "사람:김대리", "이슈:버그"]
-  created_at: timestamp;
+  tags: string;              // JSON array TEXT (["프로젝트:A", "사람:김대리"])
+  summary_gen_count: number; // 요약 재생성 횟수 (일 3회 제한)
+  created_at: string;
+  updated_at: string;
 }
 
 // Summary (요약)
@@ -87,10 +94,11 @@ interface Summary {
   id: string;
   user_id: string;
   period: 'daily' | 'weekly' | 'monthly';
-  period_start: string;   // YYYY-MM-DD
+  period_start: string;      // YYYY-MM-DD
   text: string;
-  entry_links: string[];  // Entry IDs
-  created_at: timestamp;
+  entry_links: string;       // JSON array TEXT (Entry IDs)
+  sentences_data: string;    // JSON array TEXT ([{ text, entry_ids }])
+  created_at: string;
 }
 
 // Todo (할 일)
@@ -98,55 +106,46 @@ interface Todo {
   id: string;
   user_id: string;
   text: string;
-  source_entry_id: string;  // 이 할 일이 추출된 Entry
+  source_entry_id?: string;  // 이 할 일이 추출된 Entry
   status: 'pending' | 'done';
-  due_date?: string;        // YYYY-MM-DD (선택)
-  created_at: timestamp;
+  due_date?: string;
+  created_at: string;
 }
 
-// Streak (연속 기록)
-interface Streak {
-  id: string;
-  user_id: string;
-  current_streak: number;    // 현재 연속 일수
-  longest_streak: number;    // 최장 연속 일수
-  last_entry_date: string;   // YYYY-MM-DD (마지막 기록일)
-  updated_at: timestamp;
-}
-
-// UserStats (게이미피케이션)
-interface UserStats {
-  id: string;
-  user_id: string;
-  level: number;             // 현재 레벨
-  xp: number;                // 경험치
-  badges: string[];          // 획득 배지 목록 ["first_entry", "7day_streak", ...]
-  total_entries: number;
-  updated_at: timestamp;
-}
+// Streak (연속 기록) — 클라이언트 계산 (별도 테이블 없음)
+// UserStats (게이미피케이션) — 클라이언트 계산 (별도 테이블 없음)
 
 // UserAiPreferences (AI 개인화 설정)
 interface UserAiPreferences {
   id: string;
-  user_id: string;           // FK → auth.users (UNIQUE)
-  summary_style: string;     // 요약 스타일 ("간결하게", "구체적으로" 등)
-  focus_areas: string[];     // 집중 영역 ("프로젝트관리", "자기개발" 등)
-  custom_instructions: string; // 사용자 커스텀 지시 (최대 500자)
-  share_persona: boolean;    // 닉네임/직업/관심사를 AI에 전달할지
-  created_at: timestamp;
-  updated_at: timestamp;
+  user_id: string;           // FK → users (UNIQUE)
+  summary_style: string;
+  focus_areas: string;       // JSON array TEXT
+  custom_instructions: string;
+  share_persona: number;     // INTEGER (0/1, SQLite boolean)
+  created_at: string;
+  updated_at: string;
+}
+
+// RefreshToken (리프레시 토큰)
+interface RefreshToken {
+  id: string;
+  user_id: string;           // FK → users, CASCADE DELETE
+  token: string;             // UNIQUE
+  expires_at: string;        // ISO datetime (30일)
+  created_at: string;
 }
 
 // EmailVerification (이메일 인증 코드 — 회원가입 시 사용)
 interface EmailVerification {
   id: string;
   email: string;
-  code: string;               // 6자리 숫자
-  verification_token?: string; // 인증 성공 시 발급, signUp 시 검증용
-  verified: boolean;
-  ip_address?: string;         // rate limit용
-  expires_at: timestamp;       // 생성 후 10분
-  created_at: timestamp;
+  code: string;              // 6자리 숫자
+  verification_token?: string;
+  verified: number;          // INTEGER (0/1)
+  ip_address?: string;
+  expires_at: string;
+  created_at: string;
 }
 ```
 
@@ -185,7 +184,7 @@ interface EmailVerification {
 
 - 컴포넌트: `PascalCase`, 함수형 + hooks
 - 파일: feature 기반 폴더 (`/features/entry`, `/features/summary`)
-- API: Supabase Edge Functions (`/functions/entries`, `/functions/summaries`)
+- API: Cloudflare Worker (Hono.js 라우트, `worker/src/routes/`)
 - 상태관리: React Query (서버 상태) + Zustand (클라이언트)
 - 스타일링: NativeWind (`className` 사용, Tailwind 문법)
 - 네비게이션: Expo Router (파일 기반 라우팅, `/app` 디렉토리)
@@ -297,6 +296,13 @@ interface EmailVerification {
 - [x] 아이디 찾기 Edge Function 연동 (send-find-id-email + 이메일 발송/폴백)
 - [x] 이메일 템플릿 Arkenstone Labs 브랜딩 + 인증 코드 템플릿
 - [x] 설정 화면 전화번호 UI 제거 (코드 유지, UI만 숨김)
+- [x] Supabase → Cloudflare 풀 마이그레이션 (D1 + Workers/Hono + R2 + Custom JWT + 클라이언트 전면 교체)
+- [x] 채팅 드래프트 자동 저장 + 이탈 경고 + 복원 배너
+- [x] Todo 추출을 Summary 생성에 통합 (단일 AI 호출 + summary_gen_count 일 3회 제한)
+- [x] 기록 상세 "요약 재생성" 버튼 (429 한도 표시 + 남은 횟수)
+- [x] Todo Optimistic Update (useUpdateTodo/useDeleteTodo 즉시 반영 + 롤백)
+- [x] 가입 코드 시스템 (INVITE_CODES wrangler secret + 회원가입 Step 1 조건부 표시)
+- [x] 로그아웃 모달 수정 (settings 모달 dismiss 후 signOut — 라우팅 가드 블록 해결)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -305,21 +311,19 @@ interface EmailVerification {
 
 ## AI 프롬프트 가이드
 
-> 실제 프롬프트는 각 Edge Function의 `index.ts`에 인라인으로 포함되어 있습니다.
+> 실제 프롬프트는 Worker의 `worker/src/routes/ai.ts`에 인라인으로 포함되어 있습니다.
 > 영문 구조화 형식 (Task / Output Schema / Rules / Examples) 으로 작성됨.
 
-| Edge Function | 프롬프트 상수 | 역할 |
-|---------------|-------------|------|
-| `tagging` | `TAGGING_PROMPT` | 프로젝트/사람/이슈 추출 |
-| `extract-todos` | `TODO_PROMPT` | 할 일 추출 |
-| `generate-summary` | `SUMMARY_PROMPT` | 일간 요약 (2-3문장 + entry_ids) |
-| `generate-weekly` | `WEEKLY_SUMMARY_PROMPT` | 주간 회고 (3-5포인트 + entry_ids) |
-| `generate-monthly` | `MONTHLY_SUMMARY_PROMPT` | 월간 회고 (5-7포인트 + entry_ids) |
-| `chat` | `buildChatSystemPrompt()` | 3단계 대화형 체크인 |
-| `send-verification-code` | — | 이메일 인증 코드 발송 (6자리, 10분 만료, IP+이메일 rate limit) |
-| `verify-email-code` | — | 인증 코드 검증 → verification_token 발급 |
-| `validate-email-token` | — | signUp 전 토큰 재검증 (서버사이드) |
-| `send-find-id-email` | — | 아이디 찾기 이메일 발송 (Resend API) |
+| Worker Route | 프롬프트 상수 | 역할 |
+|-------------|-------------|------|
+| `POST /ai/tagging` | `TAGGING_PROMPT` | 프로젝트/사람/이슈 추출 |
+| `POST /ai/extract-todos` | `TODO_PROMPT` | 할 일 추출 (standalone, 현재는 generate-summary에 통합) |
+| `POST /ai/generate-summary` | `SUMMARY_PROMPT` | 일간 요약 (2-3문장 + entry_ids + todos 추출 통합, 일 3회 제한) |
+| `POST /ai/generate-weekly` | `WEEKLY_SUMMARY_PROMPT` | 주간 회고 (3-5포인트 + entry_ids) |
+| `POST /ai/generate-monthly` | `MONTHLY_SUMMARY_PROMPT` | 월간 회고 (5-7포인트 + entry_ids) |
+| `POST /ai/chat` | `buildChatSystemPrompt()` | 3단계 대화형 체크인 |
+
+Auth/이메일 라우트는 `worker/src/routes/auth.ts` 및 `worker/src/routes/email-verification.ts`에 위치.
 
 ---
 
@@ -357,6 +361,7 @@ interface EmailVerification {
 | **게이미피케이션** | [`docs/gamification.md`](docs/gamification.md) | 스트릭/XP/레벨/배지 시스템, 새 배지 추가 방법 |
 | **AI 기능** | [`docs/ai-features.md`](docs/ai-features.md) | AI 파이프라인, Edge Function 스펙, 프롬프트, 미구현 기능 목록 |
 | **에러 코드** | [`docs/error-codes.md`](docs/error-codes.md) | 에러 코드 카탈로그, CS 대응 가이드, 사용자 메시지(ko/en) |
+| **Cloudflare 마이그레이션** | [`docs/cloudflare-migration.md`](docs/cloudflare-migration.md) | Supabase→Cloudflare 전환 배경, Worker 구조, Auth 시스템, D1 스키마, 배포 |
 
 ### 문서 활용 원칙
 1. **새 UI 컴포넌트 작성 시**: `components.md` (사용법) → `dark-mode.md` (색상 매핑) → `i18n.md` (번역 키)
@@ -491,6 +496,13 @@ interface EmailVerification {
 | 2026-02-15 | 전화번호를 설정 UI에서 제거 | 가입/설정에서 불필요, 코드는 유지하여 추후 복원 가능 | 전화번호 유지 |
 | 2026-02-15 | 이메일 템플릿에 Arkenstone Labs 브랜딩 | 제품(Miriel)과 회사(Arkenstone Labs) 브랜드 분리, footer에 "Miriel by Arkenstone Labs" | Miriel만 표시 |
 | 2026-02-15 | 로고 이미지를 128px 리사이즈 버전으로 분리 (logo-128.png) | 원본 icon.png(2048x2048)를 그대로 사용하면 화면에서 과도하게 큼, 로고용 경량 에셋 별도 관리 | 원본 직접 사용 |
+| 2026-02-15 | Supabase → Cloudflare 풀 마이그레이션 | Supabase Edge Function auth 이슈(getUser 401) 반복 + 대규모 서비스 시 Cloudflare 유리. D1(SQLite) + Workers(Hono.js) + R2 + Custom JWT로 전환 | Supabase 유지 |
+| 2026-02-15 | Custom JWT (Web Crypto HMAC-SHA256) | 외부 JWT 라이브러리 없이 Workers 환경 네이티브 API 활용, access 1시간 + refresh 30일 rotation | @tsndr/cloudflare-worker-jwt 사용 |
+| 2026-02-15 | bcryptjs 8 rounds | Workers free tier 10ms CPU 제한 내 동작, Paid 전환 시 rounds 증가 가능 | PBKDF2 (Web Crypto) |
+| 2026-02-15 | Todo 추출을 generate-summary에 통합 (단일 AI 호출) | 기록 저장 시 extract-todos + generate-summary 2번 호출 → SUMMARY_PROMPT에 todos 추출 규칙 포함하여 1번 호출로 통합. 비용/속도 개선 | 별도 extract-todos 호출 유지 |
+| 2026-02-15 | 일간 요약 재생성 3회 제한 (summary_gen_count) | 무한 재생성 방지 + OpenAI 비용 통제. entries.summary_gen_count 컬럼으로 추적, 429 반환 | 제한 없음 |
+| 2026-02-15 | Todo Optimistic Update 패턴 도입 | 완료 체크/삭제 시 서버 응답 대기 없이 즉시 UI 반영 → 체감 속도 대폭 개선 | 서버 응답 후 캐시 무효화만 |
+| 2026-02-15 | 가입 코드 시스템 (INVITE_CODES) | 테스터 전용 가입 제한으로 무분별한 계정 생성 방지, wrangler secret으로 관리 | 오픈 가입 유지 |
 | | | | |
 
 ---
@@ -500,13 +512,10 @@ interface EmailVerification {
 개발 중 발견한 이슈와 해결책을 기록합니다.
 
 ```
-- Supabase RLS: 테이블 생성 후 RLS 정책 반드시 설정할 것
 - OpenAI API: 응답 형식 JSON 강제하려면 response_format 설정 필요
 - AsyncStorage + Expo Web: expo export 시 window is not defined 에러 발생
   → Platform.OS !== 'web' 일 때만 AsyncStorage를 storage로 전달
-  → 웹에서는 Supabase 기본 localStorage 사용
 - NativeWind v4: babel.config.js에 jsxImportSource: 'nativewind' 필수
-- Supabase Edge Functions: Deno 환경이므로 tsconfig.json에서 exclude 처리 필요
 - i18n: 상수 파일(gamification/constants.ts 등)에서 i18n.t()를 모듈 레벨에서 호출 시 import '@/i18n'이 먼저 실행되어야 함 → app/_layout.tsx 최상단에서 import
 - i18n: useTranslation() 훅은 React 컴포넌트 내에서만 사용, 순수 함수/store에서는 i18n.t() 직접 호출
 - Dark Mode: NativeWind dark: 클래스는 React Navigation style 객체(headerStyle, tabBarStyle)에 적용 안 됨
@@ -526,16 +535,14 @@ interface EmailVerification {
 - Header 높이: 모바일에서 기본 헤더가 너무 높음 → headerStyle: { height: 48 }로 줄임
 - Settings 팝업 모달: React Native Modal + KeyboardAvoidingView + transparent overlay 패턴 사용
   → onShow 콜백에서 draft 동기화, onSubmitEditing으로 키보드 Done 지원
-- user_metadata 동시성: Supabase auth.updateUser()를 여러 필드에 동시 호출하면 last-write-wins로 데이터 유실
-  → 반드시 단일 updateUser({ data: { ...allFields } })로 배치 호출 (savePersona 패턴)
+- user_metadata (users.user_metadata JSON 컬럼): 여러 필드 동시 수정 시 PUT /auth/user로 배치 호출 (savePersona 패턴)
 - user_metadata 라우팅 가드: user 변경 시 loadUserData() 비동기 완료 전에 라우팅 결정하면 온보딩 플래시 발생
   → userDataLoaded 플래그로 메타데이터 로드 완료까지 라우팅 보류
 - AsyncStorage vs user_metadata: 온보딩/페르소나/개인정보 동의 같은 계정별 데이터는 반드시 user_metadata에 저장
   → AsyncStorage는 디바이스별이라 계정 전환 시 다른 사용자 데이터가 남음
   → theme/language만 AsyncStorage 유지 (디바이스 설정이므로)
-- Supabase Storage 아바타: 버킷 'avatars'에 {userId}/avatar.{ext} 경로로 업로드
-  → 같은 경로에 덮어쓰기해도 CDN 캐시로 이전 이미지 표시될 수 있음 → ?t=timestamp 캐시버스팅 필수
-  → 버킷 생성 + RLS 정책 설정을 Supabase 콘솔에서 수동으로 해야 함
+- R2 아바타: {userId}/avatar.{ext} 경로로 업로드
+  → ?t=timestamp 캐시버스팅 필수
 - expo-image-picker: aspect [1,1]로 정사각형 크롭, quality 0.7로 파일 크기 절약
   → mediaTypes 옵션이 ImagePicker.MediaTypeOptions에서 MediaType로 변경됨 (SDK 버전 주의)
   → 웹에서 asset.uri가 data URI 또는 blob URL → `uri.split('.').pop()`으로 확장자 추출 불가
@@ -546,25 +553,14 @@ interface EmailVerification {
   → Android는 NotificationChannel 필수 (checkin-reminders), iOS는 자동
 - 알림 스케줄링: SchedulableTriggerInputTypes.DAILY 사용 시 cancelAllScheduledNotificationsAsync() 먼저 호출
   → 중복 스케줄 방지, 시간 변경 시에도 기존 알림 제거 후 재등록
-- Supabase auth.resend(): type: 'signup'으로 호출해야 회원가입 인증 메일 재전송
-  → 쿨다운 없이 연속 호출 시 rate limit 발생 가능 → 클라이언트에서 60초 쿨다운 적용
-- profiles 테이블: username은 반드시 lowercase로 저장 → insert 시 username.toLowerCase() 필수
-  → DB 제약조건으로 ^[a-zA-Z0-9_]{3,20}$ 포맷 강제 (대소문자 허용하지만 저장은 소문자)
-- SECURITY DEFINER 함수: get_email_by_username, get_username_by_email, is_username_available
-  → auth.users에 직접 접근해야 하므로 SECURITY DEFINER 필수, search_path = public 설정으로 스키마 고정
-- loadUserData 2단계: user_metadata는 동기 set, profiles 데이터는 비동기 fetch 후 set
-  → profiles fetch 실패(회원가입 직후 등)해도 userDataLoaded: true 설정해서 라우팅 차단하지 않음
-- Supabase .single().then(): PromiseLike 타입이라 .catch() 없음 → .then() 내에서 error 체크
+- 이메일 인증 재전송: 클라이언트에서 60초 쿨다운 적용
+- users 테이블: username은 반드시 lowercase로 저장 → insert 시 username.toLowerCase() 필수
+- loadUserData: GET /auth/me → user_metadata JSON 파싱 → 상태 설정
+  → 실패해도 userDataLoaded: true 설정해서 라우팅 차단하지 않음
 - EditModal async onSave: onSave가 throw하면 모달 유지, 정상이면 onClose() 호출
   → 서버 에러 시 사용자가 재시도 가능
-- Supabase auth.signUp + 이메일 인증(Confirm Email) ON:
-  → session이 null로 반환됨 → auth.uid()가 null이라 RLS 보호 테이블에 INSERT 불가
-  → 해결: user_metadata에 pendingUsername/pendingPhone 임시 저장 → 이메일 인증 후 첫 로그인 시 loadUserData에서 profiles 생성
-- Supabase auth.signUp 중복 이메일 (이메일 인증 ON + 미인증 사용자):
-  → 에러 없이 "가짜" 응답 반환 (email enumeration 방지), data.user.identities === []
-  → identities.length === 0 체크로 "이미 등록된 이메일" 에러 표시 필요
-- Supabase auth rate limit: signUp 반복 호출 시 429 Too Many Requests (email rate limit exceeded)
-  → 테스트 시 새 이메일 사용하거나 Supabase 대시보드에서 rate limit 조정
+- Custom Auth: 회원가입 시 이메일 인증 코드 → validate-email-token → POST /auth/signup 순서
+  → 이메일/username 중복 시 Worker에서 409 에러 반환
 - 리브랜딩 (v0.4): AsyncStorage 키가 @reflectlog/ → @miriel/ 로 변경됨
   → 기존 테스트 기기에서 테마/언어 설정 초기화됨 (새 키로 저장되므로 이전 값 읽지 못함)
 - 에러 처리: AppError는 생성자에서 i18n.t()로 메시지 번역 → i18n이 초기화된 후에만 정확한 메시지 반환
@@ -575,7 +571,7 @@ interface EmailVerification {
 - Setup 플로우 라우팅: hasCompletedSetup 체크가 라우팅 가드에서 최우선 → setup 미완료 시 auth/onboarding 라우팅 무시
   → completeSetup()의 Zustand set()은 동기이므로 router.replace 전에 가드가 새 값을 인식 → setup으로 되돌아오지 않음
 - Setup vs Onboarding: setup은 로그인 전(디바이스 레벨, AsyncStorage), onboarding은 로그인 후(계정 레벨, user_metadata)
-  → setup에서는 Supabase 호출 불가 (미로그인), onboarding에서는 user_metadata 사용
+  → setup에서는 API 호출 불가 (미로그인), onboarding에서는 user_metadata 사용
 - 온보딩 알림 설정: 로컬 state로 모은 뒤 Step 3 완료 시 saveNotificationSettings()로 배치 저장
   → 개별 저장 시 user_metadata last-write-wins 문제 발생 (savePersona와 동일 패턴)
 - expo-notifications WEEKLY trigger: weekday 값이 1=Sun..7=Sat (ISO와 다름)
@@ -591,46 +587,63 @@ interface EmailVerification {
   → day === 0 ? -6 : 1 로 처리
 - AI 개인화: buildAiContext()는 prefs가 null이면 undefined 반환 → Edge Function에 ai_context 미포함 (기존 동작 유지)
   → focus_areas 토글 시 번역된 라벨 문자열로 저장 → 언어 변경 시 기존 선택이 매칭 안 될 수 있음 (데모 범위에서는 무시)
-- user_ai_preferences: UPSERT(onConflict: user_id) 사용 → 첫 저장 시 INSERT, 이후 UPDATE
-  → updated_at 트리거는 update_updated_at_column() 함수 재사용 (001_initial_schema.sql에 정의)
+- user_ai_preferences: INSERT OR REPLACE 사용 → 첫 저장 시 INSERT, 이후 UPDATE
 - 에러 표시 이중 패턴: auth 화면은 getErrorMessage() + 인라인 텍스트 (빨간 박스), 그 외 화면은 showErrorAlert() Alert
   → auth는 사용자가 에러를 보면서 입력값을 즉시 수정해야 하므로 인라인이 적합
   → settings/entries는 모달/비동기 작업이므로 Alert이 적합
-- 셋업 환영 화면 세션 버그: hasCompletedSetup이 false인데 Supabase 세션이 남아있는 경우
+- 셋업 환영 화면 세션 버그: hasCompletedSetup이 false인데 토큰이 남아있는 경우
   → 환영 화면에서 auth로 이동 시 라우팅 가드가 기존 세션 감지 → /(tabs) 리다이렉트
-  → 해결: completeSetup() 후 supabase.auth.signOut()으로 세션 정리, .catch(() => {})로 세션 없는 경우 무시
+  → 해결: completeSetup() 후 authStore.signOut()으로 토큰 정리
 - 웹 알림 권한: 브라우저가 이전에 거부(denied)하면 requestPermission() 재호출 불가
   → 온보딩에서 웹은 Notification.permission === 'default'일 때만 팝업, 결과 무관하게 앱 레벨 활성화
   → 네이티브는 기존 대로 권한 결과에 의존
 - PowerShell Set-Content 인코딩 경고: PowerShell로 UTF-8 파일 수정 시 한국어/이모지 깨짐 + LF→CRLF 변환
   → 일괄 치환 작업은 반드시 Edit 도구 사용, PowerShell 사용 금지
-- Edge Function: 각 함수에 인라인 callOpenAI + getCorsHeaders + 프롬프트 + 보안 처리 포함
-  → _shared/ 모듈 없음, 각 함수가 자체 완결적 (3637d4c 패턴)
+- Worker AI 라우트: worker/src/routes/ai.ts에 6개 AI 엔드포인트 통합
+  → 인라인 callOpenAI + 프롬프트 + ai_context 새니타이징 (3637d4c 패턴 유지)
 - OpenAI JSON 모드: `response_format: { type: 'json_object' }` 설정으로 JSON 응답 강제
 - 월간 알림 (expo-notifications): MONTHLY 트리거 타입 없음
   → DATE 트리거로 다음 발생일 1회 예약, 알림 재스케줄링 시마다 갱신
 - monthlyReviewDay 범위: 1~28로 제한 (29~31은 월마다 존재하지 않을 수 있음)
   → MonthDayPickerModal에서 28개 버튼 그리드로 선택
-- chat Edge Function: stateless — 클라이언트가 매 턴마다 전체 히스토리 전달
+- chat AI route: stateless — 클라이언트가 매 턴마다 전체 히스토리 전달
   → messages 최대 20개 제한 (서버에서 검증)
   → AI 실패 시 chatStore가 자동으로 정적 질문 fallback
-- chat Edge Function: OpenAI multi-turn에서 role은 'system'/'user'/'assistant' 사용
+- chat AI route: OpenAI multi-turn에서 role은 'system'/'user'/'assistant' 사용
   → 클라이언트에서 role='assistant'로 보내면 그대로 전달
 - 일간 요약 자동 생성: 기록 저장 시 fire-and-forget으로 호출
   → 실패해도 사용자에게 영향 없음, React Query 캐시 무효화로 Summary 탭 자동 반영
-- Edge Function 프롬프트: 각 함수에 인라인 포함 (3637d4c 패턴), _shared/ 모듈 없음
-  → 새 개발자 clone 후 `cp prompts.example.ts prompts.ts` 필수 (없으면 Deno "Module not found" 에러)
-  → prompts.example.ts와 prompts.ts는 동일한 export 이름/시그니처 유지 필수
-  → 새 프롬프트 추가 시 양쪽 파일 동시 수정 (example에는 placeholder + JSDoc)
-- email_verifications 테이블: RLS enabled + 정책 없음 = service_role만 접근 가능 (Edge Function에서만 사용)
-  → 클라이언트(anon key)에서 직접 접근 불가, 반드시 Edge Function 경유
-- send-verification-code IP 추출: x-forwarded-for (첫 번째 값) 또는 cf-connecting-ip 사용
+- email_verifications 테이블: Worker 라우트에서만 접근 (클라이언트에서 직접 접근 불가)
+- send-verification-code IP 추출: cf-connecting-ip 또는 x-forwarded-for 사용
   → 로컬 개발 시 'unknown'으로 fallback, IP rate limit 우회됨
-- Supabase Confirm Email OFF 필수: 자체 코드 인증으로 대체, ON이면 signUp 후 session=null로 자동 로그인 안 됨
 - 로고 에셋: icon.png(2048x2048)는 앱 아이콘용, logo-128.png(128x128)는 화면 표시용
   → `@/`는 src/를 가리키므로 assets/는 상대경로 `../../assets/images/` 사용 필수
 - verification_token: signUp 직전 validate-email-token으로 서버사이드 재검증
   → 클라이언트에서 토큰 조작 방지, 토큰도 expires_at 이내에만 유효
+- Cloudflare Workers: free tier CPU 10ms 제한 → bcryptjs 8 rounds로 제한
+  → Paid($5/mo) 전환 시 50ms로 해소, rounds 증가 가능
+- D1 JSON 필드: TEXT 컬럼에 JSON.stringify 저장, 조회 시 parseJsonFields() 유틸로 파싱
+  → tags, entry_links, sentences_data, focus_areas, user_metadata 모두 JSON TEXT
+- Custom JWT: access token 1시간 + refresh token 30일 rotation
+  → 401 응답 시 apiFetch가 자동으로 POST /auth/refresh → 새 토큰 → 원래 요청 재시도
+  → refresh도 실패 → clearTokens() + forceSignOut()
+- 채팅 드래프트: localStorage(web) / AsyncStorage(native)에 자동 저장
+  → 당일 날짜만 유효, 다음날이면 자동 삭제
+  → 이탈 시 beforeRemove + beforeunload로 저장 확인
+- apiFetch 래퍼: src/lib/api.ts — 토큰 자동 첨부, 401 자동 refresh, JSON 파싱
+  → 기존 supabase.from().select() 패턴 대신 apiFetch('/entries') 사용
+- wrangler dev: 로컬 개발 시 --local 플래그로 로컬 D1/R2 사용
+  → 배포: npx wrangler deploy + secrets (JWT_SECRET, OPENAI_API_KEY, RESEND_API_KEY, INVITE_CODES)
+- 설정 모달 로그아웃: settings.tsx는 `presentation: 'modal'`이므로 signOut() 시 라우팅 가드의 router.replace()가 모달에 의해 블록됨
+  → 반드시 router.dismiss() 먼저 호출 후 signOut() 실행
+- 429 에러 패스스루: apiFetch에서 429 응답을 AppError로 감싸면 .status/.body가 소실됨
+  → summary API에서 429은 throw error로 직접 전달, 클라이언트에서 err.status === 429 체크
+- React Query Optimistic Update: onMutate에서 즉시 캐시 수정, onError에서 스냅샷 롤백, onSettled에서 invalidate
+  → getQueriesData 반환 키 타입이 readonly unknown[]이므로 스냅샷도 readonly unknown[]으로 선언
+  → status 타입 좁히기: updates.status as Todo['status']로 캐스팅 필요
+- INVITE_CODES: wrangler secret에 쉼표 구분 문자열 (예: "ABC123,DEF456")
+  → 비어있으면 가입 제한 없음, /health에서 invite_required 플래그 반환
+  → 클라이언트는 앱 시작 시 /health 체크하여 조건부 UI 표시
 ```
 
 ---
@@ -650,6 +663,8 @@ interface EmailVerification {
 | 2026-02-12 | v0.9 | 월간 회고 + AI 대화형 체크인 + 일간 요약 자동 생성 (Edge Function, UI, 알림, 설정) | Chris |
 | 2026-02-14 | v0.10 | Edge Function 아키텍처 3637d4c 기준 복원 (OpenAI GPT-4o 인라인, _shared/ 제거, 보안 강화 패턴 통일) | Chris |
 | 2026-02-15 | v0.11 | Multi-step signup redesign + email verification code + password reset + dual login (username/email) + Arkenstone Labs branding | Chris |
+| 2026-02-15 | v0.12 | Supabase → Cloudflare full migration (D1 + Workers/Hono + R2 + Custom JWT auth + all client code migrated) | Chris |
+| 2026-02-15 | v0.13 | Todo+Summary merge (single AI call) + daily 3x limit + invite code + optimistic updates + logout fix | Chris |
 | | | | |
 
 <details>

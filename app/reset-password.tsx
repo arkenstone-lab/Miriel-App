@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
+import { apiPublicFetch } from '@/lib/api'
 import { AppError, getErrorMessage } from '@/lib/errors'
 
 export default function ResetPasswordScreen() {
@@ -11,25 +11,38 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState('')
   const [successText, setSuccessText] = useState('')
-  const [sessionReady, setSessionReady] = useState(false)
+  const [resetToken, setResetToken] = useState('')
   const router = useRouter()
+  const params = useLocalSearchParams<{ token?: string }>()
   const { t } = useTranslation('auth')
 
-  // Listen for PASSWORD_RECOVERY event (Supabase auto-restores session from URL)
+  // Extract reset token from URL params or hash fragment
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setSessionReady(true)
+    // Try from search params first
+    if (params.token) {
+      setResetToken(params.token)
+      return
+    }
+
+    // Try from URL hash fragment (web only)
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const hash = window.location.hash
+      const searchParams = new URLSearchParams(hash.replace('#', '?'))
+      const token = searchParams.get('token')
+      if (token) {
+        setResetToken(token)
+        return
       }
-    })
+      // Also check query string
+      const urlParams = new URLSearchParams(window.location.search)
+      const qToken = urlParams.get('token')
+      if (qToken) {
+        setResetToken(qToken)
+      }
+    }
+  }, [params.token])
 
-    // If already on web with token in URL, session might already be restored
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setSessionReady(true)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
+  const sessionReady = resetToken.length > 0
 
   const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword
 
@@ -45,14 +58,19 @@ export default function ResetPasswordScreen() {
       setErrorText(t('resetPassword.mismatch'))
       return
     }
+    if (!resetToken) {
+      setErrorText(t('resetPassword.invalidLink'))
+      return
+    }
 
     setLoading(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword })
-      if (error) throw new AppError('AUTH_016', error)
+      const data = await apiPublicFetch<{ error?: string }>('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ token: resetToken, new_password: newPassword }),
+      })
+      if (data?.error) throw new AppError('AUTH_016', data.error)
 
-      // Sign out so user can log in with new password
-      await supabase.auth.signOut().catch(() => {})
       setSuccessText(t('resetPassword.success'))
     } catch (error: unknown) {
       setErrorText(getErrorMessage(error))

@@ -1,0 +1,16 @@
+name = "miriel-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+CORS_ORIGINS = "http://localhost:8081,http://localhost:19006,https://miriel-api.official-606.workers.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "miriel-db"
+database_id = "31d9ebbb-cb3d-4252-9ed0-1548d7199018"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "miriel-avatars"

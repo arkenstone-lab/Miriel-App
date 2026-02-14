@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
+import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -38,8 +39,8 @@ export default function SettingsScreen() {
   const { t } = useTranslation('settings')
   const { t: tPrivacy } = useTranslation('privacy')
   const {
-    theme, language, nickname, username,
-    setTheme, setLanguage, setNickname, setEmail,
+    theme, language, username,
+    setTheme, setLanguage, setEmail,
     notificationsEnabled, morningNotificationTime, eveningNotificationTime,
     weeklyReviewDay, weeklyReviewTime,
     monthlyReviewDay, monthlyReviewTime,
@@ -48,10 +49,10 @@ export default function SettingsScreen() {
     setMonthlyReviewDay, setMonthlyReviewTime,
   } = useSettingsStore()
   const { user, signOut } = useAuthStore()
+  const router = useRouter()
   const { colorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
 
-  const [nicknameModalVisible, setNicknameModalVisible] = useState(false)
   const [emailModalVisible, setEmailModalVisible] = useState(false)
   const [passwordModalVisible, setPasswordModalVisible] = useState(false)
   const [morningPickerVisible, setMorningPickerVisible] = useState(false)
@@ -119,7 +120,15 @@ export default function SettingsScreen() {
   const handleSignOut = () => {
     Alert.alert(t('account.signOutConfirmTitle'), t('account.signOutConfirmMessage'), [
       { text: t('modal.cancel'), style: 'cancel' },
-      { text: t('account.signOut'), style: 'destructive', onPress: signOut },
+      {
+        text: t('account.signOut'),
+        style: 'destructive',
+        onPress: async () => {
+          // Dismiss modal first, then sign out so routing guard can navigate cleanly
+          if (router.canDismiss()) router.dismiss()
+          await signOut()
+        },
+      },
     ])
   }
 
@@ -442,19 +451,6 @@ export default function SettingsScreen() {
                 {username ? `@${username}` : '—'}
               </Text>
             </View>
-            {/* Nickname */}
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
-              onPress={() => setNicknameModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <FontAwesome name="user-o" size={16} color="#9ca3af" />
-              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.nickname')}</Text>
-              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
-                {nickname || t('account.nicknamePlaceholder')}
-              </Text>
-              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
-            </TouchableOpacity>
             {/* Email */}
             <TouchableOpacity
               className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
@@ -594,17 +590,6 @@ export default function SettingsScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Nickname Edit Modal */}
-      <EditModal
-        visible={nicknameModalVisible}
-        title={t('account.nickname')}
-        value={nickname}
-        placeholder={t('account.nicknamePlaceholder')}
-        maxLength={20}
-        onSave={setNickname}
-        onClose={() => setNicknameModalVisible(false)}
-      />
 
       {/* Email Edit Modal */}
       <EditModal

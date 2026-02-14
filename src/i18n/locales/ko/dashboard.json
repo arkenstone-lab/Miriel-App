@@ -42,5 +42,12 @@
   },
   "weeklyActivity": {
     "title": "이번 주 활동"
+  },
+  "weeklyReview": {
+    "title": "주간 회고",
+    "generate": "주간 회고 생성하기",
+    "viewReview": "회고 보기",
+    "empty": "이번 주 기록을 쌓으면 주간 회고를 생성할 수 있어요",
+    "evidenceCount": "근거 {{count}}개"
   }
 }

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { apiPublicFetch } from '@/lib/api'
 import { AppError } from '@/lib/errors'
 
 interface ChatRequestMessage {
@@ -28,10 +28,12 @@ export interface ChatResponse {
 }
 
 export async function chatWithAI(params: ChatParams): Promise<ChatResponse> {
-  const { data, error } = await supabase.functions.invoke('chat', {
-    body: params,
-  })
-
-  if (error) throw new AppError('CHAT_001', error)
-  return data as ChatResponse
+  try {
+    return await apiPublicFetch<ChatResponse>('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    })
+  } catch (error) {
+    throw new AppError('CHAT_001', error)
+  }
 }

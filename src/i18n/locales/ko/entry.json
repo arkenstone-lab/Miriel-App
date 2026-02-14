@@ -9,12 +9,21 @@
     "savedTitle": "기록이 저장됐어요!",
     "tagCount": "태그 {{count}}개",
     "todoCount": "할일 {{count}}개 추출",
+    "aiSummary": "AI 요약",
+    "summaryReady": "일간 요약 생성됨",
     "saveFailed": "저장 실패",
     "chatCompletion": "기록이 완성됐어요! 아래 버튼을 눌러 저장하세요.",
     "chatFallback": "더 말씀해주세요!",
     "aiThinking": "생각 중...",
     "alreadyRecordedToday": "오늘 이미 기록이 있어요",
-    "redirectingToEdit": "기존 기록의 편집 화면으로 이동합니다."
+    "redirectingToEdit": "기존 기록의 편집 화면으로 이동합니다.",
+    "draftFound": "이전 대화가 남아 있어요",
+    "draftFoundDesc": "작성 중이던 대화를 이어서 할 수 있어요.",
+    "draftResume": "이어서 작성",
+    "draftNew": "새로 시작",
+    "leaveTitle": "대화를 그만둘까요?",
+    "leaveMessage": "작성 중인 대화 내용이 저장됩니다. 나중에 이어서 작성할 수 있어요.",
+    "leaveConfirm": "나가기"
   },
   "detail": {
     "notFound": "기록을 찾을 수 없습니다.",
@@ -24,6 +33,12 @@
     "editFailed": "수정 실패",
     "extractedTodos": "추출된 할 일",
     "dailySummary": "일간 요약",
-    "retryMessage": "다시 시도해주세요."
+    "retryMessage": "다시 시도해주세요.",
+    "syncButton": "요약 재생성",
+    "syncing": "재생성 중...",
+    "syncSuccess": "요약과 할 일이 업데이트됐어요!",
+    "syncFailed": "재생성 실패",
+    "syncLimitReached": "일일 한도 도달 ({{count}}/{{max}})",
+    "syncRemaining": "오늘 {{remaining}}/{{max}}회 남음"
   }
 }

@@ -8,10 +8,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Alert,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useNavigation } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
@@ -20,7 +21,6 @@ import { useChatStore, type ChatMessage } from '@/stores/chatStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useCreateEntry, useUpdateEntry, useTodayEntry } from '@/features/entry/hooks'
 import { requestTagging } from '@/features/entry/api'
-import { extractTodos } from '@/features/todo/api'
 import { useTodos } from '@/features/todo/hooks'
 import { generateSummary } from '@/features/summary/api'
 import { useAiPreferences } from '@/features/ai-preferences/hooks'
@@ -137,6 +137,8 @@ export default function NewEntryScreen() {
   const [saveFeedback, setSaveFeedback] = useState<{
     tags: number
     todos: number
+    sessionSummary?: string | null
+    summaryGenerated?: boolean
   } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const {
@@ -149,18 +151,25 @@ export default function NewEntryScreen() {
     initChat,
     mode,
     setMode,
+    checkForDraft,
+    resumeDraft,
+    clearDraft,
+    saveDraft,
   } = useChatStore()
   const createEntry = useCreateEntry()
   const updateEntry = useUpdateEntry()
   const queryClient = useQueryClient()
   const { data: todayEntry, isLoading: checkingToday } = useTodayEntry()
-  const { data: aiPrefs } = useAiPreferences()
-  const { data: pendingTodosData } = useTodos('pending')
-  const { nickname, occupation, interests, language } = useSettingsStore()
+  const { data: aiPrefs, isLoading: aiPrefsLoading } = useAiPreferences()
+  const { data: pendingTodosData, isLoading: todosLoading } = useTodos('pending')
+  const { username, occupation, interests, language } = useSettingsStore()
   const router = useRouter()
+  const navigation = useNavigation()
   const flatListRef = useRef<FlatList>(null)
   const [animatingId, setAnimatingId] = useState<string | null>(null)
   const prevMessageCountRef = useRef(0)
+  const [showDraftBanner, setShowDraftBanner] = useState(false)
+  const [draftChecked, setDraftChecked] = useState(false)
   const { t } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
 
@@ -186,21 +195,81 @@ export default function NewEntryScreen() {
     }
   }, [checkingToday, todayEntry])
 
-  // Initialize AI chat on mount
-  useEffect(() => {
+  // Start fresh AI chat
+  const initFreshChat = useCallback(() => {
     reset()
-    const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
-    const todos = (pendingTodosData || []).map((t) => ({
-      text: t.text,
-      status: t.status,
-      due_date: t.due_date || undefined,
+    const aiContext = buildAiContext(aiPrefs, { username, occupation, interests })
+    const todos = (pendingTodosData || []).map((td) => ({
+      text: td.text,
+      status: td.status,
+      due_date: td.due_date || undefined,
     }))
-    initChat({
-      pendingTodos: todos,
-      aiContext,
-      language: language || 'en',
+    initChat({ pendingTodos: todos, aiContext, language: language || 'en' })
+  }, [aiPrefs, username, occupation, interests, pendingTodosData, language])
+
+  // Check for draft, then initialize
+  useEffect(() => {
+    if (aiPrefsLoading || todosLoading || draftChecked) return
+    setDraftChecked(true)
+    checkForDraft().then((hasDraft) => {
+      if (hasDraft) {
+        setShowDraftBanner(true)
+      } else {
+        initFreshChat()
+      }
     })
+  }, [aiPrefsLoading, todosLoading, draftChecked])
+
+  const handleResumeDraft = useCallback(() => {
+    setShowDraftBanner(false)
+    resumeDraft()
   }, [])
+
+  const handleStartFresh = useCallback(() => {
+    setShowDraftBanner(false)
+    clearDraft()
+    initFreshChat()
+  }, [initFreshChat])
+
+  // Navigation guard — warn before leaving mid-conversation
+  useEffect(() => {
+    if (messages.length <= 1 || isComplete || saveFeedback || showDraftBanner) return
+
+    const unsubscribe = navigation.addListener('beforeRemove' as any, (e: any) => {
+      e.preventDefault()
+      // Save draft before prompting
+      saveDraft()
+
+      Alert.alert(
+        t('create.leaveTitle'),
+        t('create.leaveMessage'),
+        [
+          { text: tCommon('action.cancel'), style: 'cancel' },
+          {
+            text: t('create.leaveConfirm'),
+            style: 'destructive',
+            onPress: () => navigation.dispatch(e.data.action),
+          },
+        ],
+      )
+    })
+
+    return unsubscribe
+  }, [messages.length, isComplete, saveFeedback, showDraftBanner, navigation])
+
+  // Web: warn on tab close/reload
+  useEffect(() => {
+    if (Platform.OS !== 'web') return
+    if (messages.length <= 1 || isComplete) return
+
+    const handler = (e: BeforeUnloadEvent) => {
+      saveDraft()
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [messages.length, isComplete])
 
   const isBusy = isAiThinking || animatingId !== null
 
@@ -227,7 +296,7 @@ export default function NewEntryScreen() {
       const entry = await createEntry.mutateAsync({ raw_text: fullText })
 
       // Build AI context from preferences + persona
-      const aiContext = buildAiContext(aiPrefs, { nickname, occupation, interests })
+      const aiContext = buildAiContext(aiPrefs, { username, occupation, interests })
 
       // Auto-tag + auto-extract todos + auto-summary
       let tagCount = 0
@@ -246,19 +315,21 @@ export default function NewEntryScreen() {
         // Tagging failed silently
       }
 
-      // Todos + daily summary — fire in parallel, non-blocking
-      const todoPromise = extractTodos(fullText, entry.id, aiContext)
-        .then((result) => { todoCount = result.todos?.length || 0 })
-        .catch(() => {})
-
+      // Daily summary (includes todo extraction) — non-blocking
+      let summaryOk = false
       const today = new Date().toISOString().split('T')[0]
-      const summaryPromise = generateSummary(today, aiContext)
-        .then(() => { queryClient.invalidateQueries({ queryKey: ['summaries'] }) })
-        .catch(() => {})
+      try {
+        const summaryResult = await generateSummary(today, aiContext)
+        summaryOk = true
+        todoCount = summaryResult?.todos?.length || 0
+        queryClient.invalidateQueries({ queryKey: ['summaries'] })
+        queryClient.invalidateQueries({ queryKey: ['todos'] })
+      } catch {
+        // Summary generation failed silently
+      }
 
-      await Promise.all([todoPromise, summaryPromise])
-
-      setSaveFeedback({ tags: tagCount, todos: todoCount })
+      const { sessionSummary } = useChatStore.getState()
+      setSaveFeedback({ tags: tagCount, todos: todoCount, sessionSummary, summaryGenerated: summaryOk })
       setIsSaving(false)
 
       // Show feedback briefly then navigate back
@@ -266,15 +337,48 @@ export default function NewEntryScreen() {
         reset()
         setSaveFeedback(null)
         router.back()
-      }, 2000)
+      }, 3000)
     } catch (error: unknown) {
       setIsSaving(false)
       showErrorAlert(t('create.saveFailed'), error)
     }
   }
 
-  // Show loading while checking for today's entry
-  if (checkingToday) return <LoadingState />
+  // Show loading while checking for today's entry or draft
+  if (checkingToday || !draftChecked) return <LoadingState />
+
+  // Draft resume banner
+  if (showDraftBanner) {
+    return (
+      <View className="flex-1 bg-white dark:bg-gray-950 justify-center items-center px-8">
+        <View className="bg-cyan-50 dark:bg-gray-800/50 rounded-full w-16 h-16 items-center justify-center mb-4">
+          <FontAwesome name="comments" size={28} color="#06b6d4" />
+        </View>
+        <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 text-center">
+          {t('create.draftFound')}
+        </Text>
+        <Text className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">
+          {t('create.draftFoundDesc')}
+        </Text>
+        <View className="w-full max-w-xs" style={{ gap: 10 }}>
+          <TouchableOpacity
+            className="w-full py-3.5 rounded-xl bg-cyan-600 items-center"
+            onPress={handleResumeDraft}
+            activeOpacity={0.8}
+          >
+            <Text className="text-base font-semibold text-white">{t('create.draftResume')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="w-full py-3.5 rounded-xl bg-gray-200 dark:bg-gray-700 items-center"
+            onPress={handleStartFresh}
+            activeOpacity={0.8}
+          >
+            <Text className="text-base font-medium text-gray-700 dark:text-gray-300">{t('create.draftNew')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  }
 
   // Save success feedback screen
   if (saveFeedback) {
@@ -286,14 +390,27 @@ export default function NewEntryScreen() {
         <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
           {t('create.savedTitle')}
         </Text>
-        <View className="flex-row gap-3 mt-2">
+        <View className="flex-row flex-wrap justify-center gap-3 mt-2">
           {saveFeedback.tags > 0 && (
             <Badge label={t('create.tagCount', { count: saveFeedback.tags })} variant="cyan" size="md" />
           )}
           {saveFeedback.todos > 0 && (
             <Badge label={t('create.todoCount', { count: saveFeedback.todos })} variant="green" size="md" />
           )}
+          {saveFeedback.summaryGenerated && (
+            <Badge label={t('create.summaryReady')} variant="cyan" size="md" />
+          )}
         </View>
+        {saveFeedback.sessionSummary && (
+          <View className="mt-4 mx-4">
+            <Text className="text-xs text-gray-400 dark:text-gray-500 text-center mb-1">
+              {t('create.aiSummary')}
+            </Text>
+            <Text className="text-sm text-gray-600 dark:text-gray-300 text-center leading-5 italic">
+              {'\u201C'}{saveFeedback.sessionSummary}{'\u201D'}
+            </Text>
+          </View>
+        )}
       </View>
     )
   }

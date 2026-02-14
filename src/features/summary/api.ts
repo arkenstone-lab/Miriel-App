@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { AppError } from '@/lib/errors'
 import type { Summary, SummarySentence } from './types'
 
@@ -6,50 +6,57 @@ export async function fetchSummaries(
   period: 'daily' | 'weekly' | 'monthly' = 'daily',
   date?: string
 ): Promise<Summary[]> {
-  let query = supabase
-    .from('summaries')
-    .select('*')
-    .eq('period', period)
-    .order('period_start', { ascending: false })
-
-  if (date) {
-    query = query.eq('period_start', date)
+  try {
+    let query = `?period=${period}`
+    if (date) query += `&date=${date}`
+    return await apiFetch<Summary[]>(`/summaries${query}`)
+  } catch (error) {
+    throw new AppError('SUMMARY_001', error)
   }
+}
 
-  const { data, error } = await query
-
-  if (error) throw new AppError('SUMMARY_001', error)
-  return data as Summary[]
+export interface GenerateSummaryResult {
+  summary: Summary
+  sentences: SummarySentence[]
+  todos?: { text: string; due_hint: string }[]
+  gen_count?: number
+  max_count?: number
 }
 
 export async function generateSummary(
   date?: string,
   aiContext?: string
-): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
-  const body: Record<string, unknown> = { date }
-  if (aiContext) body.ai_context = aiContext
+): Promise<GenerateSummaryResult> {
+  try {
+    const body: Record<string, unknown> = { date }
+    if (aiContext) body.ai_context = aiContext
 
-  const { data, error } = await supabase.functions.invoke('generate-summary', {
-    body,
-  })
-
-  if (error) throw new AppError('SUMMARY_002', error)
-  return data as { summary: Summary; sentences: SummarySentence[] }
+    return await apiFetch<GenerateSummaryResult>('/ai/generate-summary', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    // Re-throw 429 errors with status/body preserved for limit detection
+    if ((error as any)?.status === 429) throw error
+    throw new AppError('SUMMARY_002', error)
+  }
 }
 
 export async function generateWeeklySummary(
   weekStart?: string,
   aiContext?: string
 ): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
-  const body: Record<string, unknown> = { week_start: weekStart }
-  if (aiContext) body.ai_context = aiContext
+  try {
+    const body: Record<string, unknown> = { week_start: weekStart }
+    if (aiContext) body.ai_context = aiContext
 
-  const { data, error } = await supabase.functions.invoke('generate-weekly', {
-    body,
-  })
-
-  if (error) throw new AppError('SUMMARY_003', error)
-  return data as { summary: Summary; sentences: SummarySentence[] }
+    return await apiFetch<{ summary: Summary; sentences: SummarySentence[] }>('/ai/generate-weekly', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    throw new AppError('SUMMARY_003', error)
+  }
 }
 
 export async function generateMonthlySummary(
@@ -57,13 +64,15 @@ export async function generateMonthlySummary(
   monthEnd: string,
   aiContext?: string
 ): Promise<{ summary: Summary; sentences: SummarySentence[] }> {
-  const body: Record<string, unknown> = { month_start: monthStart, month_end: monthEnd }
-  if (aiContext) body.ai_context = aiContext
+  try {
+    const body: Record<string, unknown> = { month_start: monthStart, month_end: monthEnd }
+    if (aiContext) body.ai_context = aiContext
 
-  const { data, error } = await supabase.functions.invoke('generate-monthly', {
-    body,
-  })
-
-  if (error) throw new AppError('SUMMARY_004', error)
-  return data as { summary: Summary; sentences: SummarySentence[] }
+    return await apiFetch<{ summary: Summary; sentences: SummarySentence[] }>('/ai/generate-monthly', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    throw new AppError('SUMMARY_004', error)
+  }
 }

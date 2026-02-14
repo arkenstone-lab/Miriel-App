@@ -1,7 +1,7 @@
 import type { UserAiPreferences } from './types'
 
 interface PersonaInfo {
-  nickname?: string
+  username?: string
   occupation?: string
   interests?: string[]
 }
@@ -21,7 +21,7 @@ export function buildAiContext(
   // Persona info (if sharing enabled)
   if (prefs.share_persona && persona) {
     const personaParts: string[] = []
-    if (persona.nickname) personaParts.push(`이름: ${persona.nickname}`)
+    if (persona.username) personaParts.push(`이름: ${persona.username}`)
     if (persona.occupation) personaParts.push(`직업: ${persona.occupation}`)
     if (persona.interests && persona.interests.length > 0) {
       personaParts.push(`관심사: ${persona.interests.join(', ')}`)

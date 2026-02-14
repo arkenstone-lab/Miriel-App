@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, TouchableOpacity } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
+import { apiPublicFetch } from '@/lib/api'
 import { AppError, getErrorMessage } from '@/lib/errors'
 
 const COOLDOWN_SECONDS = 60
@@ -37,11 +37,11 @@ export default function VerifyEmailScreen() {
     setResending(true)
     setStatusText('')
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
+      const data = await apiPublicFetch<{ error?: string }>('/auth/send-verification-code', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
       })
-      if (error) throw new AppError('AUTH_014', error)
+      if (data?.error) throw new AppError('AUTH_014', data.error)
       setStatusType('success')
       setStatusText(t('verify.resendSuccessMessage'))
       setCooldown(COOLDOWN_SECONDS)

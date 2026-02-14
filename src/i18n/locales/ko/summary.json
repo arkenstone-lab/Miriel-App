@@ -11,7 +11,9 @@
     "emptyDescription": "기록을 작성한 후\n요약을 생성해보세요!",
     "summaryCount": "{{count}}개 요약",
     "label": "일간 요약",
-    "periodLabel": "{{date}} 일간 요약"
+    "periodLabel": "{{date}} 일간 요약",
+    "limitTitle": "한도 도달",
+    "limitMessage": "일간 요약 재생성 한도에 도달했어요 (하루 3회)."
   },
   "weekly": {
     "generateButton": "이번 주 회고 생성",

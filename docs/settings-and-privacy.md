@@ -9,8 +9,8 @@
 | Data Category | Storage | Reason |
 |---------------|---------|--------|
 | Theme, Language | AsyncStorage | Device-level preferences |
-| Nickname, Gender, Occupation, Interests, Avatar, Onboarding, Privacy, Notifications | Supabase user_metadata | Account-level, synced across devices |
-| Username, Phone | Supabase `profiles` table | Shared data (username lookup for login) |
+| Nickname, Gender, Occupation, Interests, Avatar, Onboarding, Privacy, Notifications | `users.user_metadata` (JSON column via `PUT /auth/user`) | Account-level, synced across devices |
+| Username, Email, Phone | `users` table (via `GET /auth/me`, `PUT /auth/user`) | Core account data |
 
 ### State
 
@@ -25,8 +25,7 @@
 | `avatarUrl` | `string` | `''` | user_metadata |
 | `hasSeenOnboarding` | `boolean` | `false` | user_metadata |
 | `hasSeenPrivacyNotice` | `boolean` | `false` | user_metadata |
-| `username` | `string` | `''` | profiles table (read-only) |
-| `phone` | `string` | `''` | profiles table |
+| `username` | `string` | `''` | users table (read-only) |
 | `notificationsEnabled` | `boolean` | `false` | user_metadata |
 | `morningNotificationTime` | `string` | `'09:00'` | user_metadata |
 | `eveningNotificationTime` | `string` | `'21:00'` | user_metadata |
@@ -40,17 +39,16 @@
 | Action | Description |
 |--------|-------------|
 | `initialize()` | Reads theme/language from AsyncStorage, applies language to i18n |
-| `loadUserData(metadata, userId)` | Loads user_metadata fields (sync) + fetches profiles data (async) |
+| `loadUserData(userData)` | Parses user_metadata JSON + sets username/email from user object |
 | `clearUserData()` | Resets all user fields, sets `userDataLoaded: false` |
 | `setTheme(theme)` | Persists to AsyncStorage, triggers NativeWind color scheme |
 | `setLanguage(lang)` | Persists to AsyncStorage, calls `i18n.changeLanguage()` |
-| `setNickname(name)` | Updates user_metadata |
-| `setPhone(phone)` | Updates profiles table |
-| `setEmail(email)` | Calls `supabase.auth.updateUser({ email })` |
-| `changePassword(password)` | Calls `supabase.auth.updateUser({ password })` |
-| `savePersona(data)` | Batch update user_metadata (nickname, gender, occupation, interests) |
-| `acknowledgePrivacyNotice()` | Sets flag in user_metadata |
-| `acknowledgeOnboarding()` | Sets flag in user_metadata |
+| `setNickname(name)` | `PUT /auth/user` with updated user_metadata |
+| `setEmail(email)` | `PUT /auth/user` with new email |
+| `changePassword(current, new)` | `POST /auth/change-password` |
+| `savePersona(data)` | Batch `PUT /auth/user` with user_metadata merge (nickname, gender, occupation, interests) |
+| `acknowledgePrivacyNotice()` | Sets flag via `PUT /auth/user` user_metadata |
+| `acknowledgeOnboarding()` | Sets flag via `PUT /auth/user` user_metadata |
 | `setNotificationsEnabled(enabled)` | Requests permissions, schedules/cancels notifications |
 | `setMorningNotificationTime(time)` | Reschedules morning notification |
 | `setEveningNotificationTime(time)` | Reschedules evening notification |
@@ -64,14 +62,14 @@ Called in `app/_layout.tsx` alongside auth initialization:
 
 ```tsx
 useEffect(() => {
-  initialize()      // auth
+  initialize()      // auth (restore tokens)
   initSettings()    // settings (AsyncStorage)
 }, [])
 
 // User data loaded when user changes
 useEffect(() => {
   if (user) {
-    loadUserData(user.user_metadata || {}, user.id)
+    loadUserData(user)  // parse user_metadata JSON, set username/email
   } else {
     clearUserData()
   }
@@ -80,11 +78,9 @@ useEffect(() => {
 
 ### loadUserData Flow
 
-1. **Sync**: Set all user_metadata fields immediately (nickname, gender, etc.)
-2. **Async**: Fetch `profiles` table for username/phone (using `.maybeSingle()`)
-3. If profile exists → set username/phone → `userDataLoaded: true`
-4. If profile doesn't exist AND `metadata.pendingUsername` is set (post email verification): auto-create profile → clear pending flags from user_metadata → `userDataLoaded: true`
-5. If profiles fetch fails or no pending data → still set `userDataLoaded: true` (don't block routing)
+1. Parse `user_metadata` JSON string → set all metadata fields (nickname, gender, etc.)
+2. Set `username`, `email` from user object
+3. Set `userDataLoaded: true`
 
 ## Settings Screen
 
@@ -100,14 +96,13 @@ useEffect(() => {
    - Summary Style (EditModal) — Summary style preference (e.g. "concise", "detailed")
    - Focus Areas (6 chip toggles) — Project management, self-development, work efficiency, communication, health/wellness, learning/growth
    - Custom Instructions (EditModal multiline, 500 chars) — Free-text instructions for AI
-   - Data: `user_ai_preferences` table (separate RLS — own user only)
+   - Data: `user_ai_preferences` table (separate — own user only)
    - Hooks: `useAiPreferences()`, `useUpsertAiPreferences()` (`src/features/ai-preferences/`)
 5. **Account**
    - Username (read-only, shows `@username`)
    - Nickname (EditModal)
    - Email (EditModal → `setEmail`)
-   - Phone (EditModal → `setPhone`)
-   - Password (EditModal with `secureTextEntry` → `changePassword`)
+   - Password (ChangePasswordModal → `POST /auth/change-password`)
    - Sign Out (confirmation alert)
 6. **Privacy & Data** — Inline privacy notice
 7. **Support** — External links (homepage, Telegram, Discord, X)
@@ -150,11 +145,10 @@ Namespace: `privacy`
 
 ## Adding New Settings
 
-1. Decide storage: AsyncStorage (device-level) or user_metadata (account-level) or profiles (shared)
+1. Decide storage: AsyncStorage (device-level) or user_metadata (account-level)
 2. Add the state field to `settingsStore.ts`
 3. Add action method with appropriate persistence
-4. For user_metadata: data loaded automatically in `loadUserData()`
-5. For profiles: add fetch in `loadUserData()` and update action with `supabase.from('profiles').update()`
-6. Add translation keys to `settings.json` (both ko and en)
-7. Add UI section in `app/settings.tsx`
-8. For AI-related settings, use `user_ai_preferences` table + `src/features/ai-preferences/` module (not settingsStore)
+4. For user_metadata: update via `PUT /auth/user` with merged metadata JSON
+5. Add translation keys to `settings.json` (both ko and en)
+6. Add UI section in `app/settings.tsx`
+7. For AI-related settings, use `user_ai_preferences` table + `src/features/ai-preferences/` module (not settingsStore)

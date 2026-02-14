@@ -24,12 +24,11 @@ export default function EditProfileScreen() {
   const isDark = colorScheme === 'dark'
 
   const {
-    nickname, gender, occupation, interests, avatarUrl,
+    gender, occupation, interests, avatarUrl,
     savePersona, setAvatarUrl,
   } = useSettingsStore()
   const { user } = useAuthStore()
 
-  const [localNickname, setLocalNickname] = useState(nickname)
   const [localGender, setLocalGender] = useState(gender)
   const [localOccupation, setLocalOccupation] = useState(occupation)
   const [localInterests, setLocalInterests] = useState<string[]>([...interests])
@@ -104,7 +103,6 @@ export default function EditProfileScreen() {
     setSaving(true)
     try {
       await savePersona({
-        nickname: localNickname,
         gender: localGender,
         occupation: localOccupation,
         interests: localInterests,
@@ -122,7 +120,7 @@ export default function EditProfileScreen() {
   }
 
   const { username } = useSettingsStore()
-  const displayName = localNickname || username || '?'
+  const displayName = username || '?'
   const initial = displayName.charAt(0).toUpperCase()
 
   return (
@@ -170,21 +168,6 @@ export default function EditProfileScreen() {
           <Text className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             {t('profile.photoSizeHint')}
           </Text>
-        </View>
-
-        {/* Nickname */}
-        <View className="mb-5">
-          <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            {tOnboarding('persona.nickname')}
-          </Text>
-          <TextInput
-            className="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
-            placeholder={tOnboarding('persona.nicknamePlaceholder')}
-            placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-            value={localNickname}
-            onChangeText={setLocalNickname}
-            maxLength={20}
-          />
         </View>
 
         {/* Gender */}

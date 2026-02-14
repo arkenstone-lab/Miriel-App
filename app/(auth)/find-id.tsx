@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
+import { apiPublicFetch } from '@/lib/api'
 import { AppError, getErrorMessage } from '@/lib/errors'
 
 export default function FindIdScreen() {
@@ -24,11 +24,10 @@ export default function FindIdScreen() {
 
     setLoading(true)
     try {
-      const { data, error } = await supabase.functions.invoke('send-find-id-email', {
-        body: { email: email.trim(), lang: i18n.language },
+      const data = await apiPublicFetch<{ error?: string; fallback?: boolean; username?: string }>('/auth/send-find-id-email', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim(), lang: i18n.language }),
       })
-
-      if (error) throw new AppError('AUTH_015', error)
 
       if (data?.error === 'not_found') {
         setErrorText(t('findId.notFound'))

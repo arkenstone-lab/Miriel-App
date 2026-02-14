@@ -42,5 +42,12 @@
   },
   "weeklyActivity": {
     "title": "This Week"
+  },
+  "weeklyReview": {
+    "title": "Weekly Review",
+    "generate": "Generate Weekly Review",
+    "viewReview": "View Review",
+    "empty": "Keep recording this week to unlock your weekly review",
+    "evidenceCount": "{{count}} sources"
   }
 }

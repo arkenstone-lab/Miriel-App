@@ -16,6 +16,7 @@ export function useGenerateSummary() {
       generateSummary(params?.date, params?.aiContext),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['summaries'] })
+      queryClient.invalidateQueries({ queryKey: ['todos'] })
     },
   })
 }

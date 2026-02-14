@@ -122,19 +122,25 @@ serve(async (req) => {
       })
     }
 
+    // Decode user_id from JWT (signature already verified by Supabase relay)
+    let userId: string
+    try {
+      const token = authHeader.replace('Bearer ', '')
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      userId = payload.sub
+      if (!userId) throw new Error('missing sub')
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
 
     const { date, ai_context } = await req.json()
     const targetDate = date || new Date().toISOString().split('T')[0]
@@ -217,7 +223,7 @@ serve(async (req) => {
     const { data: summary, error: insertError } = await supabase
       .from('summaries')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         period: 'daily',
         period_start: targetDate,
         text: summaryText,

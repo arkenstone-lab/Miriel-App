@@ -1,119 +1,128 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { apiFetch, apiPublicFetch, setTokens, clearTokens, getAccessToken } from '@/lib/api'
 import { AppError } from '@/lib/errors'
-import type { Session, User } from '@supabase/supabase-js'
 
 interface SignUpParams {
   username: string
   email: string
   password: string
   verificationToken: string
+  inviteCode?: string
+}
+
+interface UserData {
+  id: string
+  email: string
+  username: string
+  phone?: string | null
+  user_metadata: Record<string, any>
+  created_at?: string
 }
 
 interface AuthState {
-  session: Session | null
-  user: User | null
+  user: UserData | null
   initialized: boolean
   initialize: () => Promise<void>
   signIn: (usernameOrEmail: string, password: string) => Promise<void>
   signUp: (params: SignUpParams) => Promise<void>
   signOut: () => Promise<void>
+  forceSignOut: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  session: null,
   user: null,
   initialized: false,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    set({
-      session,
-      user: session?.user ?? null,
-      initialized: true,
-    })
+    try {
+      const token = await getAccessToken()
+      if (!token) {
+        set({ user: null, initialized: true })
+        return
+      }
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      set({
-        session,
-        user: session?.user ?? null,
-      })
-    })
+      // Validate token by fetching user info
+      const user = await apiFetch<UserData>('/auth/me')
+      set({ user, initialized: true })
+    } catch {
+      // Token invalid or expired (refresh also failed)
+      await clearTokens()
+      set({ user: null, initialized: true })
+    }
   },
 
   signIn: async (usernameOrEmail: string, password: string) => {
-    let email: string
-
-    if (usernameOrEmail.includes('@')) {
-      // Direct email login
-      email = usernameOrEmail.trim().toLowerCase()
-    } else {
-      // Resolve username → email via RPC
-      const { data, error: rpcError } = await supabase.rpc('get_email_by_username', {
-        p_username: usernameOrEmail,
+    try {
+      const data = await apiPublicFetch<{
+        user: UserData
+        access_token: string
+        refresh_token: string
+      }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ login: usernameOrEmail, password }),
       })
-      if (rpcError) throw new AppError('AUTH_002', rpcError)
-      if (!data) throw new AppError('AUTH_001')
-      email = data
-    }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw new AppError('AUTH_003', error)
+      await setTokens(data.access_token, data.refresh_token)
+      set({ user: data.user })
+    } catch (err: any) {
+      if (err.body?.error === 'invalid_credentials') {
+        throw new AppError('AUTH_003')
+      }
+      throw new AppError('AUTH_002', err)
+    }
   },
 
-  signUp: async ({ username, email, password, verificationToken }: SignUpParams) => {
-    // Validate email verification token server-side
-    const { data: tokenData, error: tokenError } = await supabase.functions.invoke(
-      'validate-email-token',
-      { body: { email: email.trim().toLowerCase(), verification_token: verificationToken } },
-    )
-    if (tokenError || !tokenData?.valid) {
+  signUp: async ({ username, email, password, verificationToken, inviteCode }: SignUpParams) => {
+    // Validate email verification token
+    const tokenResult = await apiPublicFetch<{ valid: boolean }>('/auth/validate-email-token', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        verification_token: verificationToken,
+      }),
+    })
+
+    if (!tokenResult.valid) {
       throw new AppError('AUTH_017')
     }
 
-    // Check username availability
-    const { data: existing, error: checkError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', username.toLowerCase())
-      .maybeSingle()
-
-    if (checkError) throw new AppError('AUTH_004', checkError)
-    if (existing) throw new AppError('AUTH_005')
-
-    // Create auth user with email confirmation disabled (already verified via code)
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-      options: {
-        data: {
-          pendingUsername: username.toLowerCase(),
-        },
-      },
-    })
-    if (error) throw new AppError('AUTH_006', error)
-
-    const userId = data.user?.id
-    if (!userId) throw new AppError('AUTH_007')
-
-    // Detect fake response for already-registered-but-unconfirmed email
-    if (data.user?.identities && data.user.identities.length === 0) {
-      throw new AppError('AUTH_008')
-    }
-
-    // If session exists (email confirmation OFF), insert profile immediately
-    if (data.session) {
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: userId,
-        username: username.toLowerCase(),
+    try {
+      const data = await apiPublicFetch<{
+        user: UserData
+        access_token: string
+        refresh_token: string
+      }>('/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          username: username.trim().toLowerCase(),
+          email: email.trim().toLowerCase(),
+          password,
+          verification_token: verificationToken,
+          ...(inviteCode ? { invite_code: inviteCode.trim() } : {}),
+        }),
       })
-      if (profileError) throw new AppError('AUTH_009', profileError)
+
+      await setTokens(data.access_token, data.refresh_token)
+      set({ user: data.user })
+    } catch (err: any) {
+      if (err.body?.error === 'email_already_registered') throw new AppError('AUTH_008')
+      if (err.body?.error === 'username_already_taken') throw new AppError('AUTH_005')
+      if (err.body?.error === 'invalid_invite_code') throw new AppError('AUTH_021')
+      throw new AppError('AUTH_006', err)
     }
-    // No session (email confirmation ON) — profile created on first login via loadUserData
   },
 
   signOut: async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw new AppError('AUTH_010', error)
+    try {
+      await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
+    } finally {
+      await clearTokens()
+      set({ user: null })
+    }
+  },
+
+  forceSignOut: () => {
+    clearTokens()
+    set({ user: null })
   },
 }))

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { supabase } from '@/lib/supabase'
+import { clearTokens } from '@/lib/api'
 
 export default function SetupWelcomeScreen() {
   const router = useRouter()
@@ -14,14 +14,14 @@ export default function SetupWelcomeScreen() {
 
   const handleSignUp = async () => {
     await completeSetup()
-    // Clear any stale session so routing guard doesn't redirect to /(tabs)
-    await supabase.auth.signOut().catch(() => {})
+    // Clear any stale tokens so routing guard doesn't redirect to /(tabs)
+    await clearTokens()
     router.replace('/(auth)/signup' as any)
   }
 
   const handleSignIn = async () => {
     await completeSetup()
-    await supabase.auth.signOut().catch(() => {})
+    await clearTokens()
     router.replace('/(auth)/login' as any)
   }
 

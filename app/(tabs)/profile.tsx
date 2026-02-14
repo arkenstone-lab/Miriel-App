@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   const { isDesktop } = useResponsiveLayout()
   const router = useRouter()
 
-  const { nickname, username, gender, occupation, interests, avatarUrl } = useSettingsStore()
+  const { username, gender, occupation, interests, avatarUrl } = useSettingsStore()
   const { user } = useAuthStore()
   const { data: stats, isLoading } = useGamificationStats()
   const { data: allTodos } = useTodos()
@@ -31,7 +31,7 @@ export default function ProfileScreen() {
 
   if (isLoading || !stats) return <LoadingState />
 
-  const displayName = nickname || username || '?'
+  const displayName = username || '?'
   const initial = displayName.charAt(0).toUpperCase()
 
   const totalTodos = allTodos?.length ?? 0
@@ -69,10 +69,7 @@ export default function ProfileScreen() {
           )}
 
           <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            {nickname || t('account.nicknamePlaceholder')}
-          </Text>
-          <Text className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            {username ? `@${username}` : ''}
+            {username || '?'}
           </Text>
 
           {/* Persona chips */}

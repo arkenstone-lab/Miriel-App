@@ -131,19 +131,25 @@ serve(async (req) => {
       })
     }
 
+    // Decode user_id from JWT (signature already verified by Supabase relay)
+    let userId: string
+    try {
+      const token = authHeader.replace('Bearer ', '')
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      userId = payload.sub
+      if (!userId) throw new Error('missing sub')
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
 
     const { text, entry_id, ai_context } = await req.json()
     if (!text) {
@@ -190,7 +196,7 @@ serve(async (req) => {
     }
 
     const todosToInsert = result.todos.map((t) => ({
-      user_id: user.id,
+      user_id: userId,
       text: t.text,
       source_entry_id: entry_id || null,
       status: 'pending' as const,

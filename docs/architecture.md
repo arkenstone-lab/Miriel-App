@@ -9,9 +9,12 @@
 | Language | TypeScript | 5.9 |
 | Styling | NativeWind (Tailwind for RN) | 4.1 |
 | CSS Engine | Tailwind CSS | 3.4 |
-| Backend | Supabase (PostgreSQL + Edge Functions) | 2.93 |
-| Auth | Supabase Auth (username/password via profiles table) | - |
-| AI | Gemini 2.0 Flash (default) / OpenAI GPT-4o (via Edge Functions) | - |
+| Backend | Cloudflare Worker (Hono.js, ~25 routes) | - |
+| Database | Cloudflare D1 (SQLite) | - |
+| Auth | Custom JWT (bcryptjs + Web Crypto HMAC-SHA256) | - |
+| Storage | Cloudflare R2 (avatar images) | - |
+| AI | OpenAI GPT-4o (via Worker inline callOpenAI) | - |
+| Email | Resend API (verification, password reset, find ID) | - |
 | Server State | TanStack React Query | 5 |
 | Client State | Zustand | 5 |
 | i18n | i18next + react-i18next + expo-localization | 25/16/17 |
@@ -54,19 +57,37 @@ miriel/
 │   ├── i18n/               # i18next config + locale JSON files
 │   │   ├── index.ts
 │   │   └── locales/{ko,en}/ # 14 namespace files per language
-│   ├── lib/                # Utilities (supabase client, constants, errors, notifications, webNotifications, avatar)
+│   ├── lib/                # Utilities (api client, constants, errors, notifications, webNotifications, avatar)
 │   └── stores/             # Zustand stores (authStore, chatStore, settingsStore)
 │
-├── supabase/
-│   ├── functions/          # Edge Functions (Deno runtime)
-│   │   ├── _shared/        # Shared modules (ai.ts, cors.ts, prompts.ts, prompts.example.ts)
-│   │   ├── tagging/        # AI tag extraction
-│   │   ├── extract-todos/  # AI todo extraction
-│   │   ├── generate-summary/   # AI daily summary
-│   │   ├── generate-weekly/    # AI weekly review
-│   │   ├── generate-monthly/   # AI monthly review
-│   │   └── chat/               # AI conversational check-in
-│   └── migrations/         # SQL schema files
+├── worker/                 # Cloudflare Worker (Hono.js)
+│   ├── package.json
+│   ├── wrangler.toml       # D1 binding (DB), R2 binding (AVATARS), vars
+│   ├── tsconfig.json
+│   ├── migrations/
+│   │   └── 0001_schema.sql # All tables (users, entries, summaries, todos, etc.)
+│   └── src/
+│       ├── index.ts        # Hono app skeleton, CORS middleware, route mounting
+│       ├── types.ts        # Env bindings (D1, R2, vars)
+│       ├── lib/
+│       │   ├── auth.ts     # JWT + bcrypt (hashPassword, verifyPassword, generateToken, verifyToken)
+│       │   ├── db.ts       # D1 helpers (generateId, now, parseJsonFields, stringifyJsonFields)
+│       │   ├── openai.ts   # callOpenAI (3x retry, 15s timeout, json_object format)
+│       │   ├── ai-sanitize.ts  # ai_context sanitization (prompt injection filter)
+│       │   └── email.ts    # Resend API wrapper (verification, password reset, find ID)
+│       ├── middleware/
+│       │   ├── auth.ts     # JWT verification middleware (Bearer → c.set('userId'))
+│       │   └── cors.ts     # CORS origin whitelist
+│       └── routes/
+│           ├── auth.ts             # signup, login, me, update, change-password, reset
+│           ├── email-verification.ts # send-code, verify-code, validate-token, find-id
+│           ├── entries.ts          # CRUD
+│           ├── todos.ts            # CRUD
+│           ├── summaries.ts        # list
+│           ├── ai.ts               # chat, tagging, extract-todos, generate-summary/weekly/monthly
+│           ├── ai-preferences.ts   # get, upsert
+│           ├── storage.ts          # avatar upload/delete/serve (R2)
+│           └── seed.ts             # Demo data seeder
 │
 ├── docs/                   # Developer documentation
 ├── tailwind.config.ts      # NativeWind config (darkMode: 'class')
@@ -82,7 +103,7 @@ Each feature in `src/features/<name>/` follows the same structure:
 ```
 features/<name>/
 ├── types.ts      # TypeScript interfaces (Entry, Summary, Todo, etc.)
-├── api.ts        # Supabase queries and Edge Function calls
+├── api.ts        # API calls via apiFetch (Worker routes)
 ├── hooks.ts      # React Query hooks wrapping api.ts
 ├── schema.ts     # (optional) AI output normalization (entry only)
 └── constants.ts  # (optional) Static data (gamification only)
@@ -90,7 +111,7 @@ features/<name>/
 
 **Data flow:**
 ```
-Component → useQuery hook (hooks.ts) → API function (api.ts) → Supabase Client → PostgreSQL / Edge Function
+Component → useQuery hook (hooks.ts) → API function (api.ts) → apiFetch (src/lib/api.ts) → Cloudflare Worker → D1 / OpenAI
 ```
 
 ## Routing Architecture
@@ -132,29 +153,40 @@ Layout components:
 
 | Store | Purpose | Persistence |
 |-------|---------|-------------|
-| `authStore` | Session, user object, signIn(username)/signUp/signOut | Supabase session (auto) |
-| `chatStore` | Chat mode messages, question index, input mode | In-memory only |
-| `settingsStore` | Theme, language, privacy, username, phone, notifications, account management | AsyncStorage (device) + user_metadata + profiles table |
+| `authStore` | User object, JWT tokens, signIn/signUp/signOut | AsyncStorage (access + refresh tokens) |
+| `chatStore` | Chat mode messages, phase tracking, input mode, draft persistence | In-memory + localStorage/AsyncStorage (drafts) |
+| `settingsStore` | Theme, language, privacy, notifications, account management | AsyncStorage (device) + users.user_metadata (account) |
 
 React Query handles all server state (entries, summaries, todos, gamification stats). Query keys follow the pattern `['resource', id?]`.
 
 ## Auth Flow
 
 1. `_layout.tsx` calls `authStore.initialize()` on mount
-2. Supabase session is restored from storage
-3. Routing guard: setup not complete → setup, no user → login, user + !onboarding → onboarding, user + auth group → tabs
-4. `onAuthStateChange` listener keeps state in sync
-5. **Login**: username → RPC lookup → `signInWithPassword({ email, password })`
-6. **Sign Up** (email confirmation OFF): username check → `auth.signUp` → profile insert → auto-route to onboarding
-7. **Sign Up** (email confirmation ON): same as above but no session → redirect to verify-email → profile created on first login via `loadUserData`
-8. **Find ID**: email → RPC lookup → show username
-9. **Find Password**: username/email → resolve email → `resetPasswordForEmail(email)`
+2. Stored JWT tokens are restored from AsyncStorage/localStorage
+3. `GET /auth/me` validates the access token and loads user data
+4. Routing guard: setup not complete → setup, no user → login, user + !onboarding → onboarding, user + auth group → tabs
+5. **Login**: username/email → `POST /auth/login` → JWT tokens stored
+6. **Sign Up**: email verification code → validate-email-token → `POST /auth/signup` → JWT tokens stored → onboarding
+7. **Token Refresh**: 401 response → `POST /auth/refresh` (refresh token) → new access + refresh tokens → retry original request
+8. **Find ID**: email → `POST /auth/send-find-id-email` → email sent with username
+9. **Find Password**: username/email → `POST /auth/reset-password-request` → email with reset link
 
 ## Environment Variables
 
+### Client (.env)
 ```
-EXPO_PUBLIC_SUPABASE_URL=<supabase-project-url>
-EXPO_PUBLIC_SUPABASE_ANON_KEY=<supabase-anon-key>
+EXPO_PUBLIC_API_URL=https://miriel-api.<account>.workers.dev
 ```
 
-Stored in `.env` (gitignored). The `EXPO_PUBLIC_` prefix makes them available in client code.
+### Worker (wrangler secrets)
+```
+JWT_SECRET=<secret-key>
+OPENAI_API_KEY=<openai-api-key>
+RESEND_API_KEY=<resend-api-key>
+INVITE_CODES=<comma-separated-codes>  # optional; if unset, open registration
+```
+
+### Worker (wrangler.toml vars)
+```
+CORS_ORIGINS=http://localhost:8081,http://localhost:19006,https://miriel.app
+```

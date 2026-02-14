@@ -31,6 +31,7 @@ When a user reports an error code, look it up below to identify the cause and re
 | AUTH_018 | 인증 코드 전송 실패 | Failed to send verification code | send-verification-code Edge Function failure | Retry |
 | AUTH_019 | 인증 코드 불일치 | Invalid verification code | Wrong code entered | Check code, retry |
 | AUTH_020 | 인증 코드 만료 | Verification code expired | Code older than 10 minutes | Request new code |
+| AUTH_021 | 유효하지 않은 가입 코드 | Invalid invite code | Wrong or missing invite code during signup | Verify invite code |
 
 ---
 

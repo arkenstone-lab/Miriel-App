@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
+import { apiPublicFetch } from '@/lib/api'
 import { AppError, getErrorMessage } from '@/lib/errors'
 
 function maskEmail(email: string): string {
@@ -31,31 +31,19 @@ export default function FindPasswordScreen() {
 
     setLoading(true)
     try {
-      let email: string
+      const data = await apiPublicFetch<{ error?: string; masked_email?: string }>('/auth/reset-password-request', {
+        method: 'POST',
+        body: JSON.stringify({ input: input.trim() }),
+      })
 
-      if (input.includes('@')) {
-        // Input is an email
-        email = input
-      } else {
-        // Input is a username — resolve to email
-        const { data, error } = await supabase.rpc('get_email_by_username', {
-          p_username: input,
-        })
-        if (error) throw new AppError('AUTH_012', error)
-        if (!data) {
-          setErrorText(t('findPassword.notFound'))
-          return
-        }
-        email = data
+      if (data?.error === 'not_found') {
+        setErrorText(t('findPassword.notFound'))
+        return
       }
+      if (data?.error) throw new AppError('AUTH_013', data.error)
 
-      const redirectTo = Platform.OS === 'web'
-        ? `${window.location.origin}/reset-password`
-        : 'miriel://reset-password'
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
-      if (error) throw new AppError('AUTH_013', error)
-
-      setResultText(t('findPassword.success', { email: maskEmail(email) }))
+      const maskedEmail = data?.masked_email || maskEmail(input)
+      setResultText(t('findPassword.success', { email: maskedEmail }))
     } catch (error: unknown) {
       setErrorText(getErrorMessage(error))
     } finally {
