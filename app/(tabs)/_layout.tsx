@@ -66,14 +66,6 @@ export default function TabLayout() {
           options={{
             title: t('tab.timeline'),
             tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
-            headerRight: () => (
-              <Pressable
-                onPress={() => router.push('/entries/new')}
-                style={{ marginRight: 16 }}
-              >
-                <FontAwesome name="plus" size={20} color="#06b6d4" />
-              </Pressable>
-            ),
           }}
         />
         <Tabs.Screen

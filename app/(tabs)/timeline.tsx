@@ -1,12 +1,16 @@
-import { useState, useMemo } from 'react'
-import { View, Text, SectionList } from 'react-native'
+import { useState, useMemo, useLayoutEffect } from 'react'
+import { View, Text, SectionList, FlatList, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
+import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
+import { useColorScheme } from 'nativewind'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useEntries, useEntry } from '@/features/entry/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { EntryCard } from '@/components/EntryCard'
 import { EntryDetail } from '@/components/EntryDetail'
+import { CalendarGrid } from '@/components/ui/CalendarGrid'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
@@ -47,14 +51,22 @@ function groupEntries(entries: Entry[], labels: Record<string, string>): Section
     .map((key) => ({ title: labels[key], data: groups[key] }))
 }
 
+type ViewMode = 'list' | 'calendar'
+
 export default function TimelineScreen() {
   const { data: entries, isLoading, error } = useEntries()
   const router = useRouter()
+  const navigation = useNavigation()
   const { isDesktop } = useResponsiveLayout()
+  const { colorScheme } = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { data: selectedEntry } = useEntry(selectedId || '')
   const { t } = useTranslation('timeline')
   const { t: tCommon } = useTranslation('common')
+
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const dateLabels: Record<string, string> = {
     today: tCommon('date.today'),
@@ -67,6 +79,49 @@ export default function TimelineScreen() {
     if (!entries) return []
     return groupEntries(entries, dateLabels)
   }, [entries])
+
+  const markedDates = useMemo(() => {
+    if (!entries) return new Set<string>()
+    return new Set(entries.map((e) => e.date))
+  }, [entries])
+
+  const filteredEntries = useMemo(() => {
+    if (!entries || !selectedDate) return entries || []
+    return entries.filter((e) => e.date === selectedDate)
+  }, [entries, selectedDate])
+
+  // Dynamic headerRight: calendar/list toggle + "+" button
+  useLayoutEffect(() => {
+    if (isDesktop) return // Desktop uses sidebar, no header
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16, gap: 14 }}>
+          <Pressable
+            onPress={() => {
+              setViewMode((prev) => {
+                const next = prev === 'list' ? 'calendar' : 'list'
+                if (next === 'list') setSelectedDate(null)
+                return next
+              })
+            }}
+          >
+            <FontAwesome
+              name={viewMode === 'list' ? 'calendar' : 'list'}
+              size={18}
+              color={isDark ? '#9ca3af' : '#6b7280'}
+            />
+          </Pressable>
+          <Pressable onPress={() => router.push('/entries/new')}>
+            <FontAwesome name="plus" size={20} color="#06b6d4" />
+          </Pressable>
+        </View>
+      ),
+    })
+  }, [navigation, viewMode, isDark, isDesktop])
+
+  const handleSelectDate = (date: string) => {
+    setSelectedDate((prev) => (prev === date ? null : date))
+  }
 
   if (isLoading) return <LoadingState />
 
@@ -96,29 +151,66 @@ export default function TimelineScreen() {
     }
   }
 
-  const master = (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderSectionHeader={({ section }) => (
-          <View className="px-4 pt-4 pb-2 bg-gray-50 dark:bg-gray-950">
-            <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              {section.title}
+  const listView = (
+    <SectionList
+      sections={sections}
+      keyExtractor={(item) => item.id}
+      renderSectionHeader={({ section }) => (
+        <View className="px-4 pt-4 pb-2 bg-gray-50 dark:bg-gray-950">
+          <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            {section.title}
+          </Text>
+        </View>
+      )}
+      renderItem={({ item }) => (
+        <View className="px-4">
+          <EntryCard
+            entry={item}
+            onPress={() => handlePress(item)}
+            isSelected={isDesktop && selectedId === item.id}
+          />
+        </View>
+      )}
+      stickySectionHeadersEnabled={false}
+    />
+  )
+
+  const calendarView = (
+    <FlatList
+      data={filteredEntries}
+      keyExtractor={(item) => item.id}
+      ListHeaderComponent={
+        <CalendarGrid
+          selectedDate={selectedDate}
+          markedDates={markedDates}
+          onSelectDate={handleSelectDate}
+        />
+      }
+      renderItem={({ item }) => (
+        <View className="px-4">
+          <EntryCard
+            entry={item}
+            onPress={() => handlePress(item)}
+            isSelected={isDesktop && selectedId === item.id}
+          />
+        </View>
+      )}
+      ListEmptyComponent={
+        selectedDate ? (
+          <View className="items-center py-8">
+            <Text className="text-sm text-gray-400 dark:text-gray-500">
+              {t('calendar.noEntries')}
             </Text>
           </View>
-        )}
-        renderItem={({ item }) => (
-          <View className="px-4">
-            <EntryCard
-              entry={item}
-              onPress={() => handlePress(item)}
-              isSelected={isDesktop && selectedId === item.id}
-            />
-          </View>
-        )}
-        stickySectionHeadersEnabled={false}
-      />
+        ) : null
+      }
+      contentContainerStyle={{ paddingBottom: 20 }}
+    />
+  )
+
+  const master = (
+    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
+      {viewMode === 'list' ? listView : calendarView}
     </View>
   )
 

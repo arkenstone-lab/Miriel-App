@@ -4,5 +4,9 @@
     "descriptionDesktop": "Press the + button in the sidebar\nto write your first entry!",
     "descriptionMobile": "Press the + button at the top right\nto write your first entry!",
     "action": "Write New Entry"
+  },
+  "calendar": {
+    "noEntries": "No entries on this date",
+    "entriesCount": "{{count}} entries"
   }
 }

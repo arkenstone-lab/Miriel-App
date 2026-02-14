@@ -42,6 +42,13 @@
     "dayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     "monthDay": "{{month}}/{{day}} ({{dayName}})"
   },
+  "calendar": {
+    "today": "Today"
+  },
+  "view": {
+    "list": "List",
+    "calendar": "Calendar"
+  },
   "placeholder": {
     "selectItem": "Select an item",
     "selectEntry": "Select an entry",

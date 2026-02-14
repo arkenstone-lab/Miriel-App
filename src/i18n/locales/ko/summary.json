@@ -36,5 +36,8 @@
     "alreadyGeneratedDesc": "이번 달 회고는 이미 생성되었습니다."
   },
   "evidenceBadge": "근거 기록 {{count}}개",
-  "loadingEntry": "기록 로딩 중..."
+  "loadingEntry": "기록 로딩 중...",
+  "calendar": {
+    "noSummaries": "이 날짜에 해당하는 요약이 없어요"
+  }
 }

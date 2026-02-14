@@ -42,6 +42,13 @@
     "dayNames": ["일", "월", "화", "수", "목", "금", "토"],
     "monthDay": "{{month}}월 {{day}}일 ({{dayName}})"
   },
+  "calendar": {
+    "today": "오늘"
+  },
+  "view": {
+    "list": "목록",
+    "calendar": "캘린더"
+  },
   "placeholder": {
     "selectItem": "항목을 선택해주세요",
     "selectEntry": "기록을 선택해주세요",

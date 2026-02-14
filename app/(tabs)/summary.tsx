@@ -1,6 +1,8 @@
-import { useState } from 'react'
-import { View, Text, FlatList } from 'react-native'
+import { useState, useMemo } from 'react'
+import { View, Text, FlatList, Pressable } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { useColorScheme } from 'nativewind'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useSummaries, useGenerateSummary, useGenerateWeeklySummary, useGenerateMonthlySummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -9,6 +11,7 @@ import { buildAiContext } from '@/features/ai-preferences/context'
 import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { SummaryDetailView } from '@/components/SummaryDetailView'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { CalendarGrid } from '@/components/ui/CalendarGrid'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -18,6 +21,7 @@ import { Badge } from '@/components/ui/Badge'
 import type { Summary } from '@/features/summary/types'
 
 type Period = 'daily' | 'weekly' | 'monthly'
+type ViewMode = 'list' | 'calendar'
 
 function formatWeekRange(periodStart: string): string {
   const start = new Date(periodStart + 'T00:00:00')
@@ -34,6 +38,28 @@ function formatMonthRange(periodStart: string, monthlyReviewDay: number): string
   end.setDate(end.getDate() - 1)
   const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`
   return `${fmt(start)} ~ ${fmt(end)}`
+}
+
+/** Check if a selected date falls within a summary's period range */
+function isDateInPeriod(dateStr: string, periodStart: string, period: Period, monthlyReviewDay: number): boolean {
+  const date = new Date(dateStr + 'T00:00:00')
+  const start = new Date(periodStart + 'T00:00:00')
+
+  if (period === 'daily') {
+    return dateStr === periodStart
+  }
+
+  if (period === 'weekly') {
+    const end = new Date(start)
+    end.setDate(end.getDate() + 6)
+    return date >= start && date <= end
+  }
+
+  // monthly
+  const end = new Date(start)
+  end.setMonth(end.getMonth() + 1)
+  end.setDate(end.getDate() - 1)
+  return date >= start && date <= end
 }
 
 function SummaryListCard({
@@ -124,11 +150,16 @@ export default function SummaryScreen() {
   const weeklyMutation = useGenerateWeeklySummary()
   const monthlyMutation = useGenerateMonthlySummary()
   const { isDesktop } = useResponsiveLayout()
+  const { colorScheme } = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { t } = useTranslation('summary')
   const { t: tCommon } = useTranslation('common')
   const { data: aiPrefs } = useAiPreferences()
   const { nickname, occupation, interests, monthlyReviewDay } = useSettingsStore()
+
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const selectedSummary = summaries?.find((s) => s.id === selectedId)
 
@@ -141,7 +172,19 @@ export default function SummaryScreen() {
   const handlePeriodChange = (v: Period) => {
     setPeriod(v)
     setSelectedId(null)
+    setSelectedDate(null)
   }
+
+  const markedDates = useMemo(() => {
+    if (!summaries) return new Set<string>()
+    return new Set(summaries.map((s) => s.period_start))
+  }, [summaries])
+
+  const filteredSummaries = useMemo(() => {
+    if (!summaries || !selectedDate) return summaries || []
+    const day = monthlyReviewDay || 1
+    return summaries.filter((s) => isDateInPeriod(selectedDate, s.period_start, period, day))
+  }, [summaries, selectedDate, period, monthlyReviewDay])
 
   if (isLoading) return <LoadingState />
 
@@ -168,6 +211,18 @@ export default function SummaryScreen() {
 
   const handleSelect = (summary: Summary) => {
     setSelectedId(summary.id)
+  }
+
+  const handleSelectDate = (date: string) => {
+    setSelectedDate((prev) => (prev === date ? null : date))
+  }
+
+  const toggleViewMode = () => {
+    setViewMode((prev) => {
+      const next = prev === 'list' ? 'calendar' : 'list'
+      if (next === 'list') setSelectedDate(null)
+      return next
+    })
   }
 
   // Weekly review 1-per-week limit
@@ -203,10 +258,12 @@ export default function SummaryScreen() {
       ? tCommon('placeholder.selectWeekly')
       : tCommon('placeholder.selectMonthly')
 
+  const listData = viewMode === 'calendar' ? filteredSummaries : (summaries || [])
+
   const master = (
     <View className="flex-1 bg-gray-50 dark:bg-gray-950">
       <FlatList
-        data={summaries || []}
+        data={listData}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View className="px-4">
@@ -221,11 +278,23 @@ export default function SummaryScreen() {
         )}
         ListHeaderComponent={
           <View className="px-4 pt-4 pb-1" style={{ gap: 12 }}>
-            <SegmentedControl
-              options={periodOptions}
-              value={period}
-              onChange={handlePeriodChange}
-            />
+            {/* SegmentedControl + calendar toggle in same row */}
+            <View className="flex-row items-center" style={{ gap: 10 }}>
+              <View className="flex-1">
+                <SegmentedControl
+                  options={periodOptions}
+                  value={period}
+                  onChange={handlePeriodChange}
+                />
+              </View>
+              <Pressable onPress={toggleViewMode} style={{ padding: 8 }}>
+                <FontAwesome
+                  name={viewMode === 'list' ? 'calendar' : 'list'}
+                  size={18}
+                  color={isDark ? '#9ca3af' : '#6b7280'}
+                />
+              </Pressable>
+            </View>
             <Button
               title={generateLabel}
               onPress={handleGenerate}
@@ -233,14 +302,31 @@ export default function SummaryScreen() {
               disabled={isLimitReached}
               size="lg"
             />
+            {viewMode === 'calendar' && (
+              <View style={{ marginHorizontal: -16 }}>
+                <CalendarGrid
+                  selectedDate={selectedDate}
+                  markedDates={markedDates}
+                  onSelectDate={handleSelectDate}
+                />
+              </View>
+            )}
           </View>
         }
         ListEmptyComponent={
-          <EmptyState
-            emoji={emptyEmoji}
-            title={emptyTitle}
-            description={emptyDesc}
-          />
+          viewMode === 'calendar' && selectedDate ? (
+            <View className="items-center py-8">
+              <Text className="text-sm text-gray-400 dark:text-gray-500">
+                {t('calendar.noSummaries')}
+              </Text>
+            </View>
+          ) : (
+            <EmptyState
+              emoji={emptyEmoji}
+              title={emptyTitle}
+              description={emptyDesc}
+            />
+          )
         }
       />
     </View>

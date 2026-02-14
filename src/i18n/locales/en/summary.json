@@ -36,5 +36,8 @@
     "alreadyGeneratedDesc": "This month's review has already been generated."
   },
   "evidenceBadge": "{{count}} source entries",
-  "loadingEntry": "Loading entry..."
+  "loadingEntry": "Loading entry...",
+  "calendar": {
+    "noSummaries": "No summaries for this date"
+  }
 }
