@@ -75,20 +75,20 @@ When adding `dark:` variants, follow this table consistently:
 
 | Light | Dark | Notes |
 |-------|------|-------|
-| `bg-cyan-50` | `dark:bg-gray-800/50` | 배경은 다크모드에서 순수 그레이 |
-| `bg-cyan-100` | `dark:bg-gray-700/40` | 선택 상태 배경도 그레이 |
-| `text-cyan-600` | `dark:text-cyan-400` | 텍스트 액센트는 시안 유지 |
-| `text-cyan-700` | `dark:text-cyan-300` | 텍스트 액센트는 시안 유지 |
-| `border-cyan-100` | `dark:border-gray-700` | 보더는 다크모드에서 그레이 |
-| `border-cyan-300` | `dark:border-gray-600` | 보더는 다크모드에서 그레이 |
+| `bg-cyan-50` | `dark:bg-gray-800/50` | Background uses pure gray in dark mode |
+| `bg-cyan-100` | `dark:bg-gray-700/40` | Selected state background also gray |
+| `text-cyan-600` | `dark:text-cyan-400` | Text accent keeps cyan |
+| `text-cyan-700` | `dark:text-cyan-300` | Text accent keeps cyan |
+| `border-cyan-100` | `dark:border-gray-700` | Borders use gray in dark mode |
+| `border-cyan-300` | `dark:border-gray-600` | Borders use gray in dark mode |
 
 ### JS Hex Code Reference (Cyan)
 
 | Hex | Tailwind Equivalent | Usage |
 |-----|---------------------|-------|
-| `#06b6d4` | cyan-500 | 기본 액센트 (버튼, FAB, 탭 active, 토글 thumb) |
-| `#22d3ee` | cyan-400 | 밝은 액센트 (다크모드 아이콘, 토글 track) |
-| `#67e8f9` | cyan-300 | 매우 밝은 액센트 (쉐브론, 서브 아이콘) |
+| `#06b6d4` | cyan-500 | Primary accent (buttons, FAB, active tab, toggle thumb) |
+| `#22d3ee` | cyan-400 | Light accent (dark mode icons, toggle track) |
+| `#67e8f9` | cyan-300 | Very light accent (chevrons, sub-icons) |
 
 ### Semantic Colors (amber, green, red, yellow)
 
@@ -109,8 +109,8 @@ When adding `dark:` variants, follow this table consistently:
 - `bg-cyan-600` (primary buttons — works in both modes)
 - `text-white` on colored backgrounds
 - `bg-cyan-500` (filled chart dots, active button backgrounds)
-- `dark:text-cyan-400`, `dark:text-cyan-300` (다크모드 텍스트 액센트 — 시안 유지)
-- `dark:bg-cyan-500` (다크모드 버튼 배경 — 시안 유지)
+- `dark:text-cyan-400`, `dark:text-cyan-300` (dark mode text accent — keeps cyan)
+- `dark:bg-cyan-500` (dark mode button background — keeps cyan)
 
 ## Adding Dark Mode to a New Component
 

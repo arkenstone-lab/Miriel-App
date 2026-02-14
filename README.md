@@ -99,10 +99,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=<your Supabase anon key>
 
 Set Edge Function secrets in Supabase Dashboard:
 ```
-GEMINI_API_KEY=<your Gemini API key>
-# or
 OPENAI_API_KEY=<your OpenAI API key>
-AI_PROVIDER=gemini  # or "openai"
 ```
 
 ### 3. Database setup

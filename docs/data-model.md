@@ -29,7 +29,7 @@
 | `user_id` | uuid | FK → auth.users, cascade delete |
 | `date` | date | Entry date (YYYY-MM-DD), defaults to today |
 | `raw_text` | text | User's journal entry text |
-| `tags` | text[] | AI-extracted tags (e.g. `["프로젝트:A", "사람:Kim"]`) |
+| `tags` | text[] | AI-extracted tags (e.g. `["project:A", "person:Kim"]`) |
 | `created_at` | timestamptz | Auto |
 | `updated_at` | timestamptz | Auto (trigger) |
 
@@ -64,10 +64,10 @@
 |--------|------|-------|
 | `id` | uuid | PK |
 | `user_id` | uuid | FK → auth.users, UNIQUE, cascade delete |
-| `summary_style` | text | 요약 스타일 (예: "간결하게") |
-| `focus_areas` | text[] | 집중 영역 배열 |
-| `custom_instructions` | text | 커스텀 지시 (최대 500자) |
-| `share_persona` | boolean | 닉네임/직업/관심사 AI 전달 여부 (default true) |
+| `summary_style` | text | Summary style preference (e.g. "concise", "detailed") |
+| `focus_areas` | text[] | Focus area tags |
+| `custom_instructions` | text | Custom AI instructions (max 500 chars) |
+| `share_persona` | boolean | Whether to share nickname/occupation/interests with AI (default true) |
 | `created_at` | timestamptz | Auto |
 | `updated_at` | timestamptz | Auto (trigger) |
 
@@ -81,6 +81,8 @@ Located in `supabase/migrations/`:
 2. `002_add_sentences_data.sql` — Adds `sentences_data` JSONB column to summaries
 3. `003_profiles_username.sql` — Creates profiles table + RLS + 3 SECURITY DEFINER RPC functions
 4. `004_user_ai_preferences.sql` — Creates user_ai_preferences table + RLS + updated_at trigger
+5. `005_security_hardening.sql` — Security policies
+6. `006_monthly_review.sql` — Monthly review feature
 
 ## TypeScript Interfaces
 
@@ -167,7 +169,7 @@ useDeleteTodo()
 
 ## Supabase Edge Functions
 
-Located in `supabase/functions/`. Each runs on Deno runtime via `_shared/ai.ts` provider abstraction:
+Located in `supabase/functions/`. Each runs on Deno runtime with inline OpenAI GPT-4o calls:
 
 | Function | Input | Output |
 |----------|-------|--------|
@@ -196,15 +198,3 @@ interface ProcessedEntry {
 Helper functions:
 - `normalizeProcessedEntry(entryId, raw)` — Validates/defaults partial AI responses
 - `processedEntryToTags(processed)` — Converts structured metadata to flat `"prefix:value"` tag strings
-
-## Tag Format Convention
-
-Edge Function이 생성하는 태그는 한국어 `prefix:value` 형식입니다:
-
-```
-프로젝트:Miriel
-사람:Kim
-이슈:login-bug
-```
-
-> **참고**: `schema.ts`의 `processedEntryToTags()` 함수는 영어 prefix(`project:`, `person:`, `issue:`)를 사용하지만, 현재 코드에서 호출되지 않는 미사용 코드입니다. 실제 태그는 Edge Function `formatTags()`에서 한국어 prefix로 직접 생성됩니다.

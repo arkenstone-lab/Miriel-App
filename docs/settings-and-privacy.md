@@ -30,6 +30,8 @@
 | `notificationsEnabled` | `boolean` | `false` | user_metadata |
 | `morningNotificationTime` | `string` | `'09:00'` | user_metadata |
 | `eveningNotificationTime` | `string` | `'21:00'` | user_metadata |
+| `weeklyReviewDay` | `number` | `4` (Friday) | user_metadata |
+| `weeklyReviewTime` | `string` | `'10:00'` | user_metadata |
 | `initialized` | `boolean` | `false` | — |
 | `userDataLoaded` | `boolean` | `false` | — |
 
@@ -52,6 +54,9 @@
 | `setNotificationsEnabled(enabled)` | Requests permissions, schedules/cancels notifications |
 | `setMorningNotificationTime(time)` | Reschedules morning notification |
 | `setEveningNotificationTime(time)` | Reschedules evening notification |
+| `setWeeklyReviewDay(day)` | Updates weekly review day (0=Mon..6=Sun) |
+| `setWeeklyReviewTime(time)` | Updates weekly review time |
+| `saveNotificationSettings(data)` | Batch save notification settings from onboarding |
 
 ### Initialization
 
@@ -87,15 +92,15 @@ useEffect(() => {
 
 ### Sections
 
-1. **Language** — Segmented control: System / 한국어 / English
+1. **Language** — Segmented control: System / Korean / English
 2. **Theme** — Segmented control: System / Light / Dark
 3. **Notifications** — Toggle + morning/evening time pickers + weekly review day/time
 4. **AI Personalization** — Customize how AI processes entries
-   - Share Persona (Switch toggle) — 닉네임/직업/관심사를 AI에 전달할지
-   - Summary Style (EditModal) — 요약 스타일 (예: "간결하게", "구체적으로")
-   - Focus Areas (6 chip toggles) — 프로젝트관리, 자기개발, 업무효율, 커뮤니케이션, 건강/웰빙, 학습/성장
-   - Custom Instructions (EditModal multiline, 500자) — AI에 추가 전달할 자유 텍스트
-   - Data: `user_ai_preferences` 테이블 (별도 RLS — 본인만 CRUD)
+   - Share Persona (Switch toggle) — Whether to share nickname/occupation/interests with AI
+   - Summary Style (EditModal) — Summary style preference (e.g. "concise", "detailed")
+   - Focus Areas (6 chip toggles) — Project management, self-development, work efficiency, communication, health/wellness, learning/growth
+   - Custom Instructions (EditModal multiline, 500 chars) — Free-text instructions for AI
+   - Data: `user_ai_preferences` table (separate RLS — own user only)
    - Hooks: `useAiPreferences()`, `useUpsertAiPreferences()` (`src/features/ai-preferences/`)
 5. **Account**
    - Username (read-only, shows `@username`)
@@ -112,7 +117,7 @@ useEffect(() => {
 ### Navigation Entry Points
 
 - **Desktop:** Gear icon (`cog`) in SidebarNav, above sign-out
-- **Mobile:** Profile tab → "Settings" button
+- **Mobile:** Profile tab → "Settings" button, Home tab → header right gear icon
 
 ## Privacy Notice Component
 

@@ -32,6 +32,9 @@ yarn-error.*
 .env*.local
 .env
 
+# Development-only (not for public repo)
+CLAUDE.md
+
 # typescript
 *.tsbuildinfo
 

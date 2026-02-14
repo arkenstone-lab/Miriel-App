@@ -43,6 +43,7 @@
 - 네이티브 모바일 앱 + 음성 입력
 - 외부 연동 (캘린더, 슬랙, 노션)
 - 리더보드 / 소셜 스트릭 (친구와 비교)
+- **오프라인 모드 (로컬 우선 아키텍처)**: SQLite 로컬 DB를 Source of Truth로, 백그라운드 서버 동기화. 현재 서버 우선 + 롤백 패턴 → 로컬 우선으로 전환 시 API/훅 레이어 재작성 필요. AI 기능(chat/tagging/summary)은 여전히 서버 필수이므로, 오프라인 시 텍스트 저장만 가능 + 정적 질문 폴백
 
 ---
 
@@ -54,7 +55,7 @@
 - **Backend**: Supabase Edge Functions
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (ID/비밀번호 — profiles 테이블로 username↔email 매핑)
-- **AI**: Gemini 2.0 Flash (기본) / OpenAI GPT-4o — AI_PROVIDER 환경변수로 전환, `_shared/ai.ts` 추상화
+- **AI**: OpenAI GPT-4o — 각 Edge Function에 인라인 callOpenAI (3x retry + 보안 처리)
 - **배포**: EAS Build (iOS/Android) + Expo Web (PC)
 - **크로스플랫폼**: PC(웹) + iOS + Android 단일 코드베이스
 
@@ -268,13 +269,14 @@ interface UserAiPreferences {
 - [x] 온보딩 알림 유도 개선 (Step 3 메인 버튼이 권한 요청 직접 유도 + 웹 자동 활성화)
 - [x] 셋업 세션 정리 (환영 화면에서 기존 세션 signOut 후 auth 이동 — 자동 로그인 버그 수정)
 - [x] 홈 탭 설정 아이콘 (모바일 헤더 우측 톱니바퀴 아이콘)
-- [x] AI Provider 추상화 (_shared/ai.ts + cors.ts, Gemini 2.0 Flash 기본, OpenAI 대체)
-- [x] 기존 4개 Edge Function 리팩토링 (인라인 코드 → _shared/ import)
+- [x] AI Provider: OpenAI GPT-4o 직접 호출 (각 Edge Function에 인라인 callOpenAI + 보안 처리)
+- [x] 6개 Edge Function 보안 강화 (CORS 화이트리스트, 프롬프트 인젝션 필터, 입력 길이 제한, entry_ids 검증)
 - [x] 월간 회고 (generate-monthly Edge Function + 요약 탭 Monthly 토글 + 1회 제한)
 - [x] 월간 회고 설정 (monthlyReviewDay 1~28 + 알림 스케줄링)
 - [x] AI 대화형 체크인 (chat Edge Function + callAIMultiTurn + 3단계 Plan→Detail→Reflection)
 - [x] 일간 요약 자동 생성 (기록 저장 시 fire-and-forget으로 generate-summary 호출)
 - [x] raw_text Phase 마커 ([Plan]/[Detail]/[Reflection] 구조화)
+- [x] ~~AI 프롬프트 분리~~ → 인라인 복원 (3637d4c 패턴, 각 Edge Function에 프롬프트 직접 포함)
 - [ ] EAS Build (iOS TestFlight + Android APK)
 - [ ] Expo Web 빌드 (PC)
 - [ ] 데모 영상 촬영
@@ -283,31 +285,17 @@ interface UserAiPreferences {
 
 ## AI 프롬프트 가이드
 
-### 체크인 질문 (Entry 작성 유도)
-```
-아침: "오늘 가장 중요한 일은 뭔가요?"
-저녁: "오늘 어떤 일이 있었나요? 잘된 것과 아쉬운 것이 있다면?"
-```
+> 실제 프롬프트는 각 Edge Function의 `index.ts`에 인라인으로 포함되어 있습니다.
+> 영문 구조화 형식 (Task / Output Schema / Rules / Examples) 으로 작성됨.
 
-### 태깅 프롬프트
-```
-다음 기록에서 프로젝트명, 사람 이름, 주요 이슈를 추출해주세요.
-JSON 형식: { "projects": [], "people": [], "issues": [] }
-```
-
-### 일간 요약 프롬프트
-```
-다음은 오늘 하루의 기록입니다. 3문장 이내로 요약하고,
-각 문장이 어떤 기록(Entry ID)에서 나왔는지 표시해주세요.
-```
-
-### To-do 추출 프롬프트
-```
-다음 기록에서 해야 할 일(action item)을 추출해주세요.
-- "~해야 한다", "~할 예정", "~하기로 했다" 등의 표현에서 추출
-- 이미 완료된 일은 제외
-- JSON 형식: { "todos": [{ "text": "할 일 내용", "due_hint": "마감 힌트 (있으면)" }] }
-```
+| Edge Function | 프롬프트 상수 | 역할 |
+|---------------|-------------|------|
+| `tagging` | `TAGGING_PROMPT` | 프로젝트/사람/이슈 추출 |
+| `extract-todos` | `TODO_PROMPT` | 할 일 추출 |
+| `generate-summary` | `SUMMARY_PROMPT` | 일간 요약 (2-3문장 + entry_ids) |
+| `generate-weekly` | `WEEKLY_SUMMARY_PROMPT` | 주간 회고 (3-5포인트 + entry_ids) |
+| `generate-monthly` | `MONTHLY_SUMMARY_PROMPT` | 월간 회고 (5-7포인트 + entry_ids) |
+| `chat` | `buildChatSystemPrompt()` | 3단계 대화형 체크인 |
 
 ---
 
@@ -469,6 +457,9 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-12 | 일간 요약 자동 생성 (기록 저장 시 fire-and-forget) | 사용자가 수동으로 요약 생성할 필요 없음, Summary 탭 진입 시 바로 확인 가능 | 수동 트리거 유지 |
 | 2026-02-12 | raw_text에 Phase 마커 추가 ([Plan]/[Detail]/[Reflection]) | 요약 AI가 기록의 구조를 파악할 수 있어 품질 향상, 추후 단계별 분석 가능 | 평문 텍스트 유지 |
 | 2026-02-12 | chat 실패 시 정적 질문 fallback | AI 장애 시에도 기록 작성 가능, 사용자 경험 무중단 | 에러 표시 후 중단 |
+| 2026-02-14 | ~~AI 프롬프트를 gitignored 파일로 분리~~ → 인라인 복원 | 3637d4c (AI 전문가 작업) 형태를 기준점으로 유지, 보안 처리 포함 인라인이 더 안정적 | _shared/ 추상화 (리팩토링 리스크) |
+| 2026-02-14 | _shared/ 모듈 제거 + OpenAI GPT-4o 직접 호출로 복원 | 3637d4c 커밋의 보안 강화 + 프롬프트 체계화를 그대로 유지, 6개 Edge Function 일관된 인라인 패턴 | Gemini + _shared/ 추상화 유지 |
+| 2026-02-14 | 오프라인 저장/동기화는 데모 후로 연기, 현재는 롤백 패턴만 적용 | 서버 우선+로컬 폴백(C)은 추후 로컬 우선(B)으로 전환 시 코드 전량 폐기 → 이중 작업. 데모 일정(D-5) 고려 시 롤백만으로 충분 | 서버 우선+로컬 폴백(C안) |
 | | | | |
 
 ---
@@ -582,10 +573,9 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
   → 네이티브는 기존 대로 권한 결과에 의존
 - PowerShell Set-Content 인코딩 경고: PowerShell로 UTF-8 파일 수정 시 한국어/이모지 깨짐 + LF→CRLF 변환
   → 일괄 치환 작업은 반드시 Edit 도구 사용, PowerShell 사용 금지
-- Edge Function _shared/ import: Deno 환경에서 상대 경로 `../` 사용, `.ts` 확장자 필수
-  → `import { callAI } from '../_shared/ai.ts'`
-- Gemini API JSON 모드: `generationConfig.responseMimeType: 'application/json'` 설정으로 JSON 응답 강제
-  → OpenAI의 `response_format: { type: 'json_object' }`에 대응
+- Edge Function: 각 함수에 인라인 callOpenAI + getCorsHeaders + 프롬프트 + 보안 처리 포함
+  → _shared/ 모듈 없음, 각 함수가 자체 완결적 (3637d4c 패턴)
+- OpenAI JSON 모드: `response_format: { type: 'json_object' }` 설정으로 JSON 응답 강제
 - 월간 알림 (expo-notifications): MONTHLY 트리거 타입 없음
   → DATE 트리거로 다음 발생일 1회 예약, 알림 재스케줄링 시마다 갱신
 - monthlyReviewDay 범위: 1~28로 제한 (29~31은 월마다 존재하지 않을 수 있음)
@@ -593,10 +583,14 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 - chat Edge Function: stateless — 클라이언트가 매 턴마다 전체 히스토리 전달
   → messages 최대 20개 제한 (서버에서 검증)
   → AI 실패 시 chatStore가 자동으로 정적 질문 fallback
-- callAIMultiTurn: Gemini는 role='model', OpenAI는 role='assistant'
-  → 각 provider에서 role 변환 처리 (model↔assistant)
+- chat Edge Function: OpenAI multi-turn에서 role은 'system'/'user'/'assistant' 사용
+  → 클라이언트에서 role='assistant'로 보내면 그대로 전달
 - 일간 요약 자동 생성: 기록 저장 시 fire-and-forget으로 호출
   → 실패해도 사용자에게 영향 없음, React Query 캐시 무효화로 Summary 탭 자동 반영
+- Edge Function 프롬프트: 각 함수에 인라인 포함 (3637d4c 패턴), _shared/ 모듈 없음
+  → 새 개발자 clone 후 `cp prompts.example.ts prompts.ts` 필수 (없으면 Deno "Module not found" 에러)
+  → prompts.example.ts와 prompts.ts는 동일한 export 이름/시그니처 유지 필수
+  → 새 프롬프트 추가 시 양쪽 파일 동시 수정 (example에는 placeholder + JSDoc)
 ```
 
 ---
@@ -613,8 +607,8 @@ JSON 형식: { "projects": [], "people": [], "issues": [] }
 | 2026-02-04 | v0.6 | 온보딩 리디자인 + 알림 확장 + 기록/회고 제한 + 웹 알림 | Chris |
 | 2026-02-04 | v0.7 | AI 개인화 (user_ai_preferences 테이블, 설정 UI, Edge Function ai_context 주입, EditModal multiline) | Chris |
 | 2026-02-05 | v0.8 | 테마 Cyan 전환 + 인라인 에러 + 온보딩/셋업 UX 개선 + 홈 설정 아이콘 | Chris |
-| 2026-02-12 | v0.9 | AI Provider 추상화 + Gemini 전환 + 월간 회고 (Edge Function, UI, 알림, 설정) | Chris |
-| 2026-02-12 | v0.10 | AI 대화형 체크인 + 일간 요약 자동 생성 + Phase 마커 (chat Edge Function, callAIMultiTurn, chatStore 리라이트) | Chris |
+| 2026-02-12 | v0.9 | 월간 회고 + AI 대화형 체크인 + 일간 요약 자동 생성 (Edge Function, UI, 알림, 설정) | Chris |
+| 2026-02-14 | v0.10 | Edge Function 아키텍처 3637d4c 기준 복원 (OpenAI GPT-4o 인라인, _shared/ 제거, 보안 강화 패턴 통일) | Chris |
 | | | | |
 
 <details>

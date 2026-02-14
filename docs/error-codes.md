@@ -1,128 +1,128 @@
-# Error Codes Reference (CS 대응용)
+# Error Codes Reference
 
-이 문서는 Miriel 앱에서 사용되는 모든 에러 코드를 정리한 CS 대응용 레퍼런스입니다.
-사용자가 오류 코드를 전달하면, 아래 표에서 코드를 검색하여 원인과 해결 방법을 안내하세요.
+This document lists all error codes used in the Miriel app.
+When a user reports an error code, look it up below to identify the cause and resolution.
 
-> 에러 형식: `(오류 코드: AUTH_001)` / `(Error code: AUTH_001)`
-
----
-
-## AUTH — 인증 관련
-
-| 코드 | 사용자 메시지 (KO) | 사용자 메시지 (EN) | 원인 | CS 해결 방법 |
-|------|-------------------|-------------------|------|-------------|
-| AUTH_001 | 아이디를 찾을 수 없습니다 | Username not found | 존재하지 않는 아이디로 로그인 시도 | 아이디 확인 요청, 아이디 찾기 안내 |
-| AUTH_002 | 아이디 조회 중 오류 | Failed to look up username | 서버 RPC 호출 실패 | 재시도 안내, 지속 시 서버 상태 확인 |
-| AUTH_003 | 비밀번호가 올바르지 않습니다 | Incorrect password | 비밀번호 불일치 | 비밀번호 확인, 비밀번호 찾기 안내 |
-| AUTH_004 | 아이디 중복 확인 중 오류 | Failed to check username availability | 회원가입 시 아이디 중복 확인 쿼리 실패 | 재시도 안내, 지속 시 서버 상태 확인 |
-| AUTH_005 | 이미 사용 중인 아이디 | Username already taken | 이미 등록된 아이디로 가입 시도 | 다른 아이디 사용 안내 |
-| AUTH_006 | 회원가입 중 오류 | Sign up failed | auth.signUp 호출 실패 | 재시도 안내, 이메일 형식 확인, rate limit 가능 |
-| AUTH_007 | 회원가입에 실패 | Sign up failed | 가입은 됐으나 유저 ID가 null | 재시도 안내, 지속 시 개발팀 에스컬레이션 |
-| AUTH_008 | 이미 등록된 이메일 | Email already registered | 동일 이메일로 재가입 시도 | 로그인 안내 또는 다른 이메일 사용 |
-| AUTH_009 | 프로필 생성 실패 | Failed to create profile | profiles 테이블 INSERT 실패 | 재시도, 지속 시 DB 확인 필요 |
-| AUTH_010 | 로그아웃 실패 | Failed to sign out | auth.signOut 호출 실패 | 앱 재시작 안내 |
-| AUTH_011 | 아이디 조회 실패 | Failed to find username | 아이디 찾기에서 RPC 조회 실패 | 이메일 주소 확인, 재시도 안내 |
-| AUTH_012 | 계정 조회 실패 | Failed to find account | 비밀번호 찾기에서 계정 조회 실패 | 아이디/이메일 확인, 재시도 안내 |
-| AUTH_013 | 재설정 이메일 전송 실패 | Failed to send reset email | resetPasswordForEmail 호출 실패 | 이메일 주소 확인, 재시도 안내 |
-| AUTH_014 | 인증 이메일 재전송 실패 | Failed to resend verification | auth.resend 호출 실패 (rate limit 가능) | 60초 후 재시도 안내 |
+> Error format: `(Error code: AUTH_001)`
 
 ---
 
-## ENTRY — 기록 관련
+## AUTH — Authentication
 
-| 코드 | 사용자 메시지 (KO) | 사용자 메시지 (EN) | 원인 | CS 해결 방법 |
-|------|-------------------|-------------------|------|-------------|
-| ENTRY_001 | 기록 목록을 불러오지 못함 | Failed to load entries | 기록 목록 SELECT 쿼리 실패 | 재시도, 네트워크 확인 안내 |
-| ENTRY_002 | 기록을 불러오지 못함 | Failed to load entry | 기록 상세 조회 실패 (삭제된 기록 가능) | 기록 삭제 여부 확인, 재시도 안내 |
-| ENTRY_003 | 로그인이 필요합니다 | Need to be logged in | 미인증 상태에서 기록 생성 시도 | 재로그인 안내 |
-| ENTRY_004 | 기록 저장 실패 | Failed to save entry | entries INSERT 실패 | 재시도, 네트워크 확인 안내 |
-| ENTRY_005 | 기록 수정 실패 | Failed to update entry | entries UPDATE 실패 | 재시도 안내 |
-| ENTRY_006 | 기록 삭제 실패 | Failed to delete entry | entries DELETE 실패 | 재시도 안내 |
-| ENTRY_007 | 자동 태깅 실패 | Auto-tagging failed | Edge Function 'tagging' 호출 실패 | 기록은 저장됨, AI 기능 일시 불가 안내 |
-| ENTRY_008 | 입력이 너무 깁니다 | Input is too long | 기록 텍스트가 20,000자 초과 | 텍스트를 줄여서 재시도 안내 |
-
----
-
-## TODO — 할 일 관련
-
-| 코드 | 사용자 메시지 (KO) | 사용자 메시지 (EN) | 원인 | CS 해결 방법 |
-|------|-------------------|-------------------|------|-------------|
-| TODO_001 | 할 일 목록을 불러오지 못함 | Failed to load todos | todos SELECT 쿼리 실패 | 재시도, 네트워크 확인 안내 |
-| TODO_002 | 관련 할 일을 불러오지 못함 | Failed to load related todos | 특정 기록의 할 일 조회 실패 | 재시도 안내 |
-| TODO_003 | 할 일 수정 실패 | Failed to update todo | todos UPDATE 실패 | 재시도 안내 |
-| TODO_004 | 할 일 삭제 실패 | Failed to delete todo | todos DELETE 실패 | 재시도 안내 |
-| TODO_005 | 자동 할 일 추출 실패 | Auto todo extraction failed | Edge Function 'extract-todos' 호출 실패 | 기록은 저장됨, AI 기능 일시 불가 안내 |
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| AUTH_001 | 아이디를 찾을 수 없습니다 | Username not found | Non-existent username used for login | Verify username, suggest Find ID |
+| AUTH_002 | 아이디 조회 중 오류 | Failed to look up username | Server RPC call failure | Retry, check server status if persistent |
+| AUTH_003 | 비밀번호가 올바르지 않습니다 | Incorrect password | Password mismatch | Verify password, suggest Find Password |
+| AUTH_004 | 아이디 중복 확인 중 오류 | Failed to check username availability | Username check query failure during signup | Retry, check server status if persistent |
+| AUTH_005 | 이미 사용 중인 아이디 | Username already taken | Username already registered | Suggest different username |
+| AUTH_006 | 회원가입 중 오류 | Sign up failed | auth.signUp call failure | Retry, verify email format, possible rate limit |
+| AUTH_007 | 회원가입에 실패 | Sign up failed | Signup succeeded but user ID is null | Retry, escalate to dev team if persistent |
+| AUTH_008 | 이미 등록된 이메일 | Email already registered | Duplicate email signup attempt | Suggest login or different email |
+| AUTH_009 | 프로필 생성 실패 | Failed to create profile | Profiles table INSERT failure | Retry, check DB if persistent |
+| AUTH_010 | 로그아웃 실패 | Failed to sign out | auth.signOut call failure | Restart app |
+| AUTH_011 | 아이디 조회 실패 | Failed to find username | Find ID RPC lookup failure | Verify email, retry |
+| AUTH_012 | 계정 조회 실패 | Failed to find account | Find Password account lookup failure | Verify username/email, retry |
+| AUTH_013 | 재설정 이메일 전송 실패 | Failed to send reset email | resetPasswordForEmail call failure | Verify email, retry |
+| AUTH_014 | 인증 이메일 재전송 실패 | Failed to resend verification | auth.resend call failure (possible rate limit) | Wait 60 seconds and retry |
 
 ---
 
-## SUMMARY — 요약 관련
+## ENTRY — Entries
 
-| 코드 | 사용자 메시지 (KO) | 사용자 메시지 (EN) | 원인 | CS 해결 방법 |
-|------|-------------------|-------------------|------|-------------|
-| SUMMARY_001 | 요약 목록을 불러오지 못함 | Failed to load summaries | summaries SELECT 쿼리 실패 | 재시도, 네트워크 확인 안내 |
-| SUMMARY_002 | 일간 요약 생성 실패 | Failed to generate daily summary | Edge Function 'generate-summary' 호출 실패 | 재시도, 오늘 기록이 있는지 확인 안내 |
-| SUMMARY_003 | 주간 요약 생성 실패 | Failed to generate weekly summary | Edge Function 'generate-weekly' 호출 실패 | 재시도, 해당 주 기록이 있는지 확인 안내 |
-| SUMMARY_004 | 월간 요약 생성 실패 | Failed to generate monthly summary | Edge Function 'generate-monthly' 호출 실패 | 재시도, 해당 기간 기록이 있는지 확인 안내 |
-
----
-
-## SETTINGS — 설정 관련
-
-| 코드 | 사용자 메시지 (KO) | 사용자 메시지 (EN) | 원인 | CS 해결 방법 |
-|------|-------------------|-------------------|------|-------------|
-| SETTINGS_001 | 이메일 변경 실패 | Failed to change email | auth.updateUser email 변경 실패 | 이메일 형식 확인, 중복 이메일 여부 확인 |
-| SETTINGS_002 | 전화번호 변경 실패 | Failed to change phone | profiles 테이블 phone UPDATE 실패 | 재시도, 형식 확인 안내 |
-| SETTINGS_003 | 설정 저장 실패 | Failed to save settings | user_metadata 업데이트 실패 (닉네임, 성별, 직업, 관심사, 아바타 등) | 재시도 안내, 네트워크 확인 |
-| SETTINGS_004 | 비밀번호 변경 실패 | Failed to change password | auth.updateUser password 변경 실패 | 재시도 안내 |
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| ENTRY_001 | 기록 목록을 불러오지 못함 | Failed to load entries | Entry list SELECT query failure | Retry, check network |
+| ENTRY_002 | 기록을 불러오지 못함 | Failed to load entry | Entry detail query failure (possibly deleted) | Check if entry exists, retry |
+| ENTRY_003 | 로그인이 필요합니다 | Need to be logged in | Entry creation attempted without auth | Re-login |
+| ENTRY_004 | 기록 저장 실패 | Failed to save entry | Entries INSERT failure | Retry, check network |
+| ENTRY_005 | 기록 수정 실패 | Failed to update entry | Entries UPDATE failure | Retry |
+| ENTRY_006 | 기록 삭제 실패 | Failed to delete entry | Entries DELETE failure | Retry |
+| ENTRY_007 | 자동 태깅 실패 | Auto-tagging failed | Tagging Edge Function call failure | Entry is saved; AI feature temporarily unavailable |
+| ENTRY_008 | 입력이 너무 깁니다 | Input is too long | Entry text exceeds 20,000 characters | Reduce text length and retry |
 
 ---
 
-## PROFILE — 프로필 관련
+## TODO — Todos
 
-| 코드 | 사용자 메시지 (KO) | 사용자 메시지 (EN) | 원인 | CS 해결 방법 |
-|------|-------------------|-------------------|------|-------------|
-| PROFILE_001 | 이미지 업로드 실패 | Failed to upload image | Supabase Storage 업로드 실패 | 파일 크기/형식 확인, 네트워크 확인, 재시도 안내 |
-| PROFILE_002 | 프로필 저장 실패 | Failed to save profile | user_metadata 업데이트 실패 | 재시도 안내 |
-| PROFILE_003 | 이미지 크기가 2MB 초과 | Image exceeds 2 MB | 선택한 이미지가 2MB 이상 | 더 작은 이미지 선택 안내, 이미지 압축 후 재시도 |
-| PROFILE_004 | 권한이 없습니다 | Permission denied | 인증된 사용자와 요청 userId 불일치 | 재로그인 안내, 지속 시 개발팀 에스컬레이션 |
-
----
-
-## AIPREF — AI 개인화 관련
-
-| 코드 | 한국어 메시지 | English Message | 발생 원인 | CS 대응 |
-|------|-------------|-----------------|----------|---------|
-| AIPREF_001 | AI 설정을 불러올 수 없습니다 | Unable to load AI preferences | user_ai_preferences 테이블 조회 실패 | 네트워크 확인, 새로고침 안내 |
-| AIPREF_002 | AI 설정 저장에 실패했습니다 | Failed to save AI preferences | user_ai_preferences upsert 실패 | 네트워크 확인, 다시 시도 안내 |
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| TODO_001 | 할 일 목록을 불러오지 못함 | Failed to load todos | Todos SELECT query failure | Retry, check network |
+| TODO_002 | 관련 할 일을 불러오지 못함 | Failed to load related todos | Entry-specific todo query failure | Retry |
+| TODO_003 | 할 일 수정 실패 | Failed to update todo | Todos UPDATE failure | Retry |
+| TODO_004 | 할 일 삭제 실패 | Failed to delete todo | Todos DELETE failure | Retry |
+| TODO_005 | 자동 할 일 추출 실패 | Auto todo extraction failed | extract-todos Edge Function call failure | Entry is saved; AI feature temporarily unavailable |
 
 ---
 
-## CHAT — AI 대화 관련
+## SUMMARY — Summaries
 
-| 코드 | 한국어 메시지 | English Message | 발생 원인 | CS 대응 |
-|------|-------------|-----------------|----------|---------|
-| CHAT_001 | AI 대화 응답을 받지 못했습니다 | Failed to get AI chat response | chat Edge Function 호출 실패 | 네트워크 확인, 새로고침 안내. 자동 fallback으로 정적 질문 전환됨 |
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| SUMMARY_001 | 요약 목록을 불러오지 못함 | Failed to load summaries | Summaries SELECT query failure | Retry, check network |
+| SUMMARY_002 | 일간 요약 생성 실패 | Failed to generate daily summary | generate-summary Edge Function failure | Retry, check that entries exist for the day |
+| SUMMARY_003 | 주간 요약 생성 실패 | Failed to generate weekly summary | generate-weekly Edge Function failure | Retry, check that entries exist for the week |
+| SUMMARY_004 | 월간 요약 생성 실패 | Failed to generate monthly summary | generate-monthly Edge Function failure | Retry, check that entries exist for the period |
 
 ---
 
-## 일반 대응 가이드
+## SETTINGS — Settings
 
-### 사용자가 에러 코드를 전달했을 때
-1. 위 표에서 코드를 찾아 **원인** 확인
-2. **CS 해결 방법**에 따라 안내
-3. 해결되지 않으면 다음 정보 수집:
-   - 에러 코드
-   - 발생 시각
-   - 사용 기기/OS
-   - 스크린샷 (가능하면)
-4. 개발팀에 에스컬레이션
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| SETTINGS_001 | 이메일 변경 실패 | Failed to change email | Email update failure | Verify email format, check for duplicates |
+| SETTINGS_002 | 전화번호 변경 실패 | Failed to change phone | Phone number update failure | Retry, verify format |
+| SETTINGS_003 | 설정 저장 실패 | Failed to save settings | user_metadata update failure | Retry, check network |
+| SETTINGS_004 | 비밀번호 변경 실패 | Failed to change password | Password update failure | Retry |
 
-### 공통 해결 방법
-- **네트워크 오류**: 인터넷 연결 확인, 앱 재시작
-- **인증 오류**: 로그아웃 후 재로그인
-- **서버 오류**: 잠시 후 재시도 (5~10분)
-- **반복 오류**: 앱 삭제 후 재설치
+---
 
-### 에러 코드가 없는 경우
-- 앱 버전이 오래된 경우 에러 코드가 표시되지 않을 수 있습니다
-- 최신 버전 업데이트 안내 후 재시도 요청
+## PROFILE — Profile
+
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| PROFILE_001 | 이미지 업로드 실패 | Failed to upload image | Storage upload failure | Check file size/format, check network, retry |
+| PROFILE_002 | 프로필 저장 실패 | Failed to save profile | user_metadata update failure | Retry |
+| PROFILE_003 | 이미지 크기가 2MB 초과 | Image exceeds 2 MB | Selected image over 2MB | Select smaller image or compress |
+| PROFILE_004 | 권한이 없습니다 | Permission denied | Auth user / request user mismatch | Re-login, escalate if persistent |
+
+---
+
+## AIPREF — AI Preferences
+
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| AIPREF_001 | AI 설정을 불러올 수 없습니다 | Unable to load AI preferences | user_ai_preferences query failure | Check network, refresh |
+| AIPREF_002 | AI 설정 저장에 실패했습니다 | Failed to save AI preferences | user_ai_preferences upsert failure | Check network, retry |
+
+---
+
+## CHAT — AI Chat
+
+| Code | User Message (KO) | User Message (EN) | Cause | Resolution |
+|------|-------------------|-------------------|-------|------------|
+| CHAT_001 | AI 대화 응답을 받지 못했습니다 | Failed to get AI chat response | Chat Edge Function call failure | Check network, refresh. Auto-fallback to static questions is enabled |
+
+---
+
+## General Support Guide
+
+### When a user reports an error code
+1. Look up the code in the tables above to identify the **cause**
+2. Follow the **resolution** steps
+3. If unresolved, collect the following information:
+   - Error code
+   - Timestamp
+   - Device / OS
+   - Screenshot (if available)
+4. Escalate to the development team
+
+### Common Resolutions
+- **Network errors**: Check internet connection, restart app
+- **Auth errors**: Sign out and sign back in
+- **Server errors**: Wait 5-10 minutes and retry
+- **Recurring errors**: Uninstall and reinstall the app
+
+### No Error Code Displayed
+- Older app versions may not display error codes
+- Suggest updating to the latest version and retrying

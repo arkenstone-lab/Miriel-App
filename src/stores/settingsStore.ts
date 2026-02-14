@@ -438,6 +438,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   saveNotificationSettings: async (settings: NotificationSettings) => {
+    const prev = useSettingsStore.getState()
     set({
       notificationsEnabled: settings.notificationsEnabled,
       morningNotificationTime: settings.morningNotificationTime,
@@ -458,7 +459,18 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         monthlyReviewTime: settings.monthlyReviewTime,
       },
     })
-    if (error) throw new AppError('SETTINGS_003', error)
+    if (error) {
+      set({
+        notificationsEnabled: prev.notificationsEnabled,
+        morningNotificationTime: prev.morningNotificationTime,
+        eveningNotificationTime: prev.eveningNotificationTime,
+        weeklyReviewDay: prev.weeklyReviewDay,
+        weeklyReviewTime: prev.weeklyReviewTime,
+        monthlyReviewDay: prev.monthlyReviewDay,
+        monthlyReviewTime: prev.monthlyReviewTime,
+      })
+      throw new AppError('SETTINGS_003', error)
+    }
     if (settings.notificationsEnabled) {
       await rescheduleAllNotifications(settings)
     }
