@@ -1,16 +1,14 @@
-import { useState, useMemo, useLayoutEffect } from 'react'
-import { View, Text, SectionList, FlatList, Pressable } from 'react-native'
+import { useState, useMemo } from 'react'
+import { View, Text, SectionList, FlatList } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useNavigation } from '@react-navigation/native'
 import { useTranslation } from 'react-i18next'
-import { useColorScheme } from 'nativewind'
-import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useEntries, useEntry } from '@/features/entry/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { EntryCard } from '@/components/EntryCard'
 import { EntryDetail } from '@/components/EntryDetail'
 import { CalendarGrid } from '@/components/ui/CalendarGrid'
+import { ViewModeToggle } from '@/components/ui/ViewModeToggle'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
@@ -56,10 +54,7 @@ type ViewMode = 'list' | 'calendar'
 export default function TimelineScreen() {
   const { data: entries, isLoading, error } = useEntries()
   const router = useRouter()
-  const navigation = useNavigation()
   const { isDesktop } = useResponsiveLayout()
-  const { colorScheme } = useColorScheme()
-  const isDark = colorScheme === 'dark'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { data: selectedEntry } = useEntry(selectedId || '')
   const { t } = useTranslation('timeline')
@@ -90,34 +85,10 @@ export default function TimelineScreen() {
     return entries.filter((e) => e.date === selectedDate)
   }, [entries, selectedDate])
 
-  // Dynamic headerRight: calendar/list toggle + "+" button
-  useLayoutEffect(() => {
-    if (isDesktop) return // Desktop uses sidebar, no header
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16, gap: 14 }}>
-          <Pressable
-            onPress={() => {
-              setViewMode((prev) => {
-                const next = prev === 'list' ? 'calendar' : 'list'
-                if (next === 'list') setSelectedDate(null)
-                return next
-              })
-            }}
-          >
-            <FontAwesome
-              name={viewMode === 'list' ? 'calendar' : 'list'}
-              size={18}
-              color={isDark ? '#9ca3af' : '#6b7280'}
-            />
-          </Pressable>
-          <Pressable onPress={() => router.push('/entries/new')}>
-            <FontAwesome name="plus" size={20} color="#06b6d4" />
-          </Pressable>
-        </View>
-      ),
-    })
-  }, [navigation, viewMode, isDark, isDesktop])
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    if (mode === 'list') setSelectedDate(null)
+  }
 
   const handleSelectDate = (date: string) => {
     setSelectedDate((prev) => (prev === date ? null : date))
@@ -151,10 +122,17 @@ export default function TimelineScreen() {
     }
   }
 
+  const viewToggleHeader = (
+    <View className="px-4 pt-3 pb-1 flex-row justify-end">
+      <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
+    </View>
+  )
+
   const listView = (
     <SectionList
       sections={sections}
       keyExtractor={(item) => item.id}
+      ListHeaderComponent={viewToggleHeader}
       renderSectionHeader={({ section }) => (
         <View className="px-4 pt-4 pb-2 bg-gray-50 dark:bg-gray-950">
           <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
@@ -180,11 +158,16 @@ export default function TimelineScreen() {
       data={filteredEntries}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
-        <CalendarGrid
-          selectedDate={selectedDate}
-          markedDates={markedDates}
-          onSelectDate={handleSelectDate}
-        />
+        <View>
+          <View className="px-4 pt-3 pb-1 flex-row justify-end">
+            <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
+          </View>
+          <CalendarGrid
+            selectedDate={selectedDate}
+            markedDates={markedDates}
+            onSelectDate={handleSelectDate}
+          />
+        </View>
       }
       renderItem={({ item }) => (
         <View className="px-4">

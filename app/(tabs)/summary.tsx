@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react'
-import { View, Text, FlatList, Pressable } from 'react-native'
+import { View, Text, FlatList } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { useColorScheme } from 'nativewind'
-import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useSummaries, useGenerateSummary, useGenerateWeeklySummary, useGenerateMonthlySummary } from '@/features/summary/hooks'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -12,6 +10,7 @@ import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout'
 import { SummaryDetailView } from '@/components/SummaryDetailView'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { CalendarGrid } from '@/components/ui/CalendarGrid'
+import { ViewModeToggle } from '@/components/ui/ViewModeToggle'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -150,8 +149,6 @@ export default function SummaryScreen() {
   const weeklyMutation = useGenerateWeeklySummary()
   const monthlyMutation = useGenerateMonthlySummary()
   const { isDesktop } = useResponsiveLayout()
-  const { colorScheme } = useColorScheme()
-  const isDark = colorScheme === 'dark'
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { t } = useTranslation('summary')
   const { t: tCommon } = useTranslation('common')
@@ -217,12 +214,9 @@ export default function SummaryScreen() {
     setSelectedDate((prev) => (prev === date ? null : date))
   }
 
-  const toggleViewMode = () => {
-    setViewMode((prev) => {
-      const next = prev === 'list' ? 'calendar' : 'list'
-      if (next === 'list') setSelectedDate(null)
-      return next
-    })
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    if (mode === 'list') setSelectedDate(null)
   }
 
   // Weekly review 1-per-week limit
@@ -278,7 +272,6 @@ export default function SummaryScreen() {
         )}
         ListHeaderComponent={
           <View className="px-4 pt-4 pb-1" style={{ gap: 12 }}>
-            {/* SegmentedControl + calendar toggle in same row */}
             <View className="flex-row items-center" style={{ gap: 10 }}>
               <View className="flex-1">
                 <SegmentedControl
@@ -287,13 +280,7 @@ export default function SummaryScreen() {
                   onChange={handlePeriodChange}
                 />
               </View>
-              <Pressable onPress={toggleViewMode} style={{ padding: 8 }}>
-                <FontAwesome
-                  name={viewMode === 'list' ? 'calendar' : 'list'}
-                  size={18}
-                  color={isDark ? '#9ca3af' : '#6b7280'}
-                />
-              </Pressable>
+              <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
             </View>
             <Button
               title={generateLabel}
