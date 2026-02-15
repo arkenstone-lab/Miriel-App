@@ -63,6 +63,30 @@
 
 ---
 
+## 배포 가이드
+
+### 웹 (Cloudflare Pages)
+- **라이브 URL**: https://miriel.app
+- **배포 레포**: `arkenstone-lab/miriel-live` (GitHub) — Cloudflare Pages 연동
+- **배포 방법**: `scripts/deploy.sh` 실행 (dev 레포에서)
+  1. `npx expo export --platform web` → `dist/` 생성
+  2. `node_modules` → `vendor` 리네임 (Cloudflare Pages 호환)
+  3. `dist/`를 `miriel-live` 레포에 force push → Cloudflare Pages 자동 배포
+- **주의**: `EXPO_PUBLIC_API_URL`은 빌드 타임에 번들에 포함됨. `.env`에 `https://api.miriel.app` 확인 후 빌드할 것
+
+### API (Cloudflare Workers)
+- **라이브 URL**: https://api.miriel.app
+- **배포**: `cd worker && npx wrangler deploy`
+- **Secrets**: `JWT_SECRET`, `OPENAI_API_KEY`, `RESEND_API_KEY`, `INVITE_CODES` (wrangler secret으로 관리)
+- **D1 DB**: `miriel-db` (APAC 리전)
+- **R2 Bucket**: `miriel-avatars`
+
+### 환경변수 (.env)
+- 로컬 개발: `EXPO_PUBLIC_API_URL=http://localhost:8787` + `cd worker && npx wrangler dev`
+- 라이브 배포: `EXPO_PUBLIC_API_URL=https://api.miriel.app` + `scripts/deploy.sh`
+
+---
+
 ## 데이터 모델 (D1 / SQLite)
 
 ```typescript
@@ -605,6 +629,16 @@ Auth/이메일 라우트는 `worker/src/routes/auth.ts` 및 `worker/src/routes/e
 - 웹 알림 권한: 브라우저가 이전에 거부(denied)하면 requestPermission() 재호출 불가
   → 온보딩에서 웹은 Notification.permission === 'default'일 때만 팝업, 결과 무관하게 앱 레벨 활성화
   → 네이티브는 기존 대로 권한 결과에 의존
+- apiPublicFetch 에러 처리: HTTP 4xx/5xx 응답 시 throw하므로, 에러 코드는 catch에서 `(error as any)?.body?.error`로 확인해야 함
+  → try 블록 내에서 `data?.error` 체크는 도달 불가 (성공 응답만 반환됨)
+- tryRefresh() 3가지 결과: 'success' (새 토큰) / 'invalid' (서버 거부 → 로그아웃) / 'network_error' (토큰 유지, 로그아웃 안 함)
+  → 이전에는 네트워크 에러도 forceSignOut() 호출 → 일시적 네트워크 장애로 영구 로그아웃되는 버그
+- authStore.initialize() 네트워크 에러 대응: /auth/me 실패 시 decodeTokenPayload()로 JWT에서 userId 추출하여 로그인 상태 유지
+  → 네트워크 복구 후 다음 API 호출 시 정상 refresh 진행
+- 로그아웃 시 모달 dismiss 필수: signOut 후 router.replace('/(auth)/login') 전에 router.canDismiss() + router.dismiss() 호출
+  → entries/new, settings, edit-profile 등 presentation:'modal' 화면이 스택 위에 남아 로그인 화면을 가리는 버그
+- 드래프트 키 유저별 분리: `@miriel/chat_draft_{userId}`로 저장하여 계정 전환 시 다른 유저 드래프트 노출 방지
+  → getDraftKey()에서 authStore.user?.id를 lazy require로 가져옴 (circular dependency 방지)
 - PowerShell Set-Content 인코딩 경고: PowerShell로 UTF-8 파일 수정 시 한국어/이모지 깨짐 + LF→CRLF 변환
   → 일괄 치환 작업은 반드시 Edit 도구 사용, PowerShell 사용 금지
 - Worker AI 라우트: worker/src/routes/ai.ts에 6개 AI 엔드포인트 통합

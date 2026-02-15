@@ -26,7 +26,7 @@ import { LegalModal } from '@/components/ui/LegalModal'
 import { useAiPreferences, useUpsertAiPreferences } from '@/features/ai-preferences/hooks'
 
 const SUPPORT_LINKS = {
-  homepage: 'https://www.miriel.app',
+  homepage: 'https://www.arkenstone-labs.com/miriel/',
   x: 'https://x.com/miriel_app',
   telegram: 'https://t.me/miriel_communtiy',
   discord: 'https://discord.gg/PnHNNtJNjn',

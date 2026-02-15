@@ -1,1 +1,12 @@
-docs/invite-codes.md
+CLAUDE.md
+.showcase-exclude
+docs/
+scripts/
+worker/src/routes/ai.ts
+worker/src/lib/openai.ts
+worker/src/lib/ai-sanitize.ts
+worker/wrangler.toml
+worker/src/routes/seed.ts
+worker/.dev.vars.example
+src/lib/demoData.ts
+src/lib/seedDemoData.ts
