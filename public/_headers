@@ -1,0 +1,11 @@
+/assets/*.ttf
+  Content-Type: font/ttf
+  Access-Control-Allow-Origin: *
+
+/assets/*.woff
+  Content-Type: font/woff
+  Access-Control-Allow-Origin: *
+
+/assets/*.woff2
+  Content-Type: font/woff2
+  Access-Control-Allow-Origin: *
