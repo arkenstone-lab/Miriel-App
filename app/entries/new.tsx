@@ -168,10 +168,21 @@ export default function NewEntryScreen() {
   const flatListRef = useRef<FlatList>(null)
   const [animatingId, setAnimatingId] = useState<string | null>(null)
   const prevMessageCountRef = useRef(0)
-  const [showDraftBanner, setShowDraftBanner] = useState(false)
   const [draftChecked, setDraftChecked] = useState(false)
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mountedRef = useRef(true)
   const { t } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current)
+      }
+    }
+  }, [])
 
   // Track when a new AI message arrives → trigger typing animation
   useEffect(() => {
@@ -213,29 +224,22 @@ export default function NewEntryScreen() {
     setDraftChecked(true)
     checkForDraft().then((hasDraft) => {
       if (hasDraft) {
-        setShowDraftBanner(true)
+        resumeDraft()
       } else {
         initFreshChat()
       }
     })
   }, [aiPrefsLoading, todosLoading, draftChecked])
 
-  const handleResumeDraft = useCallback(() => {
-    setShowDraftBanner(false)
-    resumeDraft()
-  }, [])
-
-  const handleStartFresh = useCallback(() => {
-    setShowDraftBanner(false)
-    clearDraft()
-    initFreshChat()
-  }, [initFreshChat])
-
   // Navigation guard — warn before leaving mid-conversation
   useEffect(() => {
-    if (messages.length <= 1 || isComplete || saveFeedback || showDraftBanner) return
+    if (messages.length <= 1 || isComplete || saveFeedback) return
+
+    let allowNavigation = false
 
     const unsubscribe = navigation.addListener('beforeRemove' as any, (e: any) => {
+      if (allowNavigation) return
+
       e.preventDefault()
       // Save draft before prompting
       saveDraft()
@@ -248,14 +252,17 @@ export default function NewEntryScreen() {
           {
             text: t('create.leaveConfirm'),
             style: 'destructive',
-            onPress: () => navigation.dispatch(e.data.action),
+            onPress: () => {
+              allowNavigation = true
+              navigation.dispatch(e.data.action)
+            },
           },
         ],
       )
     })
 
     return unsubscribe
-  }, [messages.length, isComplete, saveFeedback, showDraftBanner, navigation])
+  }, [messages.length, isComplete, saveFeedback, navigation])
 
   // Web: warn on tab close/reload
   useEffect(() => {
@@ -328,12 +335,15 @@ export default function NewEntryScreen() {
         // Summary generation failed silently
       }
 
+      if (!mountedRef.current) return
+
       const { sessionSummary } = useChatStore.getState()
       setSaveFeedback({ tags: tagCount, todos: todoCount, sessionSummary, summaryGenerated: summaryOk })
       setIsSaving(false)
 
       // Show feedback briefly then navigate back
-      setTimeout(() => {
+      feedbackTimerRef.current = setTimeout(() => {
+        if (!mountedRef.current) return
         reset()
         setSaveFeedback(null)
         router.back()
@@ -346,39 +356,6 @@ export default function NewEntryScreen() {
 
   // Show loading while checking for today's entry or draft
   if (checkingToday || !draftChecked) return <LoadingState />
-
-  // Draft resume banner
-  if (showDraftBanner) {
-    return (
-      <View className="flex-1 bg-white dark:bg-gray-950 justify-center items-center px-8">
-        <View className="bg-cyan-50 dark:bg-gray-800/50 rounded-full w-16 h-16 items-center justify-center mb-4">
-          <FontAwesome name="comments" size={28} color="#06b6d4" />
-        </View>
-        <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 text-center">
-          {t('create.draftFound')}
-        </Text>
-        <Text className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">
-          {t('create.draftFoundDesc')}
-        </Text>
-        <View className="w-full max-w-xs" style={{ gap: 10 }}>
-          <TouchableOpacity
-            className="w-full py-3.5 rounded-xl bg-cyan-600 items-center"
-            onPress={handleResumeDraft}
-            activeOpacity={0.8}
-          >
-            <Text className="text-base font-semibold text-white">{t('create.draftResume')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="w-full py-3.5 rounded-xl bg-gray-200 dark:bg-gray-700 items-center"
-            onPress={handleStartFresh}
-            activeOpacity={0.8}
-          >
-            <Text className="text-base font-medium text-gray-700 dark:text-gray-300">{t('create.draftNew')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    )
-  }
 
   // Save success feedback screen
   if (saveFeedback) {
