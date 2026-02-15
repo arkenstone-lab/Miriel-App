@@ -30,10 +30,11 @@ Write for 3 minutes a day. Miriel organizes, summarizes, and connects your recor
 | Styling | NativeWind (Tailwind CSS for RN) + Dark mode |
 | i18n | i18next — Korean / English, auto-detect system locale |
 | State | React Query (server) + Zustand (client) |
-| Backend | Supabase Edge Functions (Deno) |
-| Database | Supabase (PostgreSQL) with RLS |
-| Auth | Username-based login + email verification |
-| AI | Gemini 2.0 Flash (primary) / OpenAI GPT-4o (fallback) |
+| Backend | Cloudflare Workers (Hono.js) |
+| Database | Cloudflare D1 (SQLite) |
+| Storage | Cloudflare R2 (avatars) |
+| Auth | Custom JWT (bcryptjs + cloudflare-worker-jwt) + email verification |
+| AI | OpenAI GPT-4o |
 | Notifications | expo-notifications (native) + Web Notification API |
 
 ## Architecture
@@ -58,17 +59,21 @@ src/
 ├── features/                 # 5 domain modules (entry, summary, todo, gamification, ai-preferences)
 ├── stores/                   # 3 Zustand stores (auth, settings, chat)
 ├── i18n/                     # 12 namespaces × 2 languages
-└── lib/                      # Supabase client, notifications, error handling
+└── lib/                      # API client, notifications, error handling
 
-supabase/
-├── migrations/               # 4 SQL migrations with RLS policies
-└── functions/                # 6 Edge Functions + shared AI abstraction
-    ├── chat/                 # Multi-turn AI dialogue for entry creation
-    ├── tagging/              # Auto-tag extraction
-    ├── extract-todos/        # Action item extraction
-    ├── generate-summary/     # Daily summary
-    ├── generate-weekly/      # Weekly review
-    └── generate-monthly/     # Monthly review
+worker/                        # Cloudflare Worker (Hono.js)
+├── migrations/               # D1 schema migrations
+└── src/
+    ├── routes/               # ~25 API routes
+    │   ├── auth.ts           # Signup, login, refresh, password reset
+    │   ├── entries.ts        # Entry CRUD
+    │   ├── summaries.ts      # Summary queries
+    │   ├── todos.ts          # Todo CRUD
+    │   ├── ai.ts             # AI endpoints (chat, tagging, summary, weekly, monthly)
+    │   ├── storage.ts        # Avatar upload/serve (R2)
+    │   └── seed.ts           # Demo data seeder
+    ├── lib/                  # Auth (JWT/bcrypt), OpenAI, email (Resend)
+    └── middleware/           # JWT auth, CORS
 ```
 
 ## Responsive Design
@@ -82,39 +87,53 @@ supabase/
 
 ### Prerequisites
 - Node.js 18+
-- Supabase project ([supabase.com](https://supabase.com))
-- Gemini API key or OpenAI API key
+- Wrangler CLI (`npm i -g wrangler`)
+- Cloudflare account
+- OpenAI API key
 
 ### 1. Install dependencies
 ```bash
 npm install
+cd worker && npm install
 ```
 
 ### 2. Environment variables
-Create `.env` in the project root:
+
+**Client** — create `.env` in the project root:
 ```
-EXPO_PUBLIC_SUPABASE_URL=<your Supabase project URL>
-EXPO_PUBLIC_SUPABASE_ANON_KEY=<your Supabase anon key>
+EXPO_PUBLIC_API_URL=https://your-worker.workers.dev
 ```
 
-Set Edge Function secrets in Supabase Dashboard:
+**Worker** — create `worker/.dev.vars` for local development:
 ```
-OPENAI_API_KEY=<your OpenAI API key>
+JWT_SECRET=<your-secret>
+OPENAI_API_KEY=<your-openai-key>
+CORS_ORIGINS=http://localhost:8081
+```
+
+For production, set secrets via Wrangler:
+```bash
+cd worker
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put OPENAI_API_KEY
+npx wrangler secret put RESEND_API_KEY    # optional, for email
+npx wrangler secret put INVITE_CODES      # optional, comma-separated
 ```
 
 ### 3. Database setup
-Run migrations in order via Supabase SQL Editor:
-```
-supabase/migrations/001_initial_schema.sql
-supabase/migrations/002_add_sentences_data.sql
-supabase/migrations/003_profiles_username.sql
-supabase/migrations/004_user_ai_preferences.sql
+```bash
+cd worker
+npx wrangler d1 migrations apply miriel-db
 ```
 
 ### 4. Run
 ```bash
+# Client
 npx expo start        # Platform selection menu
 npx expo start --web  # Web directly
+
+# Worker (local)
+cd worker && npx wrangler dev
 ```
 
 ## License
