@@ -9,6 +9,7 @@ import {
   Platform,
   Animated,
   Alert,
+  Modal,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
 } from 'react-native'
@@ -169,6 +170,7 @@ export default function NewEntryScreen() {
   const [animatingId, setAnimatingId] = useState<string | null>(null)
   const prevMessageCountRef = useRef(0)
   const [draftChecked, setDraftChecked] = useState(false)
+  const [leaveAction, setLeaveAction] = useState<any>(null)
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
   const { t } = useTranslation('entry')
@@ -241,24 +243,31 @@ export default function NewEntryScreen() {
       if (allowNavigation) return
 
       e.preventDefault()
-      // Save draft before prompting
       saveDraft()
 
-      Alert.alert(
-        t('create.leaveTitle'),
-        t('create.leaveMessage'),
-        [
-          { text: tCommon('action.cancel'), style: 'cancel' },
-          {
-            text: t('create.leaveConfirm'),
-            style: 'destructive',
-            onPress: () => {
-              allowNavigation = true
-              navigation.dispatch(e.data.action)
+      if (Platform.OS === 'web') {
+        // Show custom modal — store the action to dispatch on confirm
+        setLeaveAction(() => () => {
+          allowNavigation = true
+          navigation.dispatch(e.data.action)
+        })
+      } else {
+        Alert.alert(
+          t('create.leaveTitle'),
+          t('create.leaveMessage'),
+          [
+            { text: tCommon('action.cancel'), style: 'cancel' },
+            {
+              text: t('create.leaveConfirm'),
+              style: 'destructive',
+              onPress: () => {
+                allowNavigation = true
+                navigation.dispatch(e.data.action)
+              },
             },
-          },
-        ],
-      )
+          ],
+        )
+      }
     })
 
     return unsubscribe
@@ -432,6 +441,47 @@ export default function NewEntryScreen() {
             size="lg"
           />
         </View>
+
+        {/* Leave confirmation modal (web) */}
+        <Modal
+          visible={!!leaveAction}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLeaveAction(null)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50 px-8">
+            <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm">
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                {t('create.leaveTitle')}
+              </Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                {t('create.leaveMessage')}
+              </Text>
+              <View className="flex-row justify-end" style={{ gap: 12 }}>
+                <TouchableOpacity
+                  className="px-4 py-2.5 rounded-lg"
+                  onPress={() => setLeaveAction(null)}
+                >
+                  <Text className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    {tCommon('action.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="px-4 py-2.5 rounded-lg bg-red-500"
+                  onPress={() => {
+                    const action = leaveAction
+                    setLeaveAction(null)
+                    action?.()
+                  }}
+                >
+                  <Text className="text-sm font-medium text-white">
+                    {t('create.leaveConfirm')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     )
   }
@@ -502,6 +552,46 @@ export default function NewEntryScreen() {
           </TouchableOpacity>
         </View>
       )}
+      {/* Leave confirmation modal (web) */}
+      <Modal
+        visible={!!leaveAction}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLeaveAction(null)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-8">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {t('create.leaveTitle')}
+            </Text>
+            <Text className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              {t('create.leaveMessage')}
+            </Text>
+            <View className="flex-row justify-end" style={{ gap: 12 }}>
+              <TouchableOpacity
+                className="px-4 py-2.5 rounded-lg"
+                onPress={() => setLeaveAction(null)}
+              >
+                <Text className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                  {tCommon('action.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="px-4 py-2.5 rounded-lg bg-red-500"
+                onPress={() => {
+                  const action = leaveAction
+                  setLeaveAction(null)
+                  action?.()
+                }}
+              >
+                <Text className="text-sm font-medium text-white">
+                  {t('create.leaveConfirm')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   )
 }
