@@ -5,6 +5,9 @@ import i18n from '@/i18n'
 import { getCheckinQuestions } from '@/lib/constants'
 import { chatWithAI, type ChatResponse } from '@/features/entry/chatApi'
 
+// Sync with MAX_MESSAGES in worker/src/routes/ai.ts
+const MAX_MESSAGES = 20
+
 export interface ChatMessage {
   id: string
   role: 'assistant' | 'user'
@@ -186,9 +189,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     _aiContext = draft.aiContext
     _language = draft.language || 'en'
     _useFallback = draft.useFallback || false
+    // Auto-complete if draft is near server message limit — prevents silent 400 errors
+    // where server rejects but client shows unhelpful fallback ("Tell me more!")
+    const messageCount = draft.messages.filter((m) => m.id !== 'thinking').length
     set({
       messages: draft.messages,
-      isComplete: draft.isComplete,
+      isComplete: draft.isComplete || messageCount >= MAX_MESSAGES - 2,
       currentPhase: draft.currentPhase,
       sessionSummary: draft.sessionSummary,
       mode: draft.mode,
@@ -238,6 +244,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // Fallback mode — use static questions
     if (_useFallback) {
       set(handleFallbackMessage(state, userMsg))
+      return
+    }
+
+    // If near server message limit, auto-complete instead of calling API
+    const currentCount = state.messages.filter((m) => m.id !== 'thinking').length
+    if (currentCount + 1 >= MAX_MESSAGES - 1) {
+      const completeMsg: ChatMessage = {
+        id: `a-${Date.now()}`,
+        role: 'assistant',
+        text: i18n.t('entry:create.chatCompletion'),
+        phase: 'reflection',
+      }
+      set({
+        messages: [...state.messages, userMsg, completeMsg],
+        isComplete: true,
+        currentPhase: 'reflection',
+      })
       return
     }
 

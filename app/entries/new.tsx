@@ -170,7 +170,7 @@ export default function NewEntryScreen() {
   const prevMessageCountRef = useRef(0)
   const [showDraftBanner, setShowDraftBanner] = useState(false)
   const [draftChecked, setDraftChecked] = useState(false)
-  const { t } = useTranslation('entry')
+  const { t, i18n } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
 
   // Track when a new AI message arrives → trigger typing animation
@@ -204,8 +204,10 @@ export default function NewEntryScreen() {
       status: td.status,
       due_date: td.due_date || undefined,
     }))
-    initChat({ pendingTodos: todos, aiContext, language: language || 'en' })
-  }, [aiPrefs, username, occupation, interests, pendingTodosData, language])
+    // Use i18n.language instead of settingsStore.language — settingsStore.language can be null
+    // which causes AI to always respond in English (defaulting to 'en')
+    initChat({ pendingTodos: todos, aiContext, language: i18n.language || 'en' })
+  }, [aiPrefs, username, occupation, interests, pendingTodosData, i18n.language])
 
   // Check for draft, then initialize
   useEffect(() => {
