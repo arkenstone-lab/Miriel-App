@@ -87,9 +87,37 @@ npx wrangler d1 migrations apply miriel-db --local # local dev
 
 ### Push 규칙
 
-- 소스 코드 변경: `miriel-dev` + `Miriel-App` 양쪽에 push (develop + main)
+- 소스 코드 변경: `miriel-dev`에 push 후 `sync-showcase.sh`로 공개 레포 동기화
 - 라이브 배포: `bash scripts/deploy.sh` (miriel-live에 자동 push)
 - Worker 배포: `cd worker && npx wrangler deploy`
+
+## 공개 레포 동기화
+
+`miriel-dev`(private)에는 내부 전용 문서가 포함되어 있어 `Miriel-App`(public)에 직접 push하면 안 됩니다.
+
+```bash
+# develop 동기화
+bash scripts/sync-showcase.sh
+
+# main도 동기화
+git checkout main && bash scripts/sync-showcase.sh && git checkout develop
+```
+
+### 동작 방식
+
+1. `.showcase-exclude`에 나열된 파일을 git 히스토리 전체에서 제거 (`git filter-branch`)
+2. 정리된 히스토리를 `Miriel-App`에 force push
+
+### 내부 전용 파일 추가
+
+`.showcase-exclude` 파일에 경로를 한 줄씩 추가합니다.
+
+```
+docs/invite-codes.md
+docs/another-internal.md
+```
+
+`#`으로 시작하는 줄은 주석으로 무시됩니다.
 
 ## Troubleshooting
 
