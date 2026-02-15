@@ -24,14 +24,14 @@ export class AppError extends Error {
 }
 
 /**
- * Extract a human-readable detail from the original error (Supabase, network, etc.)
+ * Extract a human-readable detail from the original error (API, network, etc.)
  * Returns undefined if no useful detail is available.
  */
 function getOriginalDetail(error: AppError): string | undefined {
   const orig = error.originalError
   if (!orig) return undefined
 
-  // Supabase errors have a .message property
+  // API errors typically have a .message property
   if (typeof orig === 'object' && orig !== null && 'message' in orig) {
     const msg = (orig as { message: string }).message
     // Skip generic/duplicate messages
@@ -52,7 +52,7 @@ function getOriginalDetail(error: AppError): string | undefined {
  *
  * Format:
  *   "사용자 메시지"
- *   "상세: Supabase error message"   ← if available
+ *   "상세: API error message"        ← if available
  *   "(오류 코드: AUTH_001)"
  */
 export function showErrorAlert(title: string, error: unknown): void {

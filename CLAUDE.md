@@ -355,11 +355,11 @@ Auth/이메일 라우트는 `worker/src/routes/auth.ts` 및 `worker/src/routes/e
 | **아키텍처 개요** | [`docs/architecture.md`](docs/architecture.md) | 프로젝트 구조, 라우팅, 상태관리 패턴을 파악할 때 |
 | **다크 모드 가이드** | [`docs/dark-mode.md`](docs/dark-mode.md) | UI 컴포넌트 추가/수정 시 `dark:` 변형 색상 매핑 참조 |
 | **i18n 가이드** | [`docs/i18n.md`](docs/i18n.md) | 번역 키 추가, 새 네임스페이스 생성, 컴포넌트/스토어에서 t() 사용법 |
-| **데이터 모델 & API** | [`docs/data-model.md`](docs/data-model.md) | DB 스키마, TypeScript 타입, API 함수, React Query 훅, Edge Functions |
+| **데이터 모델 & API** | [`docs/data-model.md`](docs/data-model.md) | DB 스키마, TypeScript 타입, API 함수, React Query 훅, Worker 라우트 |
 | **컴포넌트 가이드** | [`docs/components.md`](docs/components.md) | UI 프리미티브(Button/Card/Badge 등) 사용법, 새 컴포넌트 작성 규칙 |
 | **설정 & 개인정보** | [`docs/settings-and-privacy.md`](docs/settings-and-privacy.md) | settingsStore 구조, 설정 화면, 개인정보 고지 컴포넌트 |
 | **게이미피케이션** | [`docs/gamification.md`](docs/gamification.md) | 스트릭/XP/레벨/배지 시스템, 새 배지 추가 방법 |
-| **AI 기능** | [`docs/ai-features.md`](docs/ai-features.md) | AI 파이프라인, Edge Function 스펙, 프롬프트, 미구현 기능 목록 |
+| **AI 기능** | [`docs/ai-features.md`](docs/ai-features.md) | AI 파이프라인, Worker 라우트 스펙, 프롬프트, 미구현 기능 목록 |
 | **에러 코드** | [`docs/error-codes.md`](docs/error-codes.md) | 에러 코드 카탈로그, CS 대응 가이드, 사용자 메시지(ko/en) |
 | **Cloudflare 마이그레이션** | [`docs/cloudflare-migration.md`](docs/cloudflare-migration.md) | Supabase→Cloudflare 전환 배경, Worker 구조, Auth 시스템, D1 스키마, 배포 |
 
@@ -368,7 +368,7 @@ Auth/이메일 라우트는 `worker/src/routes/auth.ts` 및 `worker/src/routes/e
 2. **새 데이터 기능 추가 시**: `data-model.md` (DB/API/훅 패턴) → `architecture.md` (feature 모듈 구조)
 3. **설정 항목 추가 시**: `settings-and-privacy.md` (스토어/화면 구조)
 4. **게이미피케이션 확장 시**: `gamification.md` (XP/배지/레벨 시스템)
-5. **AI 기능 수정/추가 시**: `ai-features.md` (Edge Function 스펙, 프롬프트, 폴백 전략)
+5. **AI 기능 수정/추가 시**: `ai-features.md` (Worker 라우트 스펙, 프롬프트, 폴백 전략)
 6. **에러 처리 추가 시**: `error-codes.md` (코드 카탈로그) → `src/lib/errors.ts` (AppError) → `errors.json` (ko/en 메시지)
 
 ---

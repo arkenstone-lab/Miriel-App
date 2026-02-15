@@ -2,7 +2,7 @@
 
 ## Overview
 
-The gamification system drives daily engagement through streaks, XP/levels, and badges. All calculations happen client-side based on Supabase data — no dedicated gamification table exists.
+The gamification system drives daily engagement through streaks, XP/levels, and badges. All calculations happen client-side based on API data — no dedicated gamification table exists.
 
 ## Streak Tracking
 
@@ -73,7 +73,7 @@ Each badge has a `check()` function that receives a `BadgeCheckContext` and retu
 
 ```
 useGamificationStats() hook
-  → fetches entries, todos, summaries via Supabase
+  → fetches entries, todos, summaries via Worker API
   → calculateStreak(entries)
   → calculateXP(entries, todos, summaries, streak)
   → calculateLevel(xp)
