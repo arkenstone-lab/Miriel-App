@@ -19,10 +19,19 @@ function generateCode(): string {
 
 // POST /auth/send-verification-code
 emailVerification.post('/send-verification-code', async (c) => {
-  const { email, lang } = await c.req.json();
+  const { email, lang, invite_code } = await c.req.json();
 
   if (!email || typeof email !== 'string') {
     return c.json({ error: 'email_required' }, 400);
+  }
+
+  // Validate invite code early (before sending email)
+  const inviteCodes = c.env.INVITE_CODES;
+  if (inviteCodes) {
+    const validCodes = inviteCodes.split(',').map((code: string) => code.trim().toLowerCase());
+    if (!invite_code || !validCodes.includes(invite_code.trim().toLowerCase())) {
+      return c.json({ error: 'invalid_invite_code' }, 403);
+    }
   }
 
   const normalizedEmail = email.trim().toLowerCase();
