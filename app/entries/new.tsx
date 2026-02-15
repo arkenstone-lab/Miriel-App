@@ -163,7 +163,7 @@ export default function NewEntryScreen() {
   const { data: todayEntry, isLoading: checkingToday } = useTodayEntry()
   const { data: aiPrefs, isLoading: aiPrefsLoading } = useAiPreferences()
   const { data: pendingTodosData, isLoading: todosLoading } = useTodos('pending')
-  const { username, occupation, interests, language } = useSettingsStore()
+  const { username, occupation, interests } = useSettingsStore()
   const router = useRouter()
   const navigation = useNavigation()
   const flatListRef = useRef<FlatList>(null)
@@ -173,7 +173,7 @@ export default function NewEntryScreen() {
   const [leaveAction, setLeaveAction] = useState<any>(null)
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
-  const { t } = useTranslation('entry')
+  const { t, i18n } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
 
   // Cleanup on unmount
@@ -217,8 +217,10 @@ export default function NewEntryScreen() {
       status: td.status,
       due_date: td.due_date || undefined,
     }))
-    initChat({ pendingTodos: todos, aiContext, language: language || 'en' })
-  }, [aiPrefs, username, occupation, interests, pendingTodosData, language])
+    // Use i18n.language instead of settingsStore.language — settingsStore.language can be null
+    // which causes AI to always respond in English (defaulting to 'en')
+    initChat({ pendingTodos: todos, aiContext, language: i18n.language || 'en' })
+  }, [aiPrefs, username, occupation, interests, pendingTodosData, i18n.language])
 
   // Check for draft, then initialize
   useEffect(() => {

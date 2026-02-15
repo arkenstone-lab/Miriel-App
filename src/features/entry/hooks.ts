@@ -56,7 +56,9 @@ export function useDeleteEntry() {
   return useMutation({
     mutationFn: (id: string) => deleteEntry(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries'] })
+      // Remove all entries caches immediately (not just invalidate) to prevent
+      // useTodayEntry from returning stale deleted entry before refetch completes
+      queryClient.removeQueries({ queryKey: ['entries'] })
     },
   })
 }

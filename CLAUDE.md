@@ -191,6 +191,7 @@ interface EmailVerification {
 - 에러 처리: `AppError(code)` + 화면별 표시 방식 분리 — auth 화면은 `getErrorMessage()` 인라인 텍스트, 그 외는 `showErrorAlert()` Alert. 에러 코드 카탈로그는 `docs/error-codes.md` 참조
 - i18n: 모든 UI 문자열은 `src/i18n/locales/{ko,en}/` JSON에서 관리, 컴포넌트에서 `useTranslation()` 사용, 하드코딩 금지
 - **Git history: All commit messages, PR titles, branch names, and changelog entries must be written in English.** Korean is allowed only in inline code comments and user-facing i18n strings. Decision logs and dev notes in CLAUDE.md may remain in Korean.
+- **주석 필수**: 코드를 수정하거나 추가할 때는 반드시 해당 변경의 이유(why)와 맥락을 주석으로 남겨야 합니다. 다른 개발자나 AI 에이전트가 코드를 읽었을 때 변경 의도를 즉시 파악할 수 있도록, 단순한 "무엇(what)"이 아닌 "왜(why)" 중심의 주석을 작성하세요. 예: `// Alert.alert callbacks are broken on web — use ConfirmModal instead`
 
 ---
 
@@ -503,6 +504,13 @@ Auth/이메일 라우트는 `worker/src/routes/auth.ts` 및 `worker/src/routes/e
 | 2026-02-15 | 일간 요약 재생성 3회 제한 (summary_gen_count) | 무한 재생성 방지 + OpenAI 비용 통제. entries.summary_gen_count 컬럼으로 추적, 429 반환 | 제한 없음 |
 | 2026-02-15 | Todo Optimistic Update 패턴 도입 | 완료 체크/삭제 시 서버 응답 대기 없이 즉시 UI 반영 → 체감 속도 대폭 개선 | 서버 응답 후 캐시 무효화만 |
 | 2026-02-15 | 가입 코드 시스템 (INVITE_CODES) | 테스터 전용 가입 제한으로 무분별한 계정 생성 방지, wrangler secret으로 관리 | 오픈 가입 유지 |
+| 2026-02-15 | Alert.alert → ConfirmModal (삭제 확인) | Alert.alert 콜백이 웹에서 동작하지 않음, window.confirm은 UX 품질 부족 → 커스텀 ConfirmModal로 통일 | window.confirm 유지 |
+| 2026-02-15 | 삭제 후 router.replace (router.back 대체) | router.back()은 삭제된 Entry URL로 돌아가 404 발생 → router.replace('/(tabs)/timeline')로 안전 이동 | router.back() 유지 |
+| 2026-02-15 | useDeleteEntry: removeQueries로 변경 | invalidateQueries는 refetch 완료 전까지 stale 캐시 반환 → useTodayEntry가 삭제된 Entry를 반환하여 autoEdit 리다이렉트 버그 유발 | invalidateQueries 유지 |
+| 2026-02-15 | ConfirmModal inline styles (NativeWind 미사용) | RN Modal은 NativeWind 컨텍스트 외부에서 렌더링되어 dark: 클래스가 동작하지 않음 → isDark 조건부 인라인 스타일 사용 | NativeWind dark: 클래스 |
+| 2026-02-15 | 채팅 AI 언어: i18n.language 사용 | settingsStore.language는 초기 null → 'en' 폴백으로 한국어 입력에 영어 응답. i18n.language는 항상 정확한 로케일 반환 | settingsStore.language 유지 |
+| 2026-02-15 | 채팅 메시지 제한 클라이언트 처리 (MAX_MESSAGES) | 서버 MAX_MESSAGES(20) 초과 시 400 에러 → "더 말씀해주세요" 무한 반복. 클라이언트에서 제한 도달 시 자동 완료 처리 | 서버 에러에만 의존 |
+| 2026-02-15 | 코딩 컨벤션에 주석 필수 규칙 추가 | 코드 수정 시 why 중심 주석으로 다른 개발자/AI 에이전트의 맥락 파악 용이 | 주석 자율 |
 | | | | |
 
 ---

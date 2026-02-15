@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, TextInput, Alert } from 'react-native'
+import { View, Text, ScrollView, TextInput } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
@@ -18,6 +18,7 @@ import { ErrorDisplay } from '@/components/ui/ErrorDisplay'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 export default function EntryDetailScreen() {
   const { id, autoEdit } = useLocalSearchParams<{ id: string; autoEdit?: string }>()
@@ -41,6 +42,8 @@ export default function EntryDetailScreen() {
   const [autoEditApplied, setAutoEditApplied] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   if (isLoading) return <LoadingState />
 
@@ -55,22 +58,20 @@ export default function EntryDetailScreen() {
     setAutoEditApplied(true)
   }
 
-  const handleDelete = () => {
-    Alert.alert(t('detail.deleteTitle'), t('detail.deleteMessage'), [
-      { text: tCommon('action.cancel'), style: 'cancel' },
-      {
-        text: tCommon('action.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteEntry.mutateAsync(entry.id)
-            router.back()
-          } catch (e: unknown) {
-            showErrorAlert(t('detail.deleteFailed'), e)
-          }
-        },
-      },
-    ])
+  // ConfirmModal replaces Alert.alert (broken on web) and window.confirm (ugly)
+  // Navigation: router.replace (not router.back) to avoid 404 on deleted entry
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true)
+    try {
+      await deleteEntry.mutateAsync(entry.id)
+      queryClient.removeQueries({ queryKey: ['entries', entry.id] })
+      await queryClient.invalidateQueries({ queryKey: ['entries'] })
+      setShowDeleteModal(false)
+      router.replace('/(tabs)/timeline')
+    } catch (e: unknown) {
+      setIsDeleting(false)
+      showErrorAlert(t('detail.deleteFailed'), e)
+    }
   }
 
   const handleEdit = () => {
@@ -149,7 +150,7 @@ export default function EntryDetailScreen() {
               title={tCommon('action.delete')}
               variant="ghost"
               size="sm"
-              onPress={handleDelete}
+              onPress={() => setShowDeleteModal(true)}
             />
           </View>
         </View>
@@ -260,6 +261,18 @@ export default function EntryDetailScreen() {
           </View>
         )}
       </View>
+
+      <ConfirmModal
+        visible={showDeleteModal}
+        title={t('detail.deleteTitle')}
+        message={t('detail.deleteMessage')}
+        confirmLabel={tCommon('action.delete')}
+        cancelLabel={tCommon('action.cancel')}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteModal(false)}
+        destructive
+        loading={isDeleting}
+      />
     </ScrollView>
   )
 }
