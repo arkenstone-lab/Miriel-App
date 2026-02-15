@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-# Sync to public showcase repo, excluding internal-only files.
+# Sync to public showcase repo, excluding internal-only files
+# from the ENTIRE git history (not just the latest commit).
+#
 # Usage: bash scripts/sync-showcase.sh
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -46,31 +48,24 @@ fi
 echo "=== Showcase Sync ($CURRENT_BRANCH) ==="
 echo "Excluding: ${EXCLUDES[*]}"
 
-# Create temp branch from current
-git checkout -b "$TEMP_BRANCH"
-
-# Remove excluded files from index
+# Build git rm command for filter-branch
+RM_CMD="git rm -rf --cached --ignore-unmatch"
 for f in "${EXCLUDES[@]}"; do
-  if git ls-files --error-unmatch "$f" &>/dev/null; then
-    git rm -rf --cached "$f" >/dev/null 2>&1
-    rm -rf "$f" 2>/dev/null || true
-    echo "  removed: $f"
-  fi
+  RM_CMD="$RM_CMD '$f'"
 done
 
-# Commit removal (amend into current HEAD to keep clean history)
-git add -A
-git commit --amend --no-edit >/dev/null 2>&1
+# Create temp branch and rewrite entire history to remove excluded files
+git checkout -b "$TEMP_BRANCH"
 
-# Push to showcase
+FILTER_BRANCH_SETUP=1 git filter-branch -f --index-filter "$RM_CMD" --prune-empty HEAD
+
+# Push cleaned branch to showcase
 git push "$SHOWCASE_REMOTE" "$TEMP_BRANCH:$CURRENT_BRANCH" --force
 
-# Cleanup: go back to original branch and delete temp
+# Cleanup
 git checkout "$CURRENT_BRANCH"
 git branch -D "$TEMP_BRANCH"
-
-# Restore excluded files from original
-git checkout HEAD -- . 2>/dev/null || true
+rm -rf .git/refs/original/
 
 echo ""
 echo "=== Synced $CURRENT_BRANCH → $SHOWCASE_REMOTE ==="
