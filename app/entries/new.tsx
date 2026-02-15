@@ -9,6 +9,7 @@ import {
   Platform,
   Animated,
   Alert,
+  Modal,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
 } from 'react-native'
@@ -162,16 +163,28 @@ export default function NewEntryScreen() {
   const { data: todayEntry, isLoading: checkingToday } = useTodayEntry()
   const { data: aiPrefs, isLoading: aiPrefsLoading } = useAiPreferences()
   const { data: pendingTodosData, isLoading: todosLoading } = useTodos('pending')
-  const { username, occupation, interests, language } = useSettingsStore()
+  const { username, occupation, interests } = useSettingsStore()
   const router = useRouter()
   const navigation = useNavigation()
   const flatListRef = useRef<FlatList>(null)
   const [animatingId, setAnimatingId] = useState<string | null>(null)
   const prevMessageCountRef = useRef(0)
-  const [showDraftBanner, setShowDraftBanner] = useState(false)
   const [draftChecked, setDraftChecked] = useState(false)
-  const { t } = useTranslation('entry')
+  const [leaveAction, setLeaveAction] = useState<any>(null)
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mountedRef = useRef(true)
+  const { t, i18n } = useTranslation('entry')
   const { t: tCommon } = useTranslation('common')
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current)
+      }
+    }
+  }, [])
 
   // Track when a new AI message arrives → trigger typing animation
   useEffect(() => {
@@ -204,8 +217,10 @@ export default function NewEntryScreen() {
       status: td.status,
       due_date: td.due_date || undefined,
     }))
-    initChat({ pendingTodos: todos, aiContext, language: language || 'en' })
-  }, [aiPrefs, username, occupation, interests, pendingTodosData, language])
+    // Use i18n.language instead of settingsStore.language — settingsStore.language can be null
+    // which causes AI to always respond in English (defaulting to 'en')
+    initChat({ pendingTodos: todos, aiContext, language: i18n.language || 'en' })
+  }, [aiPrefs, username, occupation, interests, pendingTodosData, i18n.language])
 
   // Check for draft, then initialize
   useEffect(() => {
@@ -213,49 +228,52 @@ export default function NewEntryScreen() {
     setDraftChecked(true)
     checkForDraft().then((hasDraft) => {
       if (hasDraft) {
-        setShowDraftBanner(true)
+        resumeDraft()
       } else {
         initFreshChat()
       }
     })
   }, [aiPrefsLoading, todosLoading, draftChecked])
 
-  const handleResumeDraft = useCallback(() => {
-    setShowDraftBanner(false)
-    resumeDraft()
-  }, [])
-
-  const handleStartFresh = useCallback(() => {
-    setShowDraftBanner(false)
-    clearDraft()
-    initFreshChat()
-  }, [initFreshChat])
-
   // Navigation guard — warn before leaving mid-conversation
   useEffect(() => {
-    if (messages.length <= 1 || isComplete || saveFeedback || showDraftBanner) return
+    if (messages.length <= 1 || isComplete || saveFeedback) return
+
+    let allowNavigation = false
 
     const unsubscribe = navigation.addListener('beforeRemove' as any, (e: any) => {
+      if (allowNavigation) return
+
       e.preventDefault()
-      // Save draft before prompting
       saveDraft()
 
-      Alert.alert(
-        t('create.leaveTitle'),
-        t('create.leaveMessage'),
-        [
-          { text: tCommon('action.cancel'), style: 'cancel' },
-          {
-            text: t('create.leaveConfirm'),
-            style: 'destructive',
-            onPress: () => navigation.dispatch(e.data.action),
-          },
-        ],
-      )
+      if (Platform.OS === 'web') {
+        // Show custom modal — store the action to dispatch on confirm
+        setLeaveAction(() => () => {
+          allowNavigation = true
+          navigation.dispatch(e.data.action)
+        })
+      } else {
+        Alert.alert(
+          t('create.leaveTitle'),
+          t('create.leaveMessage'),
+          [
+            { text: tCommon('action.cancel'), style: 'cancel' },
+            {
+              text: t('create.leaveConfirm'),
+              style: 'destructive',
+              onPress: () => {
+                allowNavigation = true
+                navigation.dispatch(e.data.action)
+              },
+            },
+          ],
+        )
+      }
     })
 
     return unsubscribe
-  }, [messages.length, isComplete, saveFeedback, showDraftBanner, navigation])
+  }, [messages.length, isComplete, saveFeedback, navigation])
 
   // Web: warn on tab close/reload
   useEffect(() => {
@@ -328,12 +346,15 @@ export default function NewEntryScreen() {
         // Summary generation failed silently
       }
 
+      if (!mountedRef.current) return
+
       const { sessionSummary } = useChatStore.getState()
       setSaveFeedback({ tags: tagCount, todos: todoCount, sessionSummary, summaryGenerated: summaryOk })
       setIsSaving(false)
 
       // Show feedback briefly then navigate back
-      setTimeout(() => {
+      feedbackTimerRef.current = setTimeout(() => {
+        if (!mountedRef.current) return
         reset()
         setSaveFeedback(null)
         router.back()
@@ -346,39 +367,6 @@ export default function NewEntryScreen() {
 
   // Show loading while checking for today's entry or draft
   if (checkingToday || !draftChecked) return <LoadingState />
-
-  // Draft resume banner
-  if (showDraftBanner) {
-    return (
-      <View className="flex-1 bg-white dark:bg-gray-950 justify-center items-center px-8">
-        <View className="bg-cyan-50 dark:bg-gray-800/50 rounded-full w-16 h-16 items-center justify-center mb-4">
-          <FontAwesome name="comments" size={28} color="#06b6d4" />
-        </View>
-        <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 text-center">
-          {t('create.draftFound')}
-        </Text>
-        <Text className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">
-          {t('create.draftFoundDesc')}
-        </Text>
-        <View className="w-full max-w-xs" style={{ gap: 10 }}>
-          <TouchableOpacity
-            className="w-full py-3.5 rounded-xl bg-cyan-600 items-center"
-            onPress={handleResumeDraft}
-            activeOpacity={0.8}
-          >
-            <Text className="text-base font-semibold text-white">{t('create.draftResume')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="w-full py-3.5 rounded-xl bg-gray-200 dark:bg-gray-700 items-center"
-            onPress={handleStartFresh}
-            activeOpacity={0.8}
-          >
-            <Text className="text-base font-medium text-gray-700 dark:text-gray-300">{t('create.draftNew')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    )
-  }
 
   // Save success feedback screen
   if (saveFeedback) {
@@ -455,6 +443,47 @@ export default function NewEntryScreen() {
             size="lg"
           />
         </View>
+
+        {/* Leave confirmation modal (web) */}
+        <Modal
+          visible={!!leaveAction}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLeaveAction(null)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50 px-8">
+            <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm">
+              <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                {t('create.leaveTitle')}
+              </Text>
+              <Text className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                {t('create.leaveMessage')}
+              </Text>
+              <View className="flex-row justify-end" style={{ gap: 12 }}>
+                <TouchableOpacity
+                  className="px-4 py-2.5 rounded-lg"
+                  onPress={() => setLeaveAction(null)}
+                >
+                  <Text className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    {tCommon('action.cancel')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="px-4 py-2.5 rounded-lg bg-red-500"
+                  onPress={() => {
+                    const action = leaveAction
+                    setLeaveAction(null)
+                    action?.()
+                  }}
+                >
+                  <Text className="text-sm font-medium text-white">
+                    {t('create.leaveConfirm')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     )
   }
@@ -525,6 +554,46 @@ export default function NewEntryScreen() {
           </TouchableOpacity>
         </View>
       )}
+      {/* Leave confirmation modal (web) */}
+      <Modal
+        visible={!!leaveAction}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLeaveAction(null)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-8">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm">
+            <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {t('create.leaveTitle')}
+            </Text>
+            <Text className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              {t('create.leaveMessage')}
+            </Text>
+            <View className="flex-row justify-end" style={{ gap: 12 }}>
+              <TouchableOpacity
+                className="px-4 py-2.5 rounded-lg"
+                onPress={() => setLeaveAction(null)}
+              >
+                <Text className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                  {tCommon('action.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="px-4 py-2.5 rounded-lg bg-red-500"
+                onPress={() => {
+                  const action = leaveAction
+                  setLeaveAction(null)
+                  action?.()
+                }}
+              >
+                <Text className="text-sm font-medium text-white">
+                  {t('create.leaveConfirm')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   )
 }

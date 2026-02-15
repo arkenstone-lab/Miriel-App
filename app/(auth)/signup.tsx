@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image, Linking } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -77,29 +77,29 @@ export default function SignupScreen() {
 
     setSendingCode(true)
     try {
-      const data = await apiPublicFetch<{ error?: string }>('/auth/send-verification-code', {
+      await apiPublicFetch('/auth/send-verification-code', {
         method: 'POST',
-        body: JSON.stringify({ email: email.trim().toLowerCase(), lang: i18n.language }),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          lang: i18n.language,
+          ...(inviteRequired ? { invite_code: inviteCode.trim() } : {}),
+        }),
       })
-
-      if (data?.error === 'email_already_registered') {
-        setErrorText(t('signup.step1.emailAlreadyRegistered'))
-        return
-      }
-      if (data?.error === 'rate_limit') {
-        setErrorText(t('signup.step1.rateLimitError'))
-        return
-      }
-      if (data?.error) {
-        setErrorText(t('signup.step1.sendFailed'))
-        return
-      }
 
       setStep(2)
       setResendCooldown(60)
       setTimeout(() => codeRef.current?.focus(), 300)
-    } catch {
-      setErrorText(t('signup.step1.sendFailed'))
+    } catch (error: unknown) {
+      const errCode = (error as any)?.body?.error
+      if (errCode === 'invalid_invite_code') {
+        setErrorText(t('signup.invalidInviteCode'))
+      } else if (errCode === 'email_already_registered') {
+        setErrorText(t('signup.step1.emailAlreadyRegistered'))
+      } else if (errCode === 'rate_limit') {
+        setErrorText(t('signup.step1.rateLimitError'))
+      } else {
+        setErrorText(t('signup.step1.sendFailed'))
+      }
     } finally {
       setSendingCode(false)
     }
@@ -479,6 +479,14 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </>
         )}
+        <TouchableOpacity
+          className="pb-6 pt-4 mb-4"
+          onPress={() => Linking.openURL('http://arkenstone-labs.com/')}
+        >
+          <Text className="text-xs text-gray-400 dark:text-gray-500 text-center">
+            by Arkenstone Labs
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   )

@@ -183,6 +183,17 @@ export default function SummaryScreen() {
     return summaries.filter((s) => isDateInPeriod(selectedDate, s.period_start, period, day))
   }, [summaries, selectedDate, period, monthlyReviewDay])
 
+  // Show alert on daily generation limit — must be before any conditional returns
+  // to avoid React "Rendered more hooks than during the previous render" error
+  useEffect(() => {
+    if (dailyMutation.error) {
+      const err = dailyMutation.error as any
+      if (err?.status === 429) {
+        Alert.alert(t('daily.limitTitle'), t('daily.limitMessage'))
+      }
+    }
+  }, [dailyMutation.error])
+
   if (isLoading) return <LoadingState />
 
   if (error) {
@@ -205,16 +216,6 @@ export default function SummaryScreen() {
   }
 
   const generateMutation = period === 'daily' ? dailyMutation : period === 'weekly' ? weeklyMutation : monthlyMutation
-
-  // Show alert on daily generation limit
-  useEffect(() => {
-    if (dailyMutation.error) {
-      const err = dailyMutation.error as any
-      if (err?.status === 429) {
-        Alert.alert(t('daily.limitTitle'), t('daily.limitMessage'))
-      }
-    }
-  }, [dailyMutation.error])
 
   const handleSelect = (summary: Summary) => {
     setSelectedId(summary.id)

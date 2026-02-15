@@ -5,6 +5,9 @@ import i18n from '@/i18n'
 import { getCheckinQuestions } from '@/lib/constants'
 import { chatWithAI, type ChatResponse } from '@/features/entry/chatApi'
 
+// Sync with MAX_MESSAGES in worker/src/routes/ai.ts — server rejects messages beyond this limit
+const MAX_MESSAGES = 20
+
 export interface ChatMessage {
   id: string
   role: 'assistant' | 'user'
@@ -59,26 +62,36 @@ let _pendingTodos: { text: string; status: string; due_date?: string }[] = []
 let _aiContext: string | undefined
 let _language = 'en'
 let _useFallback = false
+let _sessionId = 0
 
-// Draft storage helpers
-const DRAFT_KEY = '@miriel/chat_draft'
+// Draft storage helpers — per-user key
+const DRAFT_KEY_PREFIX = '@miriel/chat_draft_'
+
+function getDraftKey(): string {
+  // Lazy import to avoid circular dependency
+  const { useAuthStore } = require('@/stores/authStore')
+  const userId = useAuthStore.getState().user?.id
+  return userId ? `${DRAFT_KEY_PREFIX}${userId}` : `${DRAFT_KEY_PREFIX}anonymous`
+}
 
 function saveDraftToStorage(draft: ChatDraft): void {
+  const key = getDraftKey()
   const json = JSON.stringify(draft)
   if (Platform.OS === 'web') {
-    try { localStorage.setItem(DRAFT_KEY, json) } catch {}
+    try { localStorage.setItem(key, json) } catch {}
   } else {
-    AsyncStorage.setItem(DRAFT_KEY, json).catch(() => {})
+    AsyncStorage.setItem(key, json).catch(() => {})
   }
 }
 
 async function loadDraftFromStorage(): Promise<ChatDraft | null> {
+  const key = getDraftKey()
   let raw: string | null
   try {
     if (Platform.OS === 'web') {
-      raw = localStorage.getItem(DRAFT_KEY)
+      raw = localStorage.getItem(key)
     } else {
-      raw = await AsyncStorage.getItem(DRAFT_KEY)
+      raw = await AsyncStorage.getItem(key)
     }
   } catch {
     return null
@@ -99,10 +112,11 @@ async function loadDraftFromStorage(): Promise<ChatDraft | null> {
 }
 
 function clearDraftFromStorage(): void {
+  const key = getDraftKey()
   if (Platform.OS === 'web') {
-    try { localStorage.removeItem(DRAFT_KEY) } catch {}
+    try { localStorage.removeItem(key) } catch {}
   } else {
-    AsyncStorage.removeItem(DRAFT_KEY).catch(() => {})
+    AsyncStorage.removeItem(key).catch(() => {})
   }
 }
 
@@ -186,9 +200,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     _aiContext = draft.aiContext
     _language = draft.language || 'en'
     _useFallback = draft.useFallback || false
+    _sessionId++
+    // Auto-complete if draft is near server message limit — prevents silent 400 errors
+    // where server rejects but client shows unhelpful fallback ("Tell me more!")
+    const messageCount = draft.messages.filter((m) => m.id !== 'thinking').length
     set({
       messages: draft.messages,
-      isComplete: draft.isComplete,
+      isComplete: draft.isComplete || messageCount >= MAX_MESSAGES - 2,
       currentPhase: draft.currentPhase,
       sessionSummary: draft.sessionSummary,
       mode: draft.mode,
@@ -202,7 +220,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     _aiContext = params.aiContext
     _language = params.language
     _useFallback = false
+    _sessionId++
 
+    const currentSession = _sessionId
     set({ messages: [], isComplete: false, isAiThinking: true, sessionSummary: null, currentPhase: 'plan', hasDraft: false })
 
     try {
@@ -215,6 +235,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ai_context: _aiContext,
       })
 
+      if (currentSession !== _sessionId) return // stale response
       set({
         messages: [{ id: 'a-0', role: 'assistant', text: response.message, phase: response.phase }],
         currentPhase: response.phase,
@@ -241,7 +262,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return
     }
 
+    // If near server message limit, auto-complete instead of calling API
+    // to prevent server 400 error and unhelpful "Tell me more!" fallback loop
+    const currentCount = state.messages.filter((m) => m.id !== 'thinking').length
+    if (currentCount + 1 >= MAX_MESSAGES - 1) {
+      const completeMsg: ChatMessage = {
+        id: `a-${Date.now()}`,
+        role: 'assistant',
+        text: i18n.t('entry:create.chatCompletion'),
+        phase: 'reflection',
+      }
+      set({
+        messages: [...state.messages, userMsg, completeMsg],
+        isComplete: true,
+        currentPhase: 'reflection',
+      })
+      return
+    }
+
     // Add user message + thinking indicator
+    const currentSession = _sessionId
     set({
       messages: [...state.messages, userMsg, { id: 'thinking', role: 'assistant', text: '...' }],
       isAiThinking: true,
@@ -264,6 +304,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         phase: response.phase,
       }
 
+      if (currentSession !== _sessionId) return // stale response
+
       // Remove thinking indicator, add real response
       set((s) => ({
         messages: [...s.messages.filter((m) => m.id !== 'thinking'), aiMsg],
@@ -277,6 +319,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         get().saveDraft()
       }
     } catch {
+      if (currentSession !== _sessionId) return // stale error
+
       // AI failed mid-conversation — add generic follow-up
       const fallbackMsg: ChatMessage = {
         id: `a-${Date.now()}`,
@@ -318,6 +362,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     _aiContext = undefined
     _language = 'en'
     _useFallback = false
+    _sessionId++
     clearDraftFromStorage()
     set({
       messages: [],
