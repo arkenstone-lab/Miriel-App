@@ -11,7 +11,7 @@ LIVE_REPO="git@github.com:arkenstone-lab/miriel-live.git"
 echo "=== Miriel Deploy ==="
 
 # 1. Build
-echo "[1/3] Building Expo Web..."
+echo "[1/4] Building Expo Web..."
 cd "$PROJECT_ROOT"
 npx expo export --platform web
 
