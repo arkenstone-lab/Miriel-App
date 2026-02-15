@@ -3,6 +3,8 @@ import { useEffect } from 'react'
 import { Platform } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
+import { useFonts } from 'expo-font'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
@@ -16,6 +18,9 @@ const queryClient = new QueryClient()
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    ...FontAwesome.font,
+  })
   const { initialized, user, initialize } = useAuthStore()
   const {
     theme, hasSeenOnboarding, hasCompletedSetup,
@@ -115,7 +120,7 @@ export default function RootLayout() {
     }
   }, [initialized, settingsReady, userDataLoaded, user, hasSeenOnboarding, hasCompletedSetup, segments])
 
-  if (!initialized || !settingsReady) {
+  if (!initialized || !settingsReady || !fontsLoaded) {
     return null
   }
 
