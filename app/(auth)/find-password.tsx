@@ -33,7 +33,8 @@ export default function FindPasswordScreen() {
     try {
       const data = await apiPublicFetch<{ error?: string; masked_email?: string }>('/auth/reset-password-request', {
         method: 'POST',
-        body: JSON.stringify({ input: input.trim() }),
+        // Server expects 'login' (matches /auth/login param naming)
+        body: JSON.stringify({ login: input.trim() }),
       })
 
       if (data?.error === 'not_found') {
