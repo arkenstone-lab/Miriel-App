@@ -19,6 +19,7 @@ import { showErrorAlert } from '@/lib/errors'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { EditModal } from '@/components/ui/EditModal'
 import { ChangePasswordModal } from '@/components/ui/ChangePasswordModal'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { TimePickerModal } from '@/components/ui/TimePickerModal'
 import { DayPickerModal } from '@/components/ui/DayPickerModal'
 import { MonthDayPickerModal } from '@/components/ui/MonthDayPickerModal'
@@ -62,6 +63,7 @@ export default function SettingsScreen() {
   const [monthlyDayPickerVisible, setMonthlyDayPickerVisible] = useState(false)
   const [monthlyTimePickerVisible, setMonthlyTimePickerVisible] = useState(false)
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null)
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false)
   const [styleModalVisible, setStyleModalVisible] = useState(false)
   const [instructionsModalVisible, setInstructionsModalVisible] = useState(false)
 
@@ -117,19 +119,16 @@ export default function SettingsScreen() {
     { label: t('theme.dark'), value: 'dark' },
   ]
 
+  // Alert.alert callbacks are broken on web — use ConfirmModal instead
   const handleSignOut = () => {
-    Alert.alert(t('account.signOutConfirmTitle'), t('account.signOutConfirmMessage'), [
-      { text: t('modal.cancel'), style: 'cancel' },
-      {
-        text: t('account.signOut'),
-        style: 'destructive',
-        onPress: async () => {
-          // Dismiss modal first, then sign out so routing guard can navigate cleanly
-          if (router.canDismiss()) router.dismiss()
-          await signOut()
-        },
-      },
-    ])
+    setSignOutModalVisible(true)
+  }
+
+  const confirmSignOut = async () => {
+    setSignOutModalVisible(false)
+    // Dismiss settings modal first, then sign out so routing guard can navigate cleanly
+    if (router.canDismiss()) router.dismiss()
+    await signOut()
   }
 
   const formatTimeDisplay = (time: string) => {
@@ -590,6 +589,18 @@ export default function SettingsScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Sign Out Confirm Modal */}
+      <ConfirmModal
+        visible={signOutModalVisible}
+        title={t('account.signOutConfirmTitle')}
+        message={t('account.signOutConfirmMessage')}
+        confirmLabel={t('account.signOut')}
+        cancelLabel={t('modal.cancel')}
+        onConfirm={confirmSignOut}
+        onCancel={() => setSignOutModalVisible(false)}
+        destructive
+      />
 
       {/* Email Edit Modal */}
       <EditModal

@@ -1,6 +1,6 @@
 import '@/i18n'
 import { useEffect } from 'react'
-import { Platform } from 'react-native'
+import { Platform, View } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts } from 'expo-font'
@@ -83,6 +83,13 @@ export default function RootLayout() {
     }
   }, [theme, settingsReady])
 
+  // Set a unified browser tab title on web — overrides React Navigation's per-screen titles
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Miriel App'
+    }
+  }, [segments])
+
   useEffect(() => {
     if (!initialized || !settingsReady) return
     // Wait for user_metadata to be loaded before routing
@@ -112,9 +119,11 @@ export default function RootLayout() {
 
     // 3. Normal routing (only when setup is done)
     if (!user && !inAuthGroup && !inSetup) {
-      // Dismiss any modals (entries/new, settings, edit-profile) before redirecting
-      while (router.canDismiss()) {
+      // Dismiss pushed screens one at a time — each dismiss changes segments,
+      // re-triggering this effect. Only replace after all screens are dismissed.
+      if (router.canDismiss()) {
         router.dismiss()
+        return
       }
       router.replace('/(auth)/login')
     } else if (user && !hasSeenOnboarding && !inOnboarding) {
@@ -131,6 +140,10 @@ export default function RootLayout() {
   const inAuthGroup = segments[0] === '(auth)'
   const inOnboardingGroup = segments[0] === '(onboarding)'
   const inSetupGroup = segments[0] === '(setup)'
+
+  // user is null but still on a protected route — routing guard will redirect,
+  // hide content during this transition to prevent bare page flash (sidebar gone, content visible)
+  const isTransitioning = !user && !inAuthGroup && !inSetupGroup && segments[0] !== 'reset-password'
 
   const stack = (
     <Stack screenOptions={{
@@ -185,6 +198,14 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       {user && !inAuthGroup && !inOnboardingGroup && !inSetupGroup ? <AppShell>{stack}</AppShell> : stack}
+      {/* Fullscreen overlay during logout transition — hides bare content
+          while routing guard redirects to login. Stack stays mounted so navigation works. */}
+      {isTransitioning && (
+        <View style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: isDark ? '#030712' : '#f9fafb',
+        }} />
+      )}
     </QueryClientProvider>
   )
 }

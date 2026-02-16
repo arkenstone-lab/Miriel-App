@@ -4,15 +4,7 @@
     "entryDetail": "Entry Detail",
     "settings": "Settings",
     "editProfile": "Edit Profile",
-    "resetPassword": "Reset Password",
-    "login": "Login",
-    "signup": "Sign Up",
-    "findId": "Find ID",
-    "findPassword": "Find Password",
-    "verifyEmail": "Verify Email",
-    "setup": "Setup",
-    "welcome": "Welcome",
-    "onboarding": "Get Started"
+    "resetPassword": "Reset Password"
   },
   "tab": {
     "home": "Home",

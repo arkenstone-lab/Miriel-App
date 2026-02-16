@@ -1,8 +1,10 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import { useState } from 'react'
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useRouter, usePathname } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 interface NavItem {
   labelKey: string
@@ -23,12 +25,26 @@ export function SidebarNav() {
   const pathname = usePathname()
   const { signOut } = useAuthStore()
   const { t } = useTranslation('common')
+  const { t: tSettings } = useTranslation('settings')
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
 
   const isActive = (path: string) => {
     if (path === '/(tabs)') {
       return pathname === '/' || pathname === '/(tabs)' || pathname === '/(tabs)/index'
     }
     return pathname === path || pathname === path.replace('/(tabs)', '')
+  }
+
+  // Show confirmation before signing out, with loading indicator during API call
+  const confirmSignOut = async () => {
+    setSigningOut(true)
+    try {
+      await signOut()
+    } finally {
+      setSigningOut(false)
+      setSignOutModalVisible(false)
+    }
   }
 
   return (
@@ -93,13 +109,31 @@ export function SidebarNav() {
         </TouchableOpacity>
         <TouchableOpacity
           className="flex-row items-center px-3 py-2.5 rounded-lg"
-          onPress={signOut}
+          onPress={() => setSignOutModalVisible(true)}
           activeOpacity={0.7}
+          disabled={signingOut}
         >
-          <FontAwesome name="sign-out" size={18} color="#9ca3af" />
+          {signingOut ? (
+            <ActivityIndicator size={18} color="#9ca3af" />
+          ) : (
+            <FontAwesome name="sign-out" size={18} color="#9ca3af" />
+          )}
           <Text className="ml-3 text-sm font-medium text-gray-500 dark:text-gray-400">{t('sidebar.signOut')}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Sign Out Confirm Modal */}
+      <ConfirmModal
+        visible={signOutModalVisible}
+        title={tSettings('account.signOutConfirmTitle')}
+        message={tSettings('account.signOutConfirmMessage')}
+        confirmLabel={tSettings('account.signOut')}
+        cancelLabel={tSettings('modal.cancel')}
+        onConfirm={confirmSignOut}
+        onCancel={() => setSignOutModalVisible(false)}
+        destructive
+        loading={signingOut}
+      />
     </View>
   )
 }

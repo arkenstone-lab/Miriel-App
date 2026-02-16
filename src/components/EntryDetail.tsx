@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, TextInput, ScrollView, TouchableOpacity } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/Badge'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { showErrorAlert } from '@/lib/errors'
 import { useUpdateEntry, useDeleteEntry } from '@/features/entry/hooks'
 import type { Entry } from '@/features/entry/types'
@@ -20,6 +21,7 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
   const isDark = colorScheme === 'dark'
 
   const [isEditing, setIsEditing] = useState(false)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [editText, setEditText] = useState(entry.raw_text)
 
   const updateEntry = useUpdateEntry()
@@ -43,20 +45,20 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
     )
   }
 
-  const handleDelete = () => {
-    Alert.alert(tEntry('detail.deleteTitle'), tEntry('detail.deleteMessage'), [
-      { text: t('action.cancel'), style: 'cancel' },
-      {
-        text: t('action.delete'),
-        style: 'destructive',
-        onPress: () => {
-          deleteEntryMutation.mutate(entry.id, {
-            onSuccess: () => onDeleted?.(),
-            onError: (error: unknown) => showErrorAlert(tEntry('detail.deleteFailed'), error),
-          })
-        },
+  // Alert.alert callbacks are broken on web — use ConfirmModal instead
+  const handleDelete = () => setDeleteModalVisible(true)
+
+  const confirmDelete = () => {
+    deleteEntryMutation.mutate(entry.id, {
+      onSuccess: () => {
+        setDeleteModalVisible(false)
+        onDeleted?.()
       },
-    ])
+      onError: (error: unknown) => {
+        setDeleteModalVisible(false)
+        showErrorAlert(tEntry('detail.deleteFailed'), error)
+      },
+    })
   }
 
   return (
@@ -143,6 +145,18 @@ export function EntryDetail({ entry, onDeleted }: EntryDetailProps) {
           </View>
         )}
       </View>
+      {/* Delete Confirm Modal */}
+      <ConfirmModal
+        visible={deleteModalVisible}
+        title={tEntry('detail.deleteTitle')}
+        message={tEntry('detail.deleteMessage')}
+        confirmLabel={t('action.delete')}
+        cancelLabel={t('action.cancel')}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteModalVisible(false)}
+        destructive
+        loading={deleteEntryMutation.isPending}
+      />
     </ScrollView>
   )
 }

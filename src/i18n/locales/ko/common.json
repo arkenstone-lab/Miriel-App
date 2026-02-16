@@ -4,15 +4,7 @@
     "entryDetail": "기록 상세",
     "settings": "설정",
     "editProfile": "프로필 수정",
-    "resetPassword": "비밀번호 재설정",
-    "login": "로그인",
-    "signup": "회원가입",
-    "findId": "아이디 찾기",
-    "findPassword": "비밀번호 찾기",
-    "verifyEmail": "이메일 인증",
-    "setup": "초기 설정",
-    "welcome": "환영합니다",
-    "onboarding": "시작하기"
+    "resetPassword": "비밀번호 재설정"
   },
   "tab": {
     "home": "홈",
