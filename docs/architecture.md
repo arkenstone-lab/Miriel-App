@@ -159,6 +159,8 @@ Layout components:
 
 React Query handles all server state (entries, summaries, todos, gamification stats). Query keys follow the pattern `['resource', id?]`.
 
+**Cache strategy:** `staleTime: 5min` (global default) prevents redundant refetches on tab switches. `cache: 'no-store'` on client fetch + `Cache-Control: no-store` on Worker responses ensures fresh data from server when React Query decides to refetch. Mutations bypass staleTime via `invalidateQueries`.
+
 ## Auth Flow
 
 1. `_layout.tsx` calls `authStore.initialize()` on mount

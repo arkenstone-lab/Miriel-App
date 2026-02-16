@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { useTodayEntry } from '@/features/entry/hooks'
 
 interface NavItem {
   labelKey: string
@@ -26,6 +27,7 @@ export function SidebarNav() {
   const { signOut } = useAuthStore()
   const { t } = useTranslation('common')
   const { t: tSettings } = useTranslation('settings')
+  const { data: todayEntry } = useTodayEntry()
   const [signOutModalVisible, setSignOutModalVisible] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
@@ -55,15 +57,24 @@ export function SidebarNav() {
         <Text className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('sidebar.tagline')}</Text>
       </View>
 
-      {/* New Entry Button */}
+      {/* New Entry / View Today's Entry Button */}
       <View className="px-4 pt-4 pb-2">
         <TouchableOpacity
           className="bg-cyan-600 rounded-xl py-3 flex-row items-center justify-center"
-          onPress={() => router.push('/entries/new')}
+          onPress={() => {
+            // Navigate to existing entry if today's entry exists, otherwise create new
+            if (todayEntry) {
+              router.push(`/entries/${todayEntry.id}`)
+            } else {
+              router.push('/entries/new')
+            }
+          }}
           activeOpacity={0.7}
         >
-          <FontAwesome name="plus" size={14} color="#ffffff" />
-          <Text className="text-white font-semibold ml-2">{t('sidebar.newEntry')}</Text>
+          <FontAwesome name={todayEntry ? 'eye' : 'plus'} size={14} color="#ffffff" />
+          <Text className="text-white font-semibold ml-2">
+            {todayEntry ? t('sidebar.viewTodayEntry') : t('sidebar.newEntry')}
+          </Text>
         </TouchableOpacity>
       </View>
 

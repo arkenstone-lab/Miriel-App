@@ -247,6 +247,8 @@ These decisions have architectural implications. Violating them will cause bugs 
 | **Chat AI language: use `i18n.language`** | `settingsStore.language` is initially null → falls back to 'en' → Korean input gets English responses. `i18n.language` always returns the correct locale. |
 | **Chat message limit handled client-side** | Server returns 400 when exceeding MAX_MESSAGES(20). Client must auto-complete conversation when limit is reached to prevent infinite "tell me more" loop. |
 | **After entry deletion, use `router.replace` (not `router.back`)** | `router.back()` navigates to the deleted entry URL → 404. Use `router.replace('/(tabs)/timeline')` for safe navigation. |
+| **React Query staleTime: 5min + cache: 'no-store'** | `staleTime: 5min` prevents redundant refetches on tab switches. `cache: 'no-store'` on `apiFetch`/`apiPublicFetch` + `Cache-Control: no-store` on Worker prevents browser HTTP caching stale data on production. Mutations still trigger immediate refetch via `invalidateQueries`. |
+| **Smart entry navigation (useTodayEntry)** | Dashboard QuickActions, FAB, Timeline header, SidebarNav all check `useTodayEntry()`. If today's entry exists → navigate to `/entries/{id}` (view), icon changes to `eye`. If not → `/entries/new` (create), icon is `pencil`/`plus`. Prevents confusing chat UI flash + leave modal. |
 
 ---
 

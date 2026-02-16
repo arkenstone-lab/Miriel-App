@@ -22,6 +22,7 @@
   },
   "quickActions": {
     "writeToday": "Write Today",
+    "viewTodayEntry": "View Today's Entry",
     "viewDailySummary": "Daily Summary",
     "checkTodos": "Check To-dos"
   },

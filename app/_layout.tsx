@@ -13,7 +13,15 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { AppShell } from '@/components/layout/AppShell'
 import '../global.css'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Data stays fresh for 5 minutes — no redundant refetches on tab switches.
+      // Mutations still trigger immediate refetch via invalidateQueries.
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+})
 
 SplashScreen.preventAutoHideAsync()
 

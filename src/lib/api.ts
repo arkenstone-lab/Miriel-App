@@ -122,7 +122,9 @@ export async function apiFetch<T = unknown>(
   }
 
   const url = `${API_URL}${path}`
-  let res = await fetch(url, { ...options, headers })
+  // cache: 'no-store' prevents browser from serving stale HTTP-cached responses
+  // when React Query refetches after invalidation (production browsers cache aggressively)
+  let res = await fetch(url, { ...options, headers, cache: 'no-store' as RequestCache })
 
   // Auto-refresh on 401
   if (res.status === 401 && token) {
@@ -130,7 +132,7 @@ export async function apiFetch<T = unknown>(
     if (refreshResult === 'success') {
       const newToken = await getAccessToken()
       headers['Authorization'] = `Bearer ${newToken}`
-      res = await fetch(url, { ...options, headers })
+      res = await fetch(url, { ...options, headers, cache: 'no-store' as RequestCache })
     } else if (refreshResult === 'invalid') {
       // Server explicitly rejected refresh token — force sign out
       const { useAuthStore } = await import('@/stores/authStore')
@@ -165,7 +167,8 @@ export async function apiPublicFetch<T = unknown>(
     ...(options.headers as Record<string, string> || {}),
   }
 
-  const res = await fetch(url, { ...options, headers })
+  // cache: 'no-store' prevents browser from serving stale HTTP-cached responses
+  const res = await fetch(url, { ...options, headers, cache: 'no-store' as RequestCache })
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }))

@@ -27,6 +27,15 @@ app.use('*', async (c, next) => {
   })(c, next);
 });
 
+// Prevent browser HTTP caching for all API responses (except storage which has its own Cache-Control).
+// Without this, browsers use heuristic caching on production domains, causing stale data after mutations.
+app.use('*', async (c, next) => {
+  await next();
+  if (!c.req.path.startsWith('/storage')) {
+    c.header('Cache-Control', 'no-store');
+  }
+});
+
 // Health check + config
 app.get('/health', (c) => c.json({
   status: 'ok',

@@ -22,6 +22,7 @@
   },
   "quickActions": {
     "writeToday": "오늘 기록하기",
+    "viewTodayEntry": "오늘 기록 보기",
     "viewDailySummary": "일간 요약 보기",
     "checkTodos": "할 일 확인"
   },

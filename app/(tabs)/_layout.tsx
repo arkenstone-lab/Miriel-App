@@ -4,6 +4,7 @@ import { Tabs, useRouter } from 'expo-router'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
+import { useTodayEntry } from '@/features/entry/hooks'
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name']
@@ -18,6 +19,16 @@ export default function TabLayout() {
   const { colorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
   const { t } = useTranslation('common')
+  const { data: todayEntry } = useTodayEntry()
+
+  // Navigate to existing entry or create new — shared by FAB and Timeline header
+  const handleEntryNavigation = () => {
+    if (todayEntry) {
+      router.push(`/entries/${todayEntry.id}`)
+    } else {
+      router.push('/entries/new')
+    }
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -68,10 +79,11 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
             headerRight: () => (
               <Pressable
-                onPress={() => router.push('/entries/new')}
+                onPress={handleEntryNavigation}
                 style={{ marginRight: 16 }}
               >
-                <FontAwesome name="plus" size={20} color="#06b6d4" />
+                {/* eye icon when today's entry exists, plus icon otherwise */}
+                <FontAwesome name={todayEntry ? 'eye' : 'plus'} size={20} color="#06b6d4" />
               </Pressable>
             ),
           }}
@@ -114,10 +126,10 @@ export default function TabLayout() {
         />
       </Tabs>
 
-      {/* Write Today FAB — mobile only */}
+      {/* Write Today / View Today FAB — mobile only */}
       {!isDesktop && (
         <Pressable
-          onPress={() => router.push('/entries/new')}
+          onPress={handleEntryNavigation}
           style={[
             styles.fab,
             {
@@ -126,7 +138,8 @@ export default function TabLayout() {
             },
           ]}
         >
-          <FontAwesome name="pencil" size={22} color="#ffffff" />
+          {/* pencil when no entry, eye when today's entry exists */}
+          <FontAwesome name={todayEntry ? 'eye' : 'pencil'} size={22} color="#ffffff" />
         </Pressable>
       )}
     </View>
