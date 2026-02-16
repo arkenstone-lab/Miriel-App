@@ -90,6 +90,17 @@ All IDs are TEXT (crypto.randomUUID). Timestamps are TEXT (ISO datetime). Arrays
 | `expires_at` | TEXT | Code expiry (10 min) |
 | `created_at` | TEXT | DEFAULT datetime('now') |
 
+### `login_attempts`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | TEXT | PK (crypto.randomUUID) |
+| `identifier` | TEXT | Email or username (for rate limiting failed logins) |
+| `ip` | TEXT | Client IP address |
+| `created_at` | TEXT | DEFAULT datetime('now') |
+
+Rate limiting: max 5 attempts per identifier per 15 minutes. Cleared on successful login.
+
 ### Indexes
 
 ```sql
@@ -103,6 +114,7 @@ CREATE INDEX idx_rt_token ON refresh_tokens(token);
 CREATE INDEX idx_rt_user ON refresh_tokens(user_id);
 CREATE INDEX idx_ev_email ON email_verifications(email);
 CREATE INDEX idx_ev_ip ON email_verifications(ip_address);
+CREATE INDEX idx_la_identifier_time ON login_attempts(identifier, created_at);
 ```
 
 ## Migrations
@@ -111,6 +123,7 @@ CREATE INDEX idx_ev_ip ON email_verifications(ip_address);
 |------|-------------|
 | `worker/migrations/0001_schema.sql` | Creates all tables (users, entries, summaries, todos, etc.) and indexes |
 | `worker/migrations/0002_entry_gen_count.sql` | Adds `summary_gen_count INTEGER DEFAULT 0` column to entries table |
+| `worker/migrations/0003_login_attempts.sql` | Creates `login_attempts` table + index for login rate limiting |
 
 Apply: `npx wrangler d1 migrations apply miriel-db`
 
@@ -196,6 +209,21 @@ useUpdateTodo()            // optimistic update: instant UI → rollback on erro
 useDeleteTodo()            // optimistic update: instant UI → rollback on error
 useUpsertAiPreferences()
 ```
+
+### Auth API (`worker/src/routes/auth.ts`)
+
+| Route | Input | Description |
+|-------|-------|-------------|
+| `POST /auth/signup` | `{ email, username, password, email_token, invite_code? }` | Create account (password: 8+ chars, uppercase, number) |
+| `POST /auth/login` | `{ identifier, password }` | Login with username/email (rate limited: 5/15min) |
+| `POST /auth/refresh` | `{ refresh_token }` | Rotate access + refresh tokens |
+| `GET /auth/me` | — | Get current user profile |
+| `PUT /auth/user` | `{ nickname?, email?, phone?, user_metadata? }` | Update user fields |
+| `POST /auth/change-password` | `{ current_password, new_password }` | Change password (validates complexity) |
+| `POST /auth/reset-password-request` | `{ username?, email? }` | Send password reset email |
+| `POST /auth/reset-password` | `{ token, new_password }` | Set new password via reset token |
+| `GET /auth/export` | — | Download user data as JSON (user-friendly schema, no internal IDs) |
+| `DELETE /auth/account` | — | Permanently delete user + all associated data (cascading) |
 
 ## Worker Routes Summary
 

@@ -30,7 +30,7 @@ miriel/
 │   ├── (tabs)/             # Tab navigator (home, timeline, summary, todos, profile)
 │   ├── entries/            # Entry screens (new, [id])
 │   ├── edit-profile.tsx    # Profile editing modal
-│   ├── settings.tsx        # Settings modal screen
+│   ├── settings.tsx        # Settings modal (language, theme, notifications, support, legal)
 │   ├── _layout.tsx         # Root layout (auth guard, providers, color scheme)
 │   └── +not-found.tsx      # 404 screen
 │
@@ -65,7 +65,9 @@ miriel/
 │   ├── wrangler.toml       # D1 binding (DB), R2 binding (AVATARS), vars
 │   ├── tsconfig.json
 │   ├── migrations/
-│   │   └── 0001_schema.sql # All tables (users, entries, summaries, todos, etc.)
+│   │   ├── 0001_schema.sql # All tables (users, entries, summaries, todos, etc.)
+│   │   ├── 0002_entry_gen_count.sql # summary_gen_count column
+│   │   └── 0003_login_attempts.sql  # Login rate limiting table
 │   └── src/
 │       ├── index.ts        # Hono app skeleton, CORS middleware, route mounting
 │       ├── types.ts        # Env bindings (D1, R2, vars)
@@ -79,7 +81,7 @@ miriel/
 │       │   ├── auth.ts     # JWT verification middleware (Bearer → c.set('userId'))
 │       │   └── cors.ts     # CORS origin whitelist
 │       └── routes/
-│           ├── auth.ts             # signup, login, me, update, change-password, reset
+│           ├── auth.ts             # signup, login, me, update, change-password, reset, export, delete-account
 │           ├── email-verification.ts # send-code, verify-code, validate-token, find-id
 │           ├── entries.ts          # CRUD
 │           ├── todos.ts            # CRUD
@@ -128,11 +130,11 @@ Root Stack (_layout.tsx)
 │   ├── timeline          → Entry list with date grouping
 │   ├── summary           → Daily/Weekly/Monthly summaries (SegmentedControl toggle)
 │   ├── todos             → Todo list with filters
-│   └── profile           → User profile, achievements, settings entry
+│   └── profile           → User profile, achievements, account mgmt, AI personalization
 ├── entries/new           → New entry (chat or quick mode)
 ├── entries/[id]          → Entry detail (edit, delete)
 ├── edit-profile          → Profile editing (avatar, persona)
-└── settings              → Settings modal
+└── settings              → Settings modal (language, theme, notifications, support, legal)
 ```
 
 ## Responsive Layout System

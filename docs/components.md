@@ -123,6 +123,34 @@ import { EditModal } from '@/components/ui/EditModal'
 | `secureTextEntry` | boolean | `false` | Password masking |
 | `multiline` | boolean | `false` | Multi-line text input (min-height 100, top-aligned) |
 
+### ConfirmModal
+
+```tsx
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+
+<ConfirmModal
+  visible={visible}
+  title="Sign Out"
+  message="Are you sure you want to sign out?"
+  confirmText="Sign Out"
+  onConfirm={handleSignOut}
+  onCancel={() => setVisible(false)}
+/>
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `visible` | boolean | required | Show/hide modal |
+| `title` | string | required | Modal header text |
+| `message` | string | required | Confirmation message |
+| `confirmText` | string | required | Confirm button label |
+| `cancelText` | string | `'Cancel'` | Cancel button label |
+| `onConfirm` | function | required | Confirmation handler |
+| `onCancel` | function | required | Cancel handler |
+| `destructive` | boolean | `false` | Red styling for destructive actions |
+
+Uses inline styles (not NativeWind) because RN Modal renders outside NativeWind context. Dark mode handled via `useColorScheme()`.
+
 ### SegmentedControl
 
 ```tsx

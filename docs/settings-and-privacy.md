@@ -86,28 +86,60 @@ useEffect(() => {
 
 `app/settings.tsx` — Opens as a modal (Stack.Screen with `presentation: 'modal'`).
 
+> **Note:** Account management and AI Personalization have been moved to `app/(tabs)/profile.tsx`. Settings now only contains app-level preferences.
+
 ### Sections
 
 1. **Language** — Segmented control: System / Korean / English
 2. **Theme** — Segmented control: System / Light / Dark
-3. **Notifications** — Toggle + morning/evening time pickers + weekly review day/time
-4. **AI Personalization** — Customize how AI processes entries
-   - Share Persona (Switch toggle) — Whether to share nickname/occupation/interests with AI
-   - Summary Style (EditModal) — Summary style preference (e.g. "concise", "detailed")
-   - Focus Areas (6 chip toggles) — Project management, self-development, work efficiency, communication, health/wellness, learning/growth
-   - Custom Instructions (EditModal multiline, 500 chars) — Free-text instructions for AI
-   - Data: `user_ai_preferences` table (separate — own user only)
-   - Hooks: `useAiPreferences()`, `useUpsertAiPreferences()` (`src/features/ai-preferences/`)
-5. **Account**
-   - Username (read-only, shows `@username`)
-   - Nickname (EditModal)
-   - Email (EditModal → `setEmail`)
-   - Password (ChangePasswordModal → `POST /auth/change-password`)
-   - Sign Out (confirmation alert)
-6. **Privacy & Data** — Inline privacy notice
-7. **Support** — External links (homepage, Telegram, Discord, X)
-8. **Legal** — Terms of Service, Privacy Policy (LegalModal)
-9. **Version** — App version number
+3. **Notifications** — Toggle + morning/evening time pickers + weekly/monthly review day/time
+4. **Support** — External links (homepage, Telegram, Discord, X)
+5. **Legal** — Terms of Service, Privacy Policy (LegalModal)
+6. **Version** — App version number
+
+## Profile Screen (Account Management)
+
+`app/(tabs)/profile.tsx` — Bottom tab screen containing user info, achievements, and account management.
+
+### Account Section
+- Username (read-only, shows `@username`)
+- Nickname (EditModal)
+- Email (EditModal → `setEmail`)
+- Password (ChangePasswordModal → `POST /auth/change-password`)
+- Data Export (`GET /auth/export`) — Downloads all user-facing data as JSON (no internal IDs)
+- Sign Out (ConfirmModal)
+- Delete Account (custom Modal with text confirmation: "삭제합니다" / "DELETE")
+
+### AI Personalization Section
+- Share Persona (Switch toggle) — Whether to share nickname/occupation/interests with AI
+- Summary Style (EditModal) — Summary style preference (e.g. "concise", "detailed")
+- Focus Areas (6 chip toggles) — Project management, self-development, work efficiency, communication, health/wellness, learning/growth
+- Custom Instructions (EditModal multiline, 500 chars) — Free-text instructions for AI
+- Data: `user_ai_preferences` table (separate — own user only)
+- Hooks: `useAiPreferences()`, `useUpsertAiPreferences()` (`src/features/ai-preferences/`)
+
+### Data Export Format
+
+`GET /auth/export` returns user-friendly JSON (no internal IDs or schema details):
+
+```json
+{
+  "exported_at": "2026-02-16T...",
+  "account": { "email", "username", "phone", "nickname", "joined" },
+  "entries": [{ "date", "content", "tags" }],
+  "summaries": [{ "type", "date", "content" }],
+  "todos": [{ "text", "status", "due_date" }],
+  "ai_settings": { "summary_style", "focus_areas", "custom_instructions" }
+}
+```
+
+### Account Deletion Flow
+
+1. User taps "Delete Account" → custom Modal appears
+2. User must type exact confirmation text: "삭제합니다" (ko) / "DELETE" (en)
+3. Button stays disabled until text matches `t('account.deleteAccountConfirmWord')`
+4. `DELETE /auth/account` cascading deletes: todos, summaries, entries, ai_preferences, refresh_tokens, email_verifications, login_attempts, R2 avatars, user record
+5. Client signs out and navigates to login screen
 
 ### Navigation Entry Points
 
@@ -150,5 +182,5 @@ Namespace: `privacy`
 3. Add action method with appropriate persistence
 4. For user_metadata: update via `PUT /auth/user` with merged metadata JSON
 5. Add translation keys to `settings.json` (both ko and en)
-6. Add UI section in `app/settings.tsx`
+6. Add UI section in `app/settings.tsx` (app preferences) or `app/(tabs)/profile.tsx` (account/AI settings)
 7. For AI-related settings, use `user_ai_preferences` table + `src/features/ai-preferences/` module (not settingsStore)

@@ -151,6 +151,13 @@ interface EmailVerification {
   expires_at: string;
   created_at: string;
 }
+
+interface LoginAttempt {
+  id: string;
+  identifier: string;       // email or username (for rate limiting)
+  ip: string;               // client IP address
+  created_at: string;       // DEFAULT datetime('now')
+}
 ```
 
 ---
@@ -162,12 +169,12 @@ interface EmailVerification {
 2. **Record** — AI chatbot check-in (3 phases) + text input
 3. **Timeline** — entry list by date + daily/weekly/monthly summary access
 4. **Todo List** — AI-extracted todos + completion + source entry links
-5. **Profile** — user info, achievements, settings access
+5. **Profile** — user info, achievements, account management (username/email/password/export/delete), AI personalization
 
 ### Detail/Modal Screens
 - **Entry Detail** — view/edit entry, regenerate summary (3/day limit)
 - **Summary Detail** — summary text with per-sentence evidence chips
-- **Settings** — account, notifications, AI personalization, theme, language
+- **Settings** — language, theme, notifications, support, legal (account + AI personalization moved to Profile)
 - **Edit Profile** — avatar upload/delete, persona fields
 - **Onboarding** — 3-step interactive setup (growth cycle → weekly review config → notifications)
 - **First-time Setup** — language → theme → welcome (pre-login, device-level)
@@ -187,7 +194,7 @@ interface EmailVerification {
 | `POST /ai/generate-monthly` | Monthly review (5-7 points + entry_ids) |
 | `POST /ai/chat` | 3-phase conversational check-in (Plan→Detail→Reflection) |
 
-Auth routes: `worker/src/routes/auth.ts`, email verification: `worker/src/routes/email-verification.ts`
+Auth routes: `worker/src/routes/auth.ts` (signup, login, refresh, me, update, change-password, reset, export, delete-account), email verification: `worker/src/routes/email-verification.ts`
 
 ---
 
@@ -249,6 +256,12 @@ These decisions have architectural implications. Violating them will cause bugs 
 | **After entry deletion, use `router.replace` (not `router.back`)** | `router.back()` navigates to the deleted entry URL → 404. Use `router.replace('/(tabs)/timeline')` for safe navigation. |
 | **React Query staleTime: 5min + cache: 'no-store'** | `staleTime: 5min` prevents redundant refetches on tab switches. `cache: 'no-store'` on `apiFetch`/`apiPublicFetch` + `Cache-Control: no-store` on Worker prevents browser HTTP caching stale data on production. Mutations still trigger immediate refetch via `invalidateQueries`. |
 | **Smart entry navigation (useTodayEntry)** | Dashboard QuickActions, FAB, Timeline header, SidebarNav all check `useTodayEntry()`. If today's entry exists → navigate to `/entries/{id}` (view), icon changes to `eye`. If not → `/entries/new` (create), icon is `pencil`/`plus`. Prevents confusing chat UI flash + leave modal. |
+| **Login rate limiting (login_attempts)** | Max 5 failed logins per identifier (email/username) per 15 minutes → returns 429 `too_many_login_attempts`. Cleared on successful login. Prevents brute force attacks. |
+| **Password validation: 8+ chars, uppercase, number** | Enforced in signup + change-password. `validatePassword()` in auth.ts. Existing accounts not retroactively validated (legacy passwords still work for login). |
+| **Account deletion requires text confirmation** | `DELETE /auth/account` cascading hard-deletes all user data (entries, summaries, todos, tokens, preferences, login_attempts, R2 avatars). Client requires exact text match: "삭제합니다" (ko) / "DELETE" (en). |
+| **Data export: user-friendly schema only** | `GET /auth/export` returns JSON with no internal IDs (no UUIDs, no source_entry_id). Fields mapped to user-facing names (raw_text→content, period_start→date). Prevents DB schema reverse-engineering. |
+| **Signup ToS/Privacy consent** | Signup form requires mandatory checkbox agreeing to Terms of Service + Privacy Policy. Includes pre-consent for future cookies/analytics and promotional emails (opt-out available). |
+| **Account + AI Personalization in Profile, not Settings** | Settings = app preferences (language/theme/notifications). Profile = account management + AI personalization. This separation prevents settings overload and aligns with user mental model. |
 
 ---
 

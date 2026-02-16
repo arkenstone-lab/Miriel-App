@@ -20,6 +20,7 @@ Write for 3 minutes a day. Miriel organizes, summarizes, and connects your recor
 - **Smart To-dos** — Action items auto-extracted from entries with source linking
 - **Streak & Gamification** — Levels, XP, badges, and streak tracking to build a journaling habit
 - **AI Personalization** — Customize summary style, focus areas, and instructions to match your workflow
+- **Data Ownership** — Export all your data as JSON, delete your account permanently at any time
 - **Cross-platform** — Single codebase for Web (PC), iOS, and Android
 
 ## Tech Stack
@@ -49,9 +50,9 @@ app/                          # Expo Router (file-based routing)
 │   ├── timeline.tsx          # Entry list by date
 │   ├── summary.tsx           # Daily / Weekly / Monthly summaries
 │   ├── todos.tsx             # AI-extracted to-dos
-│   └── profile.tsx           # User profile + gamification stats
+│   └── profile.tsx           # User profile + gamification + account management
 ├── entries/                  # Entry detail + create/edit
-├── settings.tsx              # Account, notifications, AI preferences
+├── settings.tsx              # Language, theme, notifications, legal
 └── edit-profile.tsx          # Avatar + persona editor
 
 src/
@@ -65,7 +66,7 @@ worker/                        # Cloudflare Worker (Hono.js)
 ├── migrations/               # D1 schema migrations
 └── src/
     ├── routes/               # ~25 API routes
-    │   ├── auth.ts           # Signup, login, refresh, password reset
+    │   ├── auth.ts           # Signup, login, refresh, password reset, export, delete
     │   ├── entries.ts        # Entry CRUD
     │   ├── summaries.ts      # Summary queries
     │   ├── todos.ts          # Todo CRUD
