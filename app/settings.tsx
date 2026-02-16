@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   View,
   Text,
@@ -7,24 +7,16 @@ import {
   Switch,
   Alert,
   Linking,
-  ActivityIndicator,
 } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useColorScheme } from 'nativewind'
-import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useAuthStore } from '@/stores/authStore'
-import { showErrorAlert } from '@/lib/errors'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
-import { EditModal } from '@/components/ui/EditModal'
-import { ChangePasswordModal } from '@/components/ui/ChangePasswordModal'
-import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { TimePickerModal } from '@/components/ui/TimePickerModal'
 import { DayPickerModal } from '@/components/ui/DayPickerModal'
 import { MonthDayPickerModal } from '@/components/ui/MonthDayPickerModal'
 import { LegalModal } from '@/components/ui/LegalModal'
-import { useAiPreferences, useUpsertAiPreferences } from '@/features/ai-preferences/hooks'
 
 const SUPPORT_LINKS = {
   homepage: 'https://www.arkenstone-labs.com/miriel/',
@@ -38,10 +30,9 @@ type Language = 'ko' | 'en'
 
 export default function SettingsScreen() {
   const { t } = useTranslation('settings')
-  const { t: tPrivacy } = useTranslation('privacy')
   const {
-    theme, language, username,
-    setTheme, setLanguage, setEmail,
+    theme, language,
+    setTheme, setLanguage,
     notificationsEnabled, morningNotificationTime, eveningNotificationTime,
     weeklyReviewDay, weeklyReviewTime,
     monthlyReviewDay, monthlyReviewTime,
@@ -49,63 +40,18 @@ export default function SettingsScreen() {
     setWeeklyReviewDay, setWeeklyReviewTime,
     setMonthlyReviewDay, setMonthlyReviewTime,
   } = useSettingsStore()
-  const { user, signOut } = useAuthStore()
-  const router = useRouter()
   const { colorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
 
-  const [emailModalVisible, setEmailModalVisible] = useState(false)
-  const [passwordModalVisible, setPasswordModalVisible] = useState(false)
   const [morningPickerVisible, setMorningPickerVisible] = useState(false)
   const [eveningPickerVisible, setEveningPickerVisible] = useState(false)
   const [weeklyDayPickerVisible, setWeeklyDayPickerVisible] = useState(false)
   const [weeklyTimePickerVisible, setWeeklyTimePickerVisible] = useState(false)
   const [monthlyDayPickerVisible, setMonthlyDayPickerVisible] = useState(false)
   const [monthlyTimePickerVisible, setMonthlyTimePickerVisible] = useState(false)
-  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null)
-  const [signOutModalVisible, setSignOutModalVisible] = useState(false)
-  const [styleModalVisible, setStyleModalVisible] = useState(false)
-  const [instructionsModalVisible, setInstructionsModalVisible] = useState(false)
-
-  // AI Personalization
-  const { data: aiPrefs, isLoading: aiPrefsLoading } = useAiPreferences()
-  const upsertAiPrefs = useUpsertAiPreferences()
-
-  const FOCUS_AREA_KEYS = [
-    'projectMgmt', 'selfDev', 'workEfficiency',
-    'communication', 'health', 'learning',
-  ] as const
-
-  const handleAiPrefToggle = (field: 'share_persona', value: boolean) => {
-    upsertAiPrefs.mutate({ [field]: value })
-  }
-
-  const handleStyleSave = async (value: string) => {
-    try {
-      await upsertAiPrefs.mutateAsync({ summary_style: value })
-    } catch (error: unknown) {
-      showErrorAlert(t('aiPersonalization.title'), error)
-      throw error
-    }
-  }
-
-  const handleInstructionsSave = async (value: string) => {
-    try {
-      await upsertAiPrefs.mutateAsync({ custom_instructions: value })
-    } catch (error: unknown) {
-      showErrorAlert(t('aiPersonalization.title'), error)
-      throw error
-    }
-  }
-
-  const toggleFocusArea = (key: string) => {
-    const label = t(`aiPersonalization.focusOptions.${key}` as any)
-    const current = aiPrefs?.focus_areas || []
-    const next = current.includes(label)
-      ? current.filter((a) => a !== label)
-      : [...current, label]
-    upsertAiPrefs.mutate({ focus_areas: next })
-  }
+  // Separate visible + type to prevent content flash during fade-out animation
+  const [legalModalVisible, setLegalModalVisible] = useState(false)
+  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy'>('terms')
 
   const languageOptions: { label: string; value: 'system' | Language }[] = [
     { label: t('language.system'), value: 'system' },
@@ -119,18 +65,6 @@ export default function SettingsScreen() {
     { label: t('theme.dark'), value: 'dark' },
   ]
 
-  // Alert.alert callbacks are broken on web — use ConfirmModal instead
-  const handleSignOut = () => {
-    setSignOutModalVisible(true)
-  }
-
-  const confirmSignOut = async () => {
-    setSignOutModalVisible(false)
-    // Dismiss settings modal first, then sign out so routing guard can navigate cleanly
-    if (router.canDismiss()) router.dismiss()
-    await signOut()
-  }
-
   const formatTimeDisplay = (time: string) => {
     const [h, m] = time.split(':').map(Number)
     const period = h >= 12 ? 'PM' : 'AM'
@@ -143,16 +77,6 @@ export default function SettingsScreen() {
     const current = useSettingsStore.getState().notificationsEnabled
     if (enabled && !current) {
       Alert.alert(t('notifications.title'), t('notifications.permissionDenied'))
-    }
-  }
-
-  const handleEmailSave = async (newEmail: string) => {
-    try {
-      await setEmail(newEmail.trim())
-      Alert.alert('', t('account.emailChanged'))
-    } catch (error: unknown) {
-      showErrorAlert(t('account.title'), error)
-      throw error // Keep modal open on error
     }
   }
 
@@ -329,179 +253,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* AI Personalization */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-            {t('aiPersonalization.title')}
-          </Text>
-          <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-            {aiPrefsLoading ? (
-              <View className="px-4 py-6 items-center">
-                <ActivityIndicator size="small" color={isDark ? '#22d3ee' : '#06b6d4'} />
-              </View>
-            ) : (
-              <>
-                {/* Share Persona Toggle */}
-                <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                  <FontAwesome name="user-circle-o" size={16} color="#9ca3af" />
-                  <View className="ml-3 flex-1">
-                    <Text className="text-sm text-gray-900 dark:text-gray-100">
-                      {t('aiPersonalization.sharePersona')}
-                    </Text>
-                    <Text className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      {t('aiPersonalization.sharePersonaDesc')}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={aiPrefs?.share_persona ?? true}
-                    onValueChange={(v) => handleAiPrefToggle('share_persona', v)}
-                    trackColor={{ false: isDark ? '#374151' : '#d1d5db', true: '#22d3ee' }}
-                    thumbColor={(aiPrefs?.share_persona ?? true) ? '#06b6d4' : '#f4f3f4'}
-                  />
-                </View>
-
-                {/* Summary Style */}
-                <TouchableOpacity
-                  className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
-                  onPress={() => setStyleModalVisible(true)}
-                  activeOpacity={0.7}
-                >
-                  <FontAwesome name="magic" size={16} color="#9ca3af" />
-                  <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
-                    {t('aiPersonalization.summaryStyle')}
-                  </Text>
-                  <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100" numberOfLines={1} style={{ maxWidth: 150 }}>
-                    {aiPrefs?.summary_style || t('aiPersonalization.summaryStylePlaceholder')}
-                  </Text>
-                  <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
-                </TouchableOpacity>
-
-                {/* Focus Areas */}
-                <View className="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
-                  <View className="flex-row items-center mb-2">
-                    <FontAwesome name="crosshairs" size={16} color="#9ca3af" />
-                    <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">
-                      {t('aiPersonalization.focusAreas')}
-                    </Text>
-                  </View>
-                  <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                    {FOCUS_AREA_KEYS.map((key) => {
-                      const label = t(`aiPersonalization.focusOptions.${key}` as any)
-                      const selected = (aiPrefs?.focus_areas || []).includes(label)
-                      return (
-                        <TouchableOpacity
-                          key={key}
-                          className={`px-3 py-1.5 rounded-full border ${
-                            selected
-                              ? 'bg-cyan-50 dark:bg-gray-700/40 border-cyan-300 dark:border-gray-600'
-                              : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                          }`}
-                          onPress={() => toggleFocusArea(key)}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            className={`text-xs font-medium ${
-                              selected
-                                ? 'text-cyan-600 dark:text-cyan-400'
-                                : 'text-gray-500 dark:text-gray-400'
-                            }`}
-                          >
-                            {label}
-                          </Text>
-                        </TouchableOpacity>
-                      )
-                    })}
-                  </View>
-                </View>
-
-                {/* Custom Instructions */}
-                <TouchableOpacity
-                  className="flex-row items-center px-4 py-3.5"
-                  onPress={() => setInstructionsModalVisible(true)}
-                  activeOpacity={0.7}
-                >
-                  <FontAwesome name="pencil" size={16} color="#9ca3af" />
-                  <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400 flex-1">
-                    {t('aiPersonalization.customInstructions')}
-                  </Text>
-                  <Text className="text-sm text-gray-900 dark:text-gray-100" numberOfLines={1} style={{ maxWidth: 120 }}>
-                    {aiPrefs?.custom_instructions
-                      ? `${aiPrefs.custom_instructions.slice(0, 15)}...`
-                      : '—'}
-                  </Text>
-                  <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* Account */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-            {t('account.title')}
-          </Text>
-          <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-            {/* Username (read-only) */}
-            <View className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
-              <FontAwesome name="id-badge" size={16} color="#9ca3af" />
-              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.username')}</Text>
-              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">
-                {username ? `@${username}` : '—'}
-              </Text>
-            </View>
-            {/* Email */}
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
-              onPress={() => setEmailModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <FontAwesome name="envelope-o" size={16} color="#9ca3af" />
-              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.email')}</Text>
-              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">{user?.email ?? '—'}</Text>
-              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
-            </TouchableOpacity>
-            {/* Password */}
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
-              onPress={() => setPasswordModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <FontAwesome name="lock" size={16} color="#9ca3af" />
-              <Text className="ml-3 text-sm text-gray-500 dark:text-gray-400">{t('account.password')}</Text>
-              <Text className="ml-auto text-sm text-gray-900 dark:text-gray-100">••••••</Text>
-              <FontAwesome name="chevron-right" size={12} color={isDark ? '#6b7280' : '#d1d5db'} style={{ marginLeft: 8 }} />
-            </TouchableOpacity>
-            {/* Sign Out */}
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-3.5"
-              onPress={handleSignOut}
-              activeOpacity={0.7}
-            >
-              <FontAwesome name="sign-out" size={16} color="#ef4444" />
-              <Text className="ml-3 text-sm text-red-500">{t('account.signOut')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Privacy & Data */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-            {t('privacy.title')}
-          </Text>
-          <View className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-            <View className="flex-row items-start mb-2">
-              <FontAwesome name="shield" size={18} color={isDark ? '#22d3ee' : '#06b6d4'} style={{ marginTop: 2 }} />
-              <Text className="ml-3 text-base font-semibold text-gray-900 dark:text-gray-100">
-                {tPrivacy('notice.title')}
-              </Text>
-            </View>
-            <Text className="text-sm text-gray-600 dark:text-gray-300 leading-5">
-              {tPrivacy('notice.body')}
-            </Text>
-          </View>
-        </View>
-
         {/* Support */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
@@ -555,7 +306,7 @@ export default function SettingsScreen() {
           <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
             <TouchableOpacity
               className="flex-row items-center px-4 py-3.5 border-b border-gray-100 dark:border-gray-800"
-              onPress={() => setLegalModalType('terms')}
+              onPress={() => { setLegalModalType('terms'); setLegalModalVisible(true) }}
               activeOpacity={0.7}
             >
               <FontAwesome name="file-text-o" size={16} color="#9ca3af" />
@@ -564,7 +315,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               className="flex-row items-center px-4 py-3.5"
-              onPress={() => setLegalModalType('privacy')}
+              onPress={() => { setLegalModalType('privacy'); setLegalModalVisible(true) }}
               activeOpacity={0.7}
             >
               <FontAwesome name="lock" size={16} color="#9ca3af" />
@@ -590,62 +341,11 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Sign Out Confirm Modal */}
-      <ConfirmModal
-        visible={signOutModalVisible}
-        title={t('account.signOutConfirmTitle')}
-        message={t('account.signOutConfirmMessage')}
-        confirmLabel={t('account.signOut')}
-        cancelLabel={t('modal.cancel')}
-        onConfirm={confirmSignOut}
-        onCancel={() => setSignOutModalVisible(false)}
-        destructive
-      />
-
-      {/* Email Edit Modal */}
-      <EditModal
-        visible={emailModalVisible}
-        title={t('account.email')}
-        value={user?.email ?? ''}
-        placeholder={t('account.emailPlaceholder')}
-        onSave={handleEmailSave}
-        onClose={() => setEmailModalVisible(false)}
-      />
-
-      {/* Password Change Modal */}
-      <ChangePasswordModal
-        visible={passwordModalVisible}
-        onClose={() => setPasswordModalVisible(false)}
-      />
-
-      {/* Summary Style Modal */}
-      <EditModal
-        visible={styleModalVisible}
-        title={t('aiPersonalization.summaryStyle')}
-        value={aiPrefs?.summary_style ?? ''}
-        placeholder={t('aiPersonalization.summaryStylePlaceholder')}
-        maxLength={100}
-        onSave={handleStyleSave}
-        onClose={() => setStyleModalVisible(false)}
-      />
-
-      {/* Custom Instructions Modal */}
-      <EditModal
-        visible={instructionsModalVisible}
-        title={t('aiPersonalization.customInstructions')}
-        value={aiPrefs?.custom_instructions ?? ''}
-        placeholder={t('aiPersonalization.customInstructionsPlaceholder')}
-        maxLength={500}
-        multiline
-        onSave={handleInstructionsSave}
-        onClose={() => setInstructionsModalVisible(false)}
-      />
-
       {/* Legal Modal */}
       <LegalModal
-        visible={legalModalType !== null}
-        type={legalModalType ?? 'terms'}
-        onClose={() => setLegalModalType(null)}
+        visible={legalModalVisible}
+        type={legalModalType}
+        onClose={() => setLegalModalVisible(false)}
       />
 
       {/* Time Picker Modals */}

@@ -6,6 +6,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { apiPublicFetch } from '@/lib/api'
 import { getApiUrl } from '@/lib/api'
 import { getErrorMessage } from '@/lib/errors'
+import { LegalModal } from '@/components/ui/LegalModal'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/
 
@@ -32,9 +34,13 @@ export default function SignupScreen() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const [errorText, setErrorText] = useState('')
+  // Separate visible + type to prevent content flash during fade-out animation
+  const [legalModalVisible, setLegalModalVisible] = useState(false)
+  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy'>('terms')
 
   const codeRef = useRef<TextInput>(null)
   const usernameRef = useRef<TextInput>(null)
@@ -175,12 +181,26 @@ export default function SignupScreen() {
       setErrorText(t('signup.step3.alertFillFields'))
       return
     }
+    // ToS/Privacy agreement is required before account creation
+    if (!agreedToTerms) {
+      setErrorText(t('signup.step3.alertAgreeRequired'))
+      return
+    }
     if (!USERNAME_REGEX.test(username)) {
       setErrorText(t('signup.alertUsernameFormat'))
       return
     }
-    if (password.length < 6) {
+    // Password complexity: 8+ chars, at least one uppercase, at least one number
+    if (password.length < 8) {
       setErrorText(t('signup.alertPasswordShort'))
+      return
+    }
+    if (!/[A-Z]/.test(password)) {
+      setErrorText(t('signup.alertPasswordNoUppercase'))
+      return
+    }
+    if (!/[0-9]/.test(password)) {
+      setErrorText(t('signup.alertPasswordNoNumber'))
       return
     }
     if (password !== confirmPassword) {
@@ -462,6 +482,37 @@ export default function SignupScreen() {
               )}
             </View>
 
+            {/* ToS / Privacy Policy agreement checkbox */}
+            <TouchableOpacity
+              className="flex-row items-start mb-4"
+              onPress={() => { setAgreedToTerms(!agreedToTerms); setErrorText('') }}
+              activeOpacity={0.7}
+            >
+              <FontAwesome
+                name={agreedToTerms ? 'check-square' : 'square-o'}
+                size={20}
+                color={agreedToTerms ? '#0891b2' : '#9ca3af'}
+                style={{ marginTop: 1 }}
+              />
+              <Text className="ml-2 text-sm text-gray-700 dark:text-gray-300 flex-1 leading-5">
+                {t('signup.step3.agreePrefix')}
+                <Text
+                  className="text-cyan-600 dark:text-cyan-400 underline"
+                  onPress={() => { setLegalModalType('terms'); setLegalModalVisible(true) }}
+                >
+                  {t('signup.step3.terms')}
+                </Text>
+                {t('signup.step3.agreeAnd')}
+                <Text
+                  className="text-cyan-600 dark:text-cyan-400 underline"
+                  onPress={() => { setLegalModalType('privacy'); setLegalModalVisible(true) }}
+                >
+                  {t('signup.step3.privacy')}
+                </Text>
+                {t('signup.step3.agreeSuffix')}
+              </Text>
+            </TouchableOpacity>
+
             {errorText !== '' && (
               <View className="mb-3 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                 <Text className="text-sm text-red-600 dark:text-red-400">{errorText}</Text>
@@ -488,6 +539,13 @@ export default function SignupScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Legal document modal — reused from settings */}
+      <LegalModal
+        visible={legalModalVisible}
+        type={legalModalType}
+        onClose={() => setLegalModalVisible(false)}
+      />
     </KeyboardAvoidingView>
   )
 }

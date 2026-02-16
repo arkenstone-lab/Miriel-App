@@ -30,13 +30,27 @@
     "confirmPasswordPlaceholder": "새 비밀번호 다시 입력",
     "passwordMismatch": "비밀번호가 일치하지 않습니다.",
     "currentPasswordWrong": "현재 비밀번호가 올바르지 않습니다.",
-    "passwordTooShort": "비밀번호는 6자 이상이어야 합니다.",
+    "passwordTooShort": "비밀번호는 8자 이상이어야 합니다.",
+    "passwordNoUppercase": "비밀번호에 대문자가 최소 1자 포함되어야 합니다.",
+    "passwordNoNumber": "비밀번호에 숫자가 최소 1자 포함되어야 합니다.",
     "passwordChanged": "비밀번호가 변경되었습니다.",
     "emailChanged": "이메일 변경 요청이 완료되었습니다.",
     "phoneChanged": "전화번호가 변경되었습니다.",
     "signOut": "로그아웃",
     "signOutConfirmTitle": "로그아웃",
-    "signOutConfirmMessage": "정말 로그아웃하시겠습니까?"
+    "signOutConfirmMessage": "정말 로그아웃하시겠습니까?",
+    "exportData": "내 데이터 내보내기",
+    "exportDataDesc": "기록, 요약, 할 일 등 모든 데이터를 JSON 파일로 다운로드합니다.",
+    "exporting": "내보내는 중...",
+    "exportSuccess": "데이터가 성공적으로 내보내졌습니다.",
+    "exportFailed": "데이터 내보내기에 실패했습니다. 다시 시도해주세요.",
+    "deleteAccount": "계정 삭제",
+    "deleteAccountConfirmTitle": "계정 삭제",
+    "deleteAccountConfirmMessage": "계정과 모든 데이터(기록, 요약, 할 일)가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.\n\n확인을 위해 '삭제합니다'를 입력해주세요.",
+    "deleteAccountConfirmWord": "삭제합니다",
+    "deleteAccountInputPlaceholder": "'삭제합니다'를 입력하세요",
+    "deleteAccountButton": "영구 삭제",
+    "deleteAccountSuccess": "계정이 삭제되었습니다."
   },
   "privacy": {
     "title": "개인정보 및 데이터"
@@ -125,6 +139,7 @@
   },
   "aiPersonalization": {
     "title": "AI 개인화",
+    "aiDataNotice": "기록은 AI 기능을 위해 OpenAI로 전송됩니다. OpenAI는 API 데이터를 학습에 사용하지 않습니다.",
     "sharePersona": "프로필 정보 공유",
     "sharePersonaDesc": "닉네임, 직업, 관심사를 AI에 전달합니다",
     "summaryStyle": "요약 스타일",

@@ -54,8 +54,17 @@ export function ChangePasswordModal({
       setErrorText(t('account.currentPasswordPlaceholder'))
       return
     }
-    if (newPassword.length < 6) {
+    // Password complexity: 8+ chars, at least one uppercase, at least one number
+    if (newPassword.length < 8) {
       setErrorText(t('account.passwordTooShort'))
+      return
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      setErrorText(t('account.passwordNoUppercase'))
+      return
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      setErrorText(t('account.passwordNoNumber'))
       return
     }
     if (newPassword !== confirmPassword) {

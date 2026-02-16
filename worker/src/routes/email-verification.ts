@@ -90,7 +90,10 @@ emailVerification.post('/send-verification-code', async (c) => {
     .run();
 
   if (!c.env.RESEND_API_KEY) {
-    return c.json({ sent: true, dev_code: code });
+    // Only expose dev_code in non-production (local dev without Resend key)
+    const response: Record<string, unknown> = { sent: true };
+    if (c.env.ENVIRONMENT !== 'production') response.dev_code = code;
+    return c.json(response);
   }
 
   const html = buildVerificationEmailHtml(emailLang, code);

@@ -50,8 +50,17 @@ export default function ResetPasswordScreen() {
     setErrorText('')
     setSuccessText('')
 
-    if (newPassword.length < 6) {
+    // Password complexity: 8+ chars, at least one uppercase, at least one number
+    if (newPassword.length < 8) {
       setErrorText(t('resetPassword.tooShort'))
+      return
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      setErrorText(t('resetPassword.noUppercase'))
+      return
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      setErrorText(t('resetPassword.noNumber'))
       return
     }
     if (newPassword !== confirmPassword) {

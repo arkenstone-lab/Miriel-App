@@ -62,6 +62,14 @@ entries.post('/', async (c) => {
   const userId = c.get('userId');
   const body = await c.req.json();
 
+  // Validate entry text (required, max 100K chars to prevent DB bloat / OpenAI token overflow)
+  if (!body.raw_text?.trim()) {
+    return c.json({ error: 'entry_text_required' }, 400);
+  }
+  if (body.raw_text.length > 100_000) {
+    return c.json({ error: 'entry_text_too_long' }, 400);
+  }
+
   const id = generateId();
   const date = body.date || new Date().toISOString().split('T')[0];
   const tags = stringifyJsonField(body.tags || []);
@@ -99,6 +107,9 @@ entries.put('/:id', async (c) => {
   const values: unknown[] = [];
 
   if (body.raw_text !== undefined) {
+    if (body.raw_text.length > 100_000) {
+      return c.json({ error: 'entry_text_too_long' }, 400);
+    }
     updates.push('raw_text = ?');
     values.push(body.raw_text);
   }

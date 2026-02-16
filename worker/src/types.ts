@@ -6,6 +6,7 @@ export interface Env {
   OPENAI_API_KEY: string;
   RESEND_API_KEY?: string;
   INVITE_CODES?: string; // comma-separated invite codes (empty = open registration)
+  ENVIRONMENT?: string;  // 'production' on live — hides dev_code/dev_token from responses
 }
 
 export interface AuthUser {

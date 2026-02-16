@@ -30,13 +30,27 @@
     "confirmPasswordPlaceholder": "Re-enter new password",
     "passwordMismatch": "Passwords do not match.",
     "currentPasswordWrong": "Current password is incorrect.",
-    "passwordTooShort": "Password must be at least 6 characters.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordNoUppercase": "Password must include at least one uppercase letter.",
+    "passwordNoNumber": "Password must include at least one number.",
     "passwordChanged": "Password has been changed.",
     "emailChanged": "Email change request has been submitted.",
     "phoneChanged": "Phone number has been updated.",
     "signOut": "Sign Out",
     "signOutConfirmTitle": "Sign Out",
-    "signOutConfirmMessage": "Are you sure you want to sign out?"
+    "signOutConfirmMessage": "Are you sure you want to sign out?",
+    "exportData": "Export My Data",
+    "exportDataDesc": "Download all your journal entries, summaries, and todos as a JSON file.",
+    "exporting": "Exporting...",
+    "exportSuccess": "Your data has been exported successfully.",
+    "exportFailed": "Failed to export data. Please try again.",
+    "deleteAccount": "Delete Account",
+    "deleteAccountConfirmTitle": "Delete Account",
+    "deleteAccountConfirmMessage": "This will permanently delete your account and all data (entries, summaries, todos). This action cannot be undone.\n\nType DELETE to confirm.",
+    "deleteAccountConfirmWord": "DELETE",
+    "deleteAccountInputPlaceholder": "Type DELETE to confirm",
+    "deleteAccountButton": "Delete Permanently",
+    "deleteAccountSuccess": "Your account has been deleted."
   },
   "privacy": {
     "title": "Privacy & Data"
@@ -125,6 +139,7 @@
   },
   "aiPersonalization": {
     "title": "AI Personalization",
+    "aiDataNotice": "Your entries are sent to OpenAI for AI features. OpenAI does not use API data for training.",
     "sharePersona": "Share Profile Info",
     "sharePersonaDesc": "Share your nickname, occupation, and interests with AI",
     "summaryStyle": "Summary Style",

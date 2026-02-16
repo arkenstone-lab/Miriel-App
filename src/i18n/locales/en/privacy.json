@@ -1,7 +1,7 @@
 {
   "notice": {
     "title": "How We Use Your Data",
-    "body": "Your entries are processed by AI to generate summaries and extract to-dos. Your data is stored securely and is never shared with third parties. All AI processing is done solely to enhance your reflection experience.",
+    "body": "Your entries are sent to OpenAI to generate summaries, extract to-dos, and power the AI chat. OpenAI does not use API data for model training. Your data is stored securely on Cloudflare and is never shared with other third parties. All AI processing is done solely to enhance your reflection experience.",
     "acknowledge": "I Understand"
   }
 }

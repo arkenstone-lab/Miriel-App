@@ -11,8 +11,17 @@ import {
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-const ACCESS_TOKEN_EXPIRY = 3600; // 1 hour
+const ACCESS_TOKEN_EXPIRY = 900; // 15 minutes — shorter window limits session hijacking after password reset
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
+
+// Password must be 8+ chars with at least one uppercase letter and one number.
+// Returns error code string if invalid, null if valid.
+function validatePassword(password: string): string | null {
+  if (!password || password.length < 8) return 'password_too_short';
+  if (!/[A-Z]/.test(password)) return 'password_no_uppercase';
+  if (!/[0-9]/.test(password)) return 'password_no_number';
+  return null;
+}
 
 async function issueTokens(
   db: D1Database,
@@ -55,6 +64,12 @@ auth.post('/signup', async (c) => {
   // Validate username format
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(normalizedUsername)) {
     return c.json({ error: 'invalid_username_format' }, 400);
+  }
+
+  // Validate password complexity (8+ chars, uppercase, number)
+  const pwError = validatePassword(password);
+  if (pwError) {
+    return c.json({ error: pwError }, 400);
   }
 
   // Validate email token
@@ -114,6 +129,15 @@ auth.post('/login', async (c) => {
   const isEmail = login.includes('@');
   const normalizedLogin = login.trim().toLowerCase();
 
+  // Rate limit: 5 failed attempts per identifier in 15 minutes
+  const recentFailures = await c.env.DB
+    .prepare('SELECT COUNT(*) as cnt FROM login_attempts WHERE identifier = ? AND created_at > datetime("now", "-15 minutes")')
+    .bind(normalizedLogin)
+    .first<{ cnt: number }>();
+  if (recentFailures && recentFailures.cnt >= 5) {
+    return c.json({ error: 'too_many_login_attempts' }, 429);
+  }
+
   const user = await c.env.DB
     .prepare(
       isEmail
@@ -124,13 +148,29 @@ auth.post('/login', async (c) => {
     .first<{ id: string; email: string; username: string; password_hash: string; user_metadata: string }>();
 
   if (!user) {
+    // Record failed attempt (user not found)
+    await c.env.DB
+      .prepare('INSERT INTO login_attempts (id, identifier, ip, created_at) VALUES (?, ?, ?, ?)')
+      .bind(generateId(), normalizedLogin, c.req.header('CF-Connecting-IP') || 'unknown', now())
+      .run();
     return c.json({ error: 'invalid_credentials' }, 401);
   }
 
   const valid = await verifyPassword(password, user.password_hash);
   if (!valid) {
+    // Record failed attempt (wrong password)
+    await c.env.DB
+      .prepare('INSERT INTO login_attempts (id, identifier, ip, created_at) VALUES (?, ?, ?, ?)')
+      .bind(generateId(), normalizedLogin, c.req.header('CF-Connecting-IP') || 'unknown', now())
+      .run();
     return c.json({ error: 'invalid_credentials' }, 401);
   }
+
+  // Successful login — clear failed attempts for this identifier
+  await c.env.DB
+    .prepare('DELETE FROM login_attempts WHERE identifier = ?')
+    .bind(normalizedLogin)
+    .run();
 
   const tokens = await issueTokens(c.env.DB, c.env.JWT_SECRET, user.id, user.email);
 
@@ -278,8 +318,9 @@ auth.post('/change-password', authMiddleware, async (c) => {
     return c.json({ error: 'current_password and new_password are required' }, 400);
   }
 
-  if (new_password.length < 6) {
-    return c.json({ error: 'password_too_short' }, 400);
+  const pwError = validatePassword(new_password);
+  if (pwError) {
+    return c.json({ error: pwError }, 400);
   }
 
   const user = await c.env.DB
@@ -343,7 +384,10 @@ auth.post('/reset-password-request', async (c) => {
   const maskedEmail = localPart.slice(0, 2) + '***@' + domain;
 
   if (!c.env.RESEND_API_KEY) {
-    return c.json({ sent: true, masked_email: maskedEmail, dev_token: resetToken });
+    // Only expose dev_token in non-production (local dev without Resend key)
+    const response: Record<string, unknown> = { sent: true, masked_email: maskedEmail };
+    if (c.env.ENVIRONMENT !== 'production') response.dev_token = resetToken;
+    return c.json(response);
   }
 
   const resetLink = `${c.env.CORS_ORIGINS?.split(',')[0] || 'http://localhost:8081'}/reset-password?token=${resetToken}`;
@@ -363,8 +407,9 @@ auth.post('/reset-password', async (c) => {
     return c.json({ error: 'token and new_password are required' }, 400);
   }
 
-  if (new_password.length < 6) {
-    return c.json({ error: 'password_too_short' }, 400);
+  const pwError = validatePassword(new_password);
+  if (pwError) {
+    return c.json({ error: pwError }, 400);
   }
 
   const { verifyToken } = await import('../lib/auth');
@@ -387,6 +432,101 @@ auth.post('/reset-password', async (c) => {
     .run();
 
   return c.json({ success: true });
+});
+
+// GET /auth/export — download user-facing data only (no internal IDs or schema details)
+auth.get('/export', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+
+  const user = await c.env.DB
+    .prepare('SELECT email, username, phone, user_metadata, created_at FROM users WHERE id = ?')
+    .bind(userId)
+    .first();
+
+  if (!user) {
+    return c.json({ error: 'user_not_found' }, 404);
+  }
+
+  const [entries, summaries, todos, aiPrefs] = await Promise.all([
+    c.env.DB.prepare('SELECT date, raw_text, tags FROM entries WHERE user_id = ? ORDER BY date DESC').bind(userId).all(),
+    c.env.DB.prepare('SELECT period, period_start, text FROM summaries WHERE user_id = ? ORDER BY period_start DESC').bind(userId).all(),
+    c.env.DB.prepare('SELECT text, status, due_date FROM todos WHERE user_id = ? ORDER BY created_at DESC').bind(userId).all(),
+    c.env.DB.prepare('SELECT summary_style, focus_areas, custom_instructions FROM user_ai_preferences WHERE user_id = ?').bind(userId).first(),
+  ]);
+
+  // Map to user-friendly field names — no internal IDs or schema leaks
+  const metadata = (parseJsonField(user.user_metadata as string) || {}) as Record<string, unknown>;
+
+  return c.json({
+    exported_at: new Date().toISOString(),
+    account: {
+      email: user.email,
+      username: user.username,
+      phone: user.phone || null,
+      nickname: metadata.nickname || null,
+      joined: user.created_at,
+    },
+    entries: (entries.results || []).map((e: any) => ({
+      date: e.date,
+      content: e.raw_text,
+      tags: parseJsonField(e.tags) || [],
+    })),
+    summaries: (summaries.results || []).map((s: any) => ({
+      type: s.period,
+      date: s.period_start,
+      content: s.text,
+    })),
+    todos: (todos.results || []).map((td: any) => ({
+      text: td.text,
+      status: td.status,
+      due_date: td.due_date || null,
+    })),
+    ai_settings: aiPrefs ? {
+      summary_style: (aiPrefs as any).summary_style || null,
+      focus_areas: parseJsonField((aiPrefs as any).focus_areas as string) || [],
+      custom_instructions: (aiPrefs as any).custom_instructions || null,
+    } : null,
+  });
+});
+
+// DELETE /auth/account — permanently delete user and all associated data
+auth.delete('/account', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+
+  const user = await c.env.DB
+    .prepare('SELECT id FROM users WHERE id = ?')
+    .bind(userId)
+    .first();
+
+  if (!user) {
+    return c.json({ error: 'user_not_found' }, 404);
+  }
+
+  // Delete all user data in order (no FK cascades in D1, so manual cleanup)
+  await Promise.all([
+    c.env.DB.prepare('DELETE FROM todos WHERE user_id = ?').bind(userId).run(),
+    c.env.DB.prepare('DELETE FROM summaries WHERE user_id = ?').bind(userId).run(),
+    c.env.DB.prepare('DELETE FROM entries WHERE user_id = ?').bind(userId).run(),
+    c.env.DB.prepare('DELETE FROM user_ai_preferences WHERE user_id = ?').bind(userId).run(),
+    c.env.DB.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').bind(userId).run(),
+    c.env.DB.prepare('DELETE FROM email_verifications WHERE email = (SELECT email FROM users WHERE id = ?)').bind(userId).run(),
+    c.env.DB.prepare('DELETE FROM login_attempts WHERE identifier = (SELECT email FROM users WHERE id = ?)').bind(userId).run(),
+  ]);
+
+  // Delete R2 avatar (best-effort — ignore errors)
+  try {
+    const avatarList = await c.env.AVATARS.list({ prefix: `${userId}/` });
+    for (const obj of avatarList.objects) {
+      await c.env.AVATARS.delete(obj.key);
+    }
+  } catch {
+    // R2 cleanup failure is non-critical
+  }
+
+  // Finally delete the user record itself
+  await c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+
+  return c.json({ success: true, message: 'Account and all data permanently deleted' });
 });
 
 // POST /auth/logout

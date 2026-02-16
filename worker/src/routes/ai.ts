@@ -346,8 +346,9 @@ async function generateAndSaveSummary(
 
 // ─── ROUTES ───
 
-// POST /ai/chat (no auth required — stateless)
-ai.post('/chat', async (c) => {
+// POST /ai/chat — stateless conversational check-in
+// authMiddleware required to prevent unauthenticated OpenAI API abuse (bill amplification)
+ai.post('/chat', authMiddleware, async (c) => {
   const { messages, time_of_day, pending_todos, language, ai_context } = await c.req.json();
 
   if (!messages || !Array.isArray(messages)) {

@@ -84,6 +84,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (err.body?.error === 'invalid_credentials') {
         throw new AppError('AUTH_003')
       }
+      // 5 failed attempts in 15 min → 429 lockout
+      if (err.body?.error === 'too_many_login_attempts') {
+        throw new AppError('AUTH_022')
+      }
       throw new AppError('AUTH_002', err)
     }
   },
