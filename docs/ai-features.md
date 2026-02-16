@@ -104,6 +104,7 @@ All AI routes are in `worker/src/routes/ai.ts` with shared utilities:
 - **3-phase conversation**: Plan (1-2 turns) → Detail (2-3 turns) → Reflection (1-2 turns)
 - **Temperature**: 0.7
 - **Multi-turn**: Client sends full history (stateless server)
+- **Prompt guardrails**: Never fabricate/assume activities; first message is a warm greeting + open question; only reference pending to-dos if explicitly provided
 - **Fallback**: Auto-switches to static check-in questions on AI failure
 - **Called**: Entry creation screen (chat mode) — every turn
 
@@ -118,7 +119,7 @@ All AI routes are in `worker/src/routes/ai.ts` with shared utilities:
 - **3 phases**: Plan → Detail → Reflection (wraps up after 5-7 exchanges)
 - **Phase markers**: Saved as `[Plan]\n...\n\n[Detail]\n...\n\n[Reflection]\n...` in raw_text
 - **Fallback**: Uses static questions from `src/lib/constants.ts` when AI unavailable
-- **Draft persistence**: Auto-saves conversation to localStorage/AsyncStorage, resumes on return
+- **Draft persistence**: Auto-saves conversation per-user (`@miriel/chat_draft_{userId}`), auto-resumes on return
 
 ### AI Output Schema
 

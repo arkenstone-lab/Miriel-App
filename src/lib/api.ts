@@ -70,15 +70,16 @@ export async function clearTokens(): Promise<void> {
 }
 
 // Refresh lock to prevent concurrent refresh calls
-let refreshPromise: Promise<boolean> | null = null
+type RefreshResult = 'success' | 'invalid' | 'network_error'
+let refreshPromise2: Promise<RefreshResult> | null = null
 
-async function tryRefresh(): Promise<boolean> {
-  if (refreshPromise) return refreshPromise
+async function tryRefresh(): Promise<RefreshResult> {
+  if (refreshPromise2) return refreshPromise2
 
-  refreshPromise = (async () => {
+  refreshPromise2 = (async (): Promise<RefreshResult> => {
     try {
       const refreshToken = await getRefreshToken()
-      if (!refreshToken) return false
+      if (!refreshToken) return 'invalid'
 
       const res = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
@@ -88,20 +89,21 @@ async function tryRefresh(): Promise<boolean> {
 
       if (!res.ok) {
         await clearTokens()
-        return false
+        return 'invalid'
       }
 
       const data = await res.json()
       await setTokens(data.access_token, data.refresh_token)
-      return true
+      return 'success'
     } catch {
-      return false
+      // Network error — don't clear tokens, keep user logged in
+      return 'network_error'
     } finally {
-      refreshPromise = null
+      refreshPromise2 = null
     }
   })()
 
-  return refreshPromise
+  return refreshPromise2
 }
 
 // Type-safe fetch wrapper
@@ -124,17 +126,18 @@ export async function apiFetch<T = unknown>(
 
   // Auto-refresh on 401
   if (res.status === 401 && token) {
-    const refreshed = await tryRefresh()
-    if (refreshed) {
+    const refreshResult = await tryRefresh()
+    if (refreshResult === 'success') {
       const newToken = await getAccessToken()
       headers['Authorization'] = `Bearer ${newToken}`
       res = await fetch(url, { ...options, headers })
-    } else {
-      // Force sign out — import dynamically to avoid circular dependency
+    } else if (refreshResult === 'invalid') {
+      // Server explicitly rejected refresh token — force sign out
       const { useAuthStore } = await import('@/stores/authStore')
       useAuthStore.getState().forceSignOut()
       throw new Error('Session expired')
     }
+    // refreshResult === 'network_error' — don't sign out, let the error propagate
   }
 
   if (!res.ok) {
@@ -177,4 +180,16 @@ export async function apiPublicFetch<T = unknown>(
 
 export function getApiUrl(): string {
   return API_URL
+}
+
+// Decode JWT payload without verification (for offline fallback)
+export function decodeTokenPayload(token: string): { sub?: string; email?: string } | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload
+  } catch {
+    return null
+  }
 }

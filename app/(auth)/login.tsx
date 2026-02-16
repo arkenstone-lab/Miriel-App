@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Linking } from 'react-native'
 import { Link } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
@@ -114,6 +114,15 @@ export default function LoginScreen() {
           </Link>
         </View>
       </View>
+
+      <TouchableOpacity
+        className="pb-6 pt-2"
+        onPress={() => Linking.openURL('http://arkenstone-labs.com/')}
+      >
+        <Text className="text-xs text-gray-400 dark:text-gray-500 text-center">
+          by Arkenstone Labs
+        </Text>
+      </TouchableOpacity>
     </KeyboardAvoidingView>
   )
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { apiFetch, apiPublicFetch, setTokens, clearTokens, getAccessToken } from '@/lib/api'
+import { apiFetch, apiPublicFetch, setTokens, clearTokens, getAccessToken, decodeTokenPayload } from '@/lib/api'
 import { AppError } from '@/lib/errors'
 
 interface SignUpParams {
@@ -44,10 +44,26 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Validate token by fetching user info
       const user = await apiFetch<UserData>('/auth/me')
       set({ user, initialized: true })
-    } catch {
-      // Token invalid or expired (refresh also failed)
-      await clearTokens()
-      set({ user: null, initialized: true })
+    } catch (err: any) {
+      if (err.message === 'Session expired') {
+        // Server explicitly rejected — clear tokens
+        await clearTokens()
+        set({ user: null, initialized: true })
+      } else {
+        // Network error — keep tokens, decode JWT for minimal user info
+        const token = await getAccessToken()
+        if (token) {
+          const payload = decodeTokenPayload(token)
+          if (payload?.sub) {
+            set({
+              user: { id: payload.sub, email: payload.email || '', username: '', user_metadata: {} },
+              initialized: true,
+            })
+            return
+          }
+        }
+        set({ user: null, initialized: true })
+      }
     }
   },
 

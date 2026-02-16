@@ -112,6 +112,10 @@ export default function RootLayout() {
 
     // 3. Normal routing (only when setup is done)
     if (!user && !inAuthGroup && !inSetup) {
+      // Dismiss any modals (entries/new, settings, edit-profile) before redirecting
+      while (router.canDismiss()) {
+        router.dismiss()
+      }
       router.replace('/(auth)/login')
     } else if (user && !hasSeenOnboarding && !inOnboarding) {
       router.replace('/(onboarding)')

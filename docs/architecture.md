@@ -154,7 +154,7 @@ Layout components:
 | Store | Purpose | Persistence |
 |-------|---------|-------------|
 | `authStore` | User object, JWT tokens, signIn/signUp/signOut | AsyncStorage (access + refresh tokens) |
-| `chatStore` | Chat mode messages, phase tracking, input mode, draft persistence | In-memory + localStorage/AsyncStorage (drafts) |
+| `chatStore` | Chat mode messages, phase tracking, input mode, draft persistence | In-memory + localStorage/AsyncStorage (per-user drafts: `@miriel/chat_draft_{userId}`) |
 | `settingsStore` | Theme, language, privacy, notifications, account management | AsyncStorage (device) + users.user_metadata (account) |
 
 React Query handles all server state (entries, summaries, todos, gamification stats). Query keys follow the pattern `['resource', id?]`.
@@ -163,11 +163,11 @@ React Query handles all server state (entries, summaries, todos, gamification st
 
 1. `_layout.tsx` calls `authStore.initialize()` on mount
 2. Stored JWT tokens are restored from AsyncStorage/localStorage
-3. `GET /auth/me` validates the access token and loads user data
-4. Routing guard: setup not complete → setup, no user → login, user + !onboarding → onboarding, user + auth group → tabs
+3. `GET /auth/me` validates the access token and loads user data. On network error, JWT is decoded locally as fallback to keep user logged in
+4. Routing guard: setup not complete → setup, no user → login (modals dismissed first), user + !onboarding → onboarding, user + auth group → tabs
 5. **Login**: username/email → `POST /auth/login` → JWT tokens stored
 6. **Sign Up**: email verification code → validate-email-token → `POST /auth/signup` → JWT tokens stored → onboarding
-7. **Token Refresh**: 401 response → `POST /auth/refresh` (refresh token) → new access + refresh tokens → retry original request
+7. **Token Refresh**: 401 response → `tryRefresh()` → success (new tokens + retry) / invalid (force sign out) / network_error (keep tokens, don't sign out)
 8. **Find ID**: email → `POST /auth/send-find-id-email` → email sent with username
 9. **Find Password**: username/email → `POST /auth/reset-password-request` → email with reset link
 
