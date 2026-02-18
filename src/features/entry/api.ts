@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api'
 import { AppError } from '@/lib/errors'
+import { getLocalToday } from '@/lib/date'
 import type { Entry, CreateEntryInput, UpdateEntryInput } from './types'
 
 export async function fetchEntries(date?: string): Promise<Entry[]> {
@@ -27,7 +28,7 @@ export async function createEntry(input: CreateEntryInput): Promise<Entry> {
       method: 'POST',
       body: JSON.stringify({
         raw_text: input.raw_text,
-        date: input.date || new Date().toISOString().split('T')[0],
+        date: input.date || getLocalToday(),
         tags: input.tags || [],
       }),
     })

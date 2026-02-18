@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchEntries, fetchEntry, createEntry, updateEntry, deleteEntry } from './api'
 import type { CreateEntryInput, UpdateEntryInput } from './types'
+import { getLocalToday } from '@/lib/date'
 
 export function useEntries(date?: string) {
   return useQuery({
@@ -10,7 +11,7 @@ export function useEntries(date?: string) {
 }
 
 export function useTodayEntry() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalToday()
   return useQuery({
     queryKey: ['entries', today],
     queryFn: () => fetchEntries(today),

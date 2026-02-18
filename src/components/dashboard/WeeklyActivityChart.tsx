@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/Card'
+import { getLocalToday, toLocalDateString } from '@/lib/date'
 import type { Entry } from '@/features/entry/types'
 
 interface WeeklyActivityChartProps {
@@ -15,7 +16,7 @@ function getLast7Days(dayNames: string[]): { date: string; dayLabel: string }[] 
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = toLocalDateString(d)
     days.push({ date: dateStr, dayLabel: dayNames[d.getDay()] })
   }
 
@@ -30,7 +31,7 @@ export function WeeklyActivityChart({ entries }: WeeklyActivityChartProps) {
   const last7Days = getLast7Days(dayNames)
   const entryDates = new Set((entries || []).map((e) => e.date))
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getLocalToday()
 
   return (
     <Card>

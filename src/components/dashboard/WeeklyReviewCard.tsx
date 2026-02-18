@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/Card'
+import { toLocalDateString } from '@/lib/date'
 import { useSummaries } from '@/features/summary/hooks'
 import { useEntries } from '@/features/entry/hooks'
 
@@ -11,7 +12,7 @@ function getMonday(date: Date): string {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1)
   d.setDate(diff)
-  return d.toISOString().split('T')[0]
+  return toLocalDateString(d)
 }
 
 export function WeeklyReviewCard() {

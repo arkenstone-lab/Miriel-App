@@ -1,4 +1,5 @@
 import i18n from '@/i18n'
+import { getLocalToday } from '@/lib/date'
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 let lastFired: Record<string, string> = {}
@@ -40,7 +41,7 @@ export function scheduleWebNotifications(settings: {
     const jsDay = now.getDay()
     const ourDay = jsDay === 0 ? 6 : jsDay - 1
 
-    const dateKey = now.toISOString().split('T')[0]
+    const dateKey = getLocalToday()
 
     // Morning
     if (hhmm === settings.morningNotificationTime) {

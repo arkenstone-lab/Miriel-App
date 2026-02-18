@@ -1,6 +1,7 @@
 import type { Entry } from '@/features/entry/types'
 import type { Todo } from '@/features/todo/types'
 import type { Summary } from '@/features/summary/types'
+import { toLocalDateString } from '@/lib/date'
 import type {
   StreakData,
   XPBreakdown,
@@ -19,12 +20,11 @@ export function calculateStreak(entries: Entry[]): StreakData {
   const uniqueDates = [...new Set(entries.map((e) => e.date))].sort().reverse()
 
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = toLocalDateString(today)
 
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStr = yesterday.toISOString().split('T')[0]
+  const yesterdayStr = toLocalDateString(yesterday)
 
   const hasEntryToday = uniqueDates.includes(todayStr)
   const lastEntryDate = uniqueDates[0] || null
@@ -36,7 +36,7 @@ export function calculateStreak(entries: Entry[]): StreakData {
   if (startDate) {
     const checkDate = new Date(startDate)
     while (true) {
-      const checkStr = checkDate.toISOString().split('T')[0]
+      const checkStr = toLocalDateString(checkDate)
       if (uniqueDates.includes(checkStr)) {
         currentStreak++
         checkDate.setDate(checkDate.getDate() - 1)

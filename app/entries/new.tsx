@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import { showErrorAlert } from '@/lib/errors'
+import { getLocalToday } from '@/lib/date'
 import { useChatStore, type ChatMessage } from '@/stores/chatStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useCreateEntry, useUpdateEntry, useTodayEntry } from '@/features/entry/hooks'
@@ -335,7 +336,7 @@ export default function NewEntryScreen() {
 
       // Daily summary (includes todo extraction) — non-blocking
       let summaryOk = false
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalToday()
       try {
         const summaryResult = await generateSummary(today, aiContext)
         summaryOk = true

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { View, Text, FlatList, Alert } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { useSummaries, useGenerateSummary, useGenerateWeeklySummary, useGenerateMonthlySummary } from '@/features/summary/hooks'
+import { toLocalDateString } from '@/lib/date'
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAiPreferences } from '@/features/ai-preferences/hooks'
@@ -112,7 +113,7 @@ function getMonday(date: Date): string {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1)
   d.setDate(diff)
-  return d.toISOString().split('T')[0]
+  return toLocalDateString(d)
 }
 
 /** Calculate the month period start (reviewDay of last month or this month) */
@@ -139,7 +140,7 @@ function getMonthlyPeriodEnd(reviewDay: number): string {
 }
 
 function formatDateStr(date: Date): string {
-  return date.toISOString().split('T')[0]
+  return toLocalDateString(date)
 }
 
 export default function SummaryScreen() {

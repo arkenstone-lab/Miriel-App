@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import i18n from '@/i18n'
+import { getLocalToday } from '@/lib/date'
 import { getCheckinQuestions } from '@/lib/constants'
 import { chatWithAI, type ChatResponse } from '@/features/entry/chatApi'
 
@@ -99,7 +100,7 @@ async function loadDraftFromStorage(): Promise<ChatDraft | null> {
   if (!raw) return null
   try {
     const draft = JSON.parse(raw) as ChatDraft
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalToday()
     if (draft.date !== today) {
       clearDraftFromStorage()
       return null
@@ -343,7 +344,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       currentPhase: state.currentPhase,
       sessionSummary: state.sessionSummary,
       mode: state.mode,
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalToday(),
       pendingTodos: _pendingTodos,
       aiContext: _aiContext,
       language: _language,
