@@ -57,7 +57,7 @@ miriel/
 │   ├── i18n/               # i18next config + locale JSON files
 │   │   ├── index.ts
 │   │   └── locales/{ko,en}/ # 14 namespace files per language
-│   ├── lib/                # Utilities (api client, constants, errors, notifications, webNotifications, avatar)
+│   ├── lib/                # Utilities (api client, constants, date, errors, notifications, webNotifications, avatar)
 │   └── stores/             # Zustand stores (authStore, chatStore, settingsStore)
 │
 ├── worker/                 # Cloudflare Worker (Hono.js)

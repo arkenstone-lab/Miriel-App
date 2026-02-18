@@ -273,6 +273,8 @@ These decisions have architectural implications. Violating them will cause bugs 
 | **Data export: user-friendly schema only** | `GET /auth/export` returns JSON with no internal IDs (no UUIDs, no source_entry_id). Fields mapped to user-facing names (raw_text→content, period_start→date). Prevents DB schema reverse-engineering. |
 | **Signup ToS/Privacy consent** | Signup form requires mandatory checkbox agreeing to Terms of Service + Privacy Policy. Includes pre-consent for future cookies/analytics and promotional emails (opt-out available). |
 | **Account + AI Personalization in Profile, not Settings** | Settings = app preferences (language/theme/notifications). Profile = account management + AI personalization. This separation prevents settings overload and aligns with user mental model. |
+| **Client dates use local timezone (`src/lib/date.ts`)** | `toISOString().split('T')[0]` returns UTC date → KST 자정~오전 9시 사이에 날짜가 하루 밀림. `getLocalToday()` / `toLocalDateString()` 사용. 서버 analytics(`_layout.tsx` app_open)만 UTC 유지. 알림 시간·entry 날짜·스트릭이 모두 사용자 현지 자정 기준으로 정렬됨. |
+| **Entry 삭제 시 daily summary cascade 삭제** | 서버에서 entry DELETE 시 해당 날짜의 daily summary도 함께 삭제. Summary 텍스트는 해당 날짜 전체 entry 기반으로 생성되므로 일부 삭제 시 stale해짐. 클라이언트도 `removeQueries(['summaries'])` 호출. |
 
 ---
 
