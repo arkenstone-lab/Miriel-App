@@ -107,7 +107,9 @@ export default function ProfileScreen() {
 
   const confirmSignOut = async () => {
     setSignOutModalVisible(false)
-    await signOut()
+    // Delay signOut so the Modal fully unmounts before navigation triggers.
+    // RN Modal blocks router.replace() while still visible in the tree.
+    setTimeout(() => signOut(), 300)
   }
 
   // Export all user data as JSON file download
@@ -151,9 +153,12 @@ export default function ProfileScreen() {
     try {
       await apiFetch('/auth/account', { method: 'DELETE' })
       Alert.alert('', t('account.deleteAccountSuccess'))
-      // Force sign out — tokens are already invalidated server-side
-      const { forceSignOut } = useAuthStore.getState()
-      forceSignOut()
+      // Delay forceSignOut so the Modal fully unmounts before navigation triggers.
+      // RN Modal blocks router.replace() while still visible in the tree.
+      setTimeout(() => {
+        const { forceSignOut } = useAuthStore.getState()
+        forceSignOut()
+      }, 300)
     } catch (error: unknown) {
       showErrorAlert(t('account.title'), error)
     }

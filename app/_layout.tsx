@@ -1,6 +1,6 @@
 import '@/i18n'
-import { useEffect } from 'react'
-import { Platform, View } from 'react-native'
+import { useEffect, useRef } from 'react'
+import { AppState, Platform, View } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts } from 'expo-font'
@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useColorScheme } from 'nativewind'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
+import { apiFetch } from '@/lib/api'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { AppShell } from '@/components/layout/AppShell'
 import '../global.css'
@@ -83,6 +84,32 @@ export default function RootLayout() {
     } else {
       clearUserData()
     }
+  }, [user])
+
+  // Track app_open event — fires once per calendar day (UTC) per session.
+  // Also re-fires when the app returns to foreground on a new day.
+  const lastTrackDateRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!user) return
+
+    const sendAppOpen = () => {
+      const today = new Date().toISOString().split('T')[0]
+      if (lastTrackDateRef.current === today) return
+      lastTrackDateRef.current = today
+      apiFetch('/analytics/track', {
+        method: 'POST',
+        body: JSON.stringify({ event: 'app_open' }),
+      }).catch(() => {})
+    }
+
+    // Fire immediately on mount (or when user logs in)
+    sendAppOpen()
+
+    // Re-fire when app returns to foreground on a new day
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') sendAppOpen()
+    })
+    return () => sub.remove()
   }, [user])
 
   useEffect(() => {

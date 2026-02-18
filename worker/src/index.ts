@@ -10,6 +10,7 @@ import { aiRoutes } from './routes/ai';
 import { aiPreferencesRoutes } from './routes/ai-preferences';
 import { storageRoutes } from './routes/storage';
 import { seedRoutes } from './routes/seed';
+import { analyticsRoutes } from './routes/analytics';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -53,5 +54,6 @@ app.route('/ai', aiRoutes);
 app.route('/ai-preferences', aiPreferencesRoutes);
 app.route('/storage', storageRoutes);
 app.route('/', seedRoutes);
+app.route('/analytics', analyticsRoutes);
 
 export default app;

@@ -3,6 +3,7 @@ import type { Env, Variables } from '../types';
 import { hashPassword, verifyPassword, generateToken, generateRefreshToken } from '../lib/auth';
 import { generateId, now, parseJsonField } from '../lib/db';
 import { authMiddleware } from '../middleware/auth';
+import { trackEvent } from '../lib/analytics';
 import {
   sendEmail,
   buildResetPasswordEmailHtml,
@@ -112,6 +113,9 @@ auth.post('/signup', async (c) => {
 
   const tokens = await issueTokens(c.env.DB, c.env.JWT_SECRET, userId, normalizedEmail);
 
+  // Track signup event (non-blocking, fire-and-forget)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'signup'));
+
   return c.json({
     user: { id: userId, email: normalizedEmail, username: normalizedUsername, user_metadata: user_metadata || {} },
     ...tokens,
@@ -173,6 +177,9 @@ auth.post('/login', async (c) => {
     .run();
 
   const tokens = await issueTokens(c.env.DB, c.env.JWT_SECRET, user.id, user.email);
+
+  // Track login event (non-blocking, fire-and-forget)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, user.id, 'login'));
 
   return c.json({
     user: {
@@ -511,6 +518,7 @@ auth.delete('/account', authMiddleware, async (c) => {
     c.env.DB.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').bind(userId).run(),
     c.env.DB.prepare('DELETE FROM email_verifications WHERE email = (SELECT email FROM users WHERE id = ?)').bind(userId).run(),
     c.env.DB.prepare('DELETE FROM login_attempts WHERE identifier = (SELECT email FROM users WHERE id = ?)').bind(userId).run(),
+    c.env.DB.prepare('DELETE FROM analytics_events WHERE user_id = ?').bind(userId).run(),
   ]);
 
   // Delete R2 avatar (best-effort — ignore errors)

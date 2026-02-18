@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
 import { authMiddleware } from '../middleware/auth';
+import { trackEvent } from '../lib/analytics';
 
 const todos = new Hono<{ Bindings: Env; Variables: Variables }>();
 todos.use('*', authMiddleware);
@@ -95,6 +96,11 @@ todos.put('/:id', async (c) => {
     .prepare('SELECT * FROM todos WHERE id = ?')
     .bind(id)
     .first<TodoRow>();
+
+  // Track todo completion (non-blocking, only when status changes to done)
+  if (body.status === 'done') {
+    c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'todo_completed'));
+  }
 
   return c.json(row);
 });

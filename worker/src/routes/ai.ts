@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { callOpenAI } from '../lib/openai';
 import { sanitizeAiContext } from '../lib/ai-sanitize';
 import { generateId, now, parseJsonFields, stringifyJsonField } from '../lib/db';
+import { trackEvent } from '../lib/analytics';
 
 const ai = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -453,6 +454,10 @@ When ending the conversation (is_complete: true), add a session_summary field:
   }
 
   const parsed = JSON.parse(content);
+
+  // Track chat message (non-blocking) — userId from authMiddleware
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, c.get('userId'), 'chat_message'));
+
   return c.json({
     message: parsed.message || '',
     is_complete: !!parsed.is_complete,
@@ -486,6 +491,10 @@ ai.post('/tagging', authMiddleware, async (c) => {
   }
 
   const parsed = JSON.parse(content);
+
+  // Track tagging usage (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, c.get('userId'), 'tagging'));
+
   return c.json({ tags: formatTags(parsed) });
 });
 
@@ -574,6 +583,9 @@ ai.post('/generate-summary', authMiddleware, async (c) => {
       .run();
   }
 
+  // Track summary generation (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'summary_generated'));
+
   return c.json({ ...result, gen_count: totalGenCount + 1, max_count: maxCount }, 201);
 });
 
@@ -604,6 +616,9 @@ ai.post('/generate-weekly', authMiddleware, async (c) => {
     entries, WEEKLY_SUMMARY_PROMPT, mockWeeklySummary, sanitized, 20000,
   );
 
+  // Track weekly review generation (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'weekly_generated'));
+
   return c.json(result, 201);
 });
 
@@ -630,6 +645,9 @@ ai.post('/generate-monthly', authMiddleware, async (c) => {
     c.env.DB, c.env.OPENAI_API_KEY, userId, 'monthly', month_start,
     entries, MONTHLY_SUMMARY_PROMPT, mockMonthlySummary, sanitized, 40000,
   );
+
+  // Track monthly review generation (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'monthly_generated'));
 
   return c.json(result, 201);
 });

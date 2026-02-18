@@ -101,6 +101,18 @@ All IDs are TEXT (crypto.randomUUID). Timestamps are TEXT (ISO datetime). Arrays
 
 Rate limiting: max 5 attempts per identifier per 15 minutes. Cleared on successful login.
 
+### `analytics_events`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | TEXT | PK (crypto.randomUUID) |
+| `user_id` | TEXT | NOT NULL, no FK (orphan events kept for aggregate metrics after account deletion) |
+| `event` | TEXT | NOT NULL (e.g. `signup`, `login`, `app_open`, `entry_created`) |
+| `properties` | TEXT | JSON object, DEFAULT `'{}'` |
+| `created_at` | TEXT | NOT NULL |
+
+Events tracked: `signup`, `login`, `app_open`, `entry_created`, `entry_updated`, `entry_deleted`, `summary_viewed`, `summary_generated`, `weekly_generated`, `monthly_generated`, `chat_message`, `tagging`, `todo_completed`. See `docs/analytics.md` for full details.
+
 ### Indexes
 
 ```sql
@@ -115,6 +127,9 @@ CREATE INDEX idx_rt_user ON refresh_tokens(user_id);
 CREATE INDEX idx_ev_email ON email_verifications(email);
 CREATE INDEX idx_ev_ip ON email_verifications(ip_address);
 CREATE INDEX idx_la_identifier_time ON login_attempts(identifier, created_at);
+CREATE INDEX idx_ae_user_created ON analytics_events(user_id, created_at);
+CREATE INDEX idx_ae_event_created ON analytics_events(event, created_at);
+CREATE INDEX idx_ae_created ON analytics_events(created_at);
 ```
 
 ## Migrations
@@ -124,6 +139,7 @@ CREATE INDEX idx_la_identifier_time ON login_attempts(identifier, created_at);
 | `worker/migrations/0001_schema.sql` | Creates all tables (users, entries, summaries, todos, etc.) and indexes |
 | `worker/migrations/0002_entry_gen_count.sql` | Adds `summary_gen_count INTEGER DEFAULT 0` column to entries table |
 | `worker/migrations/0003_login_attempts.sql` | Creates `login_attempts` table + index for login rate limiting |
+| `worker/migrations/0004_analytics.sql` | Creates `analytics_events` table + indexes for retention tracking |
 
 Apply: `npx wrangler d1 migrations apply miriel-db`
 

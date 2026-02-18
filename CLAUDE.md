@@ -68,7 +68,7 @@
 ### API (Cloudflare Workers)
 - **Live**: https://api.miriel.app
 - **Deploy**: `cd worker && npx wrangler deploy`
-- **Secrets** (wrangler secret): `JWT_SECRET`, `OPENAI_API_KEY`, `RESEND_API_KEY`, `INVITE_CODES`
+- **Secrets** (wrangler secret): `JWT_SECRET`, `OPENAI_API_KEY`, `RESEND_API_KEY`, `INVITE_CODES`, `ANALYTICS_SECRET`
 - **D1**: `miriel-db` (APAC) / **R2**: `miriel-avatars`
 
 ### Local Dev
@@ -196,6 +196,16 @@ interface LoginAttempt {
 
 Auth routes: `worker/src/routes/auth.ts` (signup, login, refresh, me, update, change-password, reset, export, delete-account), email verification: `worker/src/routes/email-verification.ts`
 
+Analytics routes: `worker/src/routes/analytics.ts` — see `docs/analytics.md` for full documentation.
+
+| Route | Purpose |
+|-------|---------|
+| `POST /analytics/track` | Client-side `app_open` event collection (authMiddleware) |
+| `GET /analytics/overview` | Total users, activation rate, DAU/WAU/MAU (ANALYTICS_SECRET) |
+| `GET /analytics/dau` | DAU/WAU time series (ANALYTICS_SECRET) |
+| `GET /analytics/retention` | Cohort-based D1/D7/D30 retention (ANALYTICS_SECRET) |
+| `GET /analytics/funnel` | Signup→activation→retention→power user funnel + feature usage (ANALYTICS_SECRET) |
+
 ---
 
 ## Coding Conventions
@@ -222,6 +232,7 @@ Auth routes: `worker/src/routes/auth.ts` (signup, login, refresh, me, update, ch
 | [`i18n.md`](docs/i18n.md) | Translation keys, namespaces, `t()` usage |
 | [`data-model.md`](docs/data-model.md) | DB schema, types, API, React Query hooks |
 | [`components.md`](docs/components.md) | UI primitives, new component rules |
+| [`analytics.md`](docs/analytics.md) | Analytics API, retention metrics, event tracking |
 | [`settings-and-privacy.md`](docs/settings-and-privacy.md) | settingsStore, settings screen |
 | [`gamification.md`](docs/gamification.md) | Streak/XP/level/badge system |
 | [`ai-features.md`](docs/ai-features.md) | AI pipeline, prompts, fallback strategies |

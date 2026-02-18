@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
 import { authMiddleware } from '../middleware/auth';
 import { generateId, now, parseJsonFields, stringifyJsonField } from '../lib/db';
+import { trackEvent } from '../lib/analytics';
 
 const entries = new Hono<{ Bindings: Env; Variables: Variables }>();
 entries.use('*', authMiddleware);
@@ -85,6 +86,9 @@ entries.post('/', async (c) => {
     .bind(id)
     .first<EntryRow>();
 
+  // Track entry creation (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'entry_created'));
+
   return c.json(formatEntry(row!), 201);
 });
 
@@ -137,6 +141,9 @@ entries.put('/:id', async (c) => {
     .bind(id)
     .first<EntryRow>();
 
+  // Track entry update (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'entry_updated'));
+
   return c.json(formatEntry(row!));
 });
 
@@ -153,6 +160,9 @@ entries.delete('/:id', async (c) => {
   if (result.meta.changes === 0) {
     return c.json({ error: 'not_found' }, 404);
   }
+
+  // Track entry deletion (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'entry_deleted'));
 
   return c.json({ success: true });
 });

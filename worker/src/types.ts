@@ -7,6 +7,7 @@ export interface Env {
   RESEND_API_KEY?: string;
   INVITE_CODES?: string; // comma-separated invite codes (empty = open registration)
   ENVIRONMENT?: string;  // 'production' on live — hides dev_code/dev_token from responses
+  ANALYTICS_SECRET?: string; // Secret for admin analytics endpoints
 }
 
 export interface AuthUser {

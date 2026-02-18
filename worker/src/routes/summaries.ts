@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
 import { authMiddleware } from '../middleware/auth';
 import { parseJsonFields } from '../lib/db';
+import { trackEvent } from '../lib/analytics';
 
 const summaries = new Hono<{ Bindings: Env; Variables: Variables }>();
 summaries.use('*', authMiddleware);
@@ -42,6 +43,10 @@ summaries.get('/', async (c) => {
   query += ' ORDER BY period_start DESC';
 
   const { results } = await c.env.DB.prepare(query).bind(...params).all<SummaryRow>();
+
+  // Track summary view with period/date context (non-blocking)
+  c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'summary_viewed', { period, date }));
+
   return c.json(results.map(formatSummary));
 });
 
