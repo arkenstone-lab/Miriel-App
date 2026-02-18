@@ -59,6 +59,8 @@ export function useDeleteEntry() {
       // Remove all entries caches immediately (not just invalidate) to prevent
       // useTodayEntry from returning stale deleted entry before refetch completes
       queryClient.removeQueries({ queryKey: ['entries'] })
+      // Remove summary caches — server cascade-deletes connected daily summary
+      queryClient.removeQueries({ queryKey: ['summaries'] })
     },
   })
 }

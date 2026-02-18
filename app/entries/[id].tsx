@@ -66,6 +66,8 @@ export default function EntryDetailScreen() {
       await deleteEntry.mutateAsync(entry.id)
       queryClient.removeQueries({ queryKey: ['entries', entry.id] })
       await queryClient.invalidateQueries({ queryKey: ['entries'] })
+      // Invalidate summaries — server cascade-deletes connected daily summary
+      await queryClient.invalidateQueries({ queryKey: ['summaries'] })
       setShowDeleteModal(false)
       router.replace('/(tabs)/timeline')
     } catch (e: unknown) {

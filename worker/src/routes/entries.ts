@@ -152,14 +152,27 @@ entries.delete('/:id', async (c) => {
   const userId = c.get('userId');
   const id = c.req.param('id');
 
-  const result = await c.env.DB
+  // Get entry date before deletion (needed to cascade-delete connected daily summary)
+  const entry = await c.env.DB
+    .prepare('SELECT date FROM entries WHERE id = ? AND user_id = ?')
+    .bind(id, userId)
+    .first<{ date: string }>();
+
+  if (!entry) {
+    return c.json({ error: 'not_found' }, 404);
+  }
+
+  await c.env.DB
     .prepare('DELETE FROM entries WHERE id = ? AND user_id = ?')
     .bind(id, userId)
     .run();
 
-  if (result.meta.changes === 0) {
-    return c.json({ error: 'not_found' }, 404);
-  }
+  // Cascade-delete daily summary for this date — summary text was generated from
+  // all entries on this date, so it becomes stale when any entry is removed
+  await c.env.DB
+    .prepare('DELETE FROM summaries WHERE user_id = ? AND period = ? AND period_start = ?')
+    .bind(userId, 'daily', entry.date)
+    .run();
 
   // Track entry deletion (non-blocking)
   c.executionCtx.waitUntil(trackEvent(c.env.DB, userId, 'entry_deleted'));
