@@ -1,4 +1,5 @@
-import { apiPublicFetch } from '@/lib/api'
+// apiFetch includes auth token — /ai/chat requires authMiddleware
+import { apiFetch } from '@/lib/api'
 import { AppError } from '@/lib/errors'
 
 interface ChatRequestMessage {
@@ -29,7 +30,7 @@ export interface ChatResponse {
 
 export async function chatWithAI(params: ChatParams): Promise<ChatResponse> {
   try {
-    return await apiPublicFetch<ChatResponse>('/ai/chat', {
+    return await apiFetch<ChatResponse>('/ai/chat', {
       method: 'POST',
       body: JSON.stringify(params),
     })

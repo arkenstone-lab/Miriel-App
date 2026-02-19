@@ -62,6 +62,10 @@ export function useDeleteEntry() {
       queryClient.removeQueries({ queryKey: ['entries'] })
       // Remove summary caches — server cascade-deletes connected daily summary
       queryClient.removeQueries({ queryKey: ['summaries'] })
+      // Clear chat draft — prevents deleted entry's chat content from
+      // reappearing when user creates a new entry on the same day
+      const { useChatStore } = require('@/stores/chatStore')
+      useChatStore.getState().clearDraft()
     },
   })
 }
