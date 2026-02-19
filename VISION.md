@@ -213,9 +213,11 @@ Three market shifts make this the right moment for Miriel:
 
 **3. The economics of AI-native consumer products have fundamentally shifted.** The cost of running large language models has dropped dramatically over the past 18 months. Features that were economically unviable just two years ago, such as personalized AI conversations, real-time summarization, and intelligent content extraction per user, can now be delivered at scale within a sustainable unit economics model. This is not just a technology unlock. It is a business model unlock. Miriel's entire AI pipeline (conversational check-in, auto-tagging, summary generation, todo extraction) runs on this new cost structure, making a fully AI-native journaling product viable as a consumer business for the first time.
 
+**4. AI agents are becoming autonomous, and they need reflection infrastructure.** The AI agent market is projected to grow at ~46% CAGR ([Grand View Research](https://www.grandviewresearch.com/industry-analysis/ai-agents-market-report)), with agents increasingly handling complex, multi-step tasks over extended timeframes. As agents move from simple tool-calling to goal-directed autonomous behavior, the ability to review past decisions and improve strategies becomes essential infrastructure, not an optional add-on. Yet no one is building it. Miriel's existing reflection pipeline is a direct architectural match for this emerging need, giving us a head start that compounds with every month of development.
+
 ### **The Moat**
 
-Miriel's defensibility comes from three reinforcing layers:
+Miriel's defensibility comes from four reinforcing layers:
 
 **1. Low-Friction Retention: The App That Gives Time Back**
 
@@ -235,7 +237,17 @@ When Miriel expands into team and enterprise use (Phase 3), a new dynamic emerge
 
 The more team members who use Miriel, the richer the organizational signal becomes. This creates a network effect within organizations: the tool becomes more valuable for managers as adoption grows, and more valuable for individuals as team insights improve their own context. Once embedded in a team's workflow, Miriel transitions from a personal productivity tool to organizational infrastructure, a category that is extremely sticky.
 
-Together, these three layers create a compounding advantage. Low friction drives consistent usage. Consistent usage builds irreplaceable data. And organizational adoption locks in value at the team level.
+**4. Agent Reflection Infrastructure: Serving the Next Billion Customers**
+
+As AI agents take on increasingly complex, long-running goals (managing projects, executing multi-step workflows, coordinating with other agents), they face the same challenge humans do: without structured reflection, past mistakes repeat and strategies stagnate. Agents need a self-improvement loop: record decisions, evaluate outcomes, detect patterns, and refine strategies.
+
+Miriel is uniquely positioned to provide this. The core pipeline built for humans (**Record → Summarize → Discover Patterns → Improve**) transfers directly to AI agents through a dedicated Agent API. Agents can programmatically log decisions, query long-term patterns, and track goal attainment, all on the same infrastructure that serves human users.
+
+This is not a speculative bet. Our team is actively building B2B AI agent systems, gaining firsthand insight into how agents operate in real work environments and what data infrastructure they require. This operational experience directly informs the design of Miriel's Agent API. We are not guessing what agents need; we are learning it by building them.
+
+The strategic implication is profound: while every other journaling and productivity tool is built exclusively for human users, Miriel is designed to serve both humans and AI agents on a unified reflection infrastructure. In a future where billions of AI agents operate alongside people, this dual-serving capability transforms Miriel from a consumer app into a platform-level service, expanding the addressable market by orders of magnitude.
+
+Together, these four layers create a compounding advantage. Low friction drives consistent usage. Consistent usage builds irreplaceable data. Organizational adoption locks in value at the team level. And agent reflection infrastructure extends Miriel's reach from millions of human users to billions of AI agents, positioning Miriel not just as an app, but as a foundational layer for how both humans and machines improve over time.
 
 ---
 
