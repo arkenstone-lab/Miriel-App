@@ -1,144 +1,174 @@
-# Miriel
+# **Miriel: AI-Powered Journal**
 
-**AI-powered journal that turns your daily notes into evidence-backed reflections.**
+> **3 minutes a day. Just answer. AI records your growth.**
+> What starts as personal reflection becomes organizational intelligence.
 
-Write for 3 minutes a day. Miriel organizes, summarizes, and connects your records — so every insight links back to what you actually wrote.
+Miriel is an AI-powered journaling app for anyone who wants to grow through reflection, without the effort. Record your day in a quick conversational check-in, and Miriel automatically generates summaries, extracts action items, and surfaces patterns. Every insight linked back to your original entry.
 
-## Why Miriel?
+**Live**: [miriel.app](https://miriel.app) · **Vision & Roadmap**: [VISION.md](VISION.md)
 
-| Problem | Solution |
-|---------|----------|
-| Writing feels like a chore — logs don't stick | Chatbot-guided check-in: answer 3 questions, done in 3 minutes |
-| Notes pile up but never get reviewed | AI generates daily/weekly/monthly summaries automatically |
-| "What should I reflect on?" | Every summary sentence links to the original entry |
+---
 
-## Key Features
+## **Why Miriel?**
 
-- **Conversational Check-in** — AI-guided 3-phase dialogue (Plan → Detail → Reflection) adapts questions to your context
-- **Auto-tagging** — Projects, people, and issues extracted from your entries
-- **Evidence-linked Summaries** — Daily, weekly, and monthly reviews where every insight traces back to your words
-- **Smart To-dos** — Action items auto-extracted from entries with source linking
-- **Streak & Gamification** — Levels, XP, badges, and streak tracking to build a journaling habit
-- **AI Personalization** — Customize summary style, focus areas, and instructions to match your workflow
-- **Data Ownership** — Export all your data as JSON, delete your account permanently at any time
-- **Cross-platform** — Single codebase for Web (PC), iOS, and Android
+Knowledge workers, students, creators, managers. Anyone with a busy schedule generates countless thoughts and notes but rarely reviews them. Existing journaling apps either demand too much effort or produce AI summaries you can't trust.
 
-## Tech Stack
+Miriel takes a different approach: **a 3-minute AI-guided conversation** replaces the blank page, and **every AI-generated sentence links back to its source entry**, so you can always verify what you actually wrote.
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Expo (React Native) + Expo Router + TypeScript |
-| Styling | NativeWind (Tailwind CSS for RN) + Dark mode |
-| i18n | i18next — Korean / English, auto-detect system locale |
-| State | React Query (server) + Zustand (client) |
-| Backend | Cloudflare Workers (Hono.js) |
-| Database | Cloudflare D1 (SQLite) |
-| Storage | Cloudflare R2 (avatars) |
-| Auth | Custom JWT (bcryptjs + cloudflare-worker-jwt) + email verification |
-| AI | OpenAI GPT-4o |
-| Notifications | expo-notifications (native) + Web Notification API |
+---
 
-## Architecture
+## **User Flow**
 
+![Miriel User Flow](userflow.png)
+
+**① Open → AI Check-In (3 min)** — AI guides you through three stages: Plan → Detail → Reflect. You just answer.
+
+**② Entry Saved → Auto-Processing** — The moment an entry is saved, three things happen simultaneously: daily summary generation, automatic todo extraction, and streak/XP updates.
+
+**③ Morning Dashboard (30 sec)** — The next morning, todos extracted from yesterday's entry appear on your dashboard. Complete them or defer to the next session.
+
+**④ Review Chain (Automatic)** — Daily summaries build into weekly reviews; weekly reviews build into monthly reviews. Recurring patterns, energy trends, and unresolved blockers surface automatically.
+
+**⑤ Adjust Goals → Loop Back** — Insights from monthly reviews inform goal adjustments, feeding into the next check-in. The flywheel of **Record → Summarize → Reflect → Grow** keeps turning.
+
+---
+
+## **Core Features**
+
+| Feature | Description |
+|---|---|
+| **Conversational Journaling** | AI guides a 3-phase check-in (Plan → Detail → Reflection). No blank-page anxiety |
+| **Evidence-Linked Summaries** | Daily, weekly, and monthly reviews where every sentence traces back to its source entry |
+| **Smart Organization** | Auto-tagging (projects, people, issues) and AI-extracted todos with source links |
+| **Gamification** | Duolingo-style streaks, XP, levels, and badges to build a lasting habit |
+| **AI Personalization** | Customizable summary style, focus areas, and persona-aware responses |
+| **AI Agent Platform** | Dedicated reflection service for AI agents. Agents log decisions, evaluate outcomes, and refine goal-directed strategies via API |
+| **Privacy-First** | Custom auth, no third-party tracking, full data export, permanent account deletion |
+
+---
+
+## **Tech Stack**
+
+| Layer | Technology | Why |
+|---|---|---|
+| Client | Expo (React Native) + TypeScript + Expo Router | Single codebase for Web, iOS, Android |
+| Styling | NativeWind (Tailwind CSS) + Dark mode | Rapid UI development + responsive design |
+| State | React Query (server) + Zustand (client) | Clean separation of server cache and client state |
+| Backend | Cloudflare Workers (Hono.js) · ~25 API routes | Edge computing, global low-latency, generous free tier |
+| Database | Cloudflare D1 (SQLite) | Serverless SQL with migration support |
+| Storage | Cloudflare R2 | S3-compatible, zero egress cost |
+| Auth | Custom JWT + bcryptjs + email verification (Resend) | Full auth system with no third-party dependency |
+| AI | OpenAI GPT-4o | Best-in-class multilingual understanding + structured output |
+| i18n | i18next - Korean / English (auto-detect system locale) | Global expansion ready |
+
+---
+
+## **Architecture**
+
+```mermaid
+graph TB
+    subgraph Client["Client (Expo)"]
+        Router["Expo Router<br>File-based routing"]
+        RQ["React Query<br>Server state cache"]
+        Zustand["Zustand<br>Auth / Settings / Chat"]
+    end
+
+    subgraph Worker["Cloudflare Workers (Hono.js)"]
+        Auth["Auth<br>JWT + bcrypt"]
+        API["API Routes<br>CRUD + AI"]
+        MW["Middleware<br>JWT verification + CORS"]
+    end
+
+    subgraph Storage["Data Storage"]
+        D1["D1 (SQLite)<br>Users / Entries / Summaries / Todos"]
+        R2["R2<br>Avatar images"]
+    end
+
+    OpenAI["OpenAI GPT-4o"]
+    Resend["Resend<br>Email delivery"]
+
+    Client -->|"HTTPS + JWT"| Worker
+    Worker --> D1
+    Worker --> R2
+    Worker --> OpenAI
+    Worker --> Resend
 ```
-app/                          # Expo Router (file-based routing)
-├── (setup)/                  # First-time device setup (language → theme → welcome)
-├── (auth)/                   # Login, signup, find-id, find-password, verify-email
-├── (onboarding)/             # Post-login onboarding (growth cycle → preferences → notifications)
-├── (tabs)/                   # Main app — 5 tabs
-│   ├── index.tsx             # Dashboard (streak, level, recent summary)
-│   ├── timeline.tsx          # Entry list by date
-│   ├── summary.tsx           # Daily / Weekly / Monthly summaries
-│   ├── todos.tsx             # AI-extracted to-dos
-│   └── profile.tsx           # User profile + gamification + account management
-├── entries/                  # Entry detail + create/edit
-├── settings.tsx              # Language, theme, notifications, legal
-└── edit-profile.tsx          # Avatar + persona editor
 
-src/
-├── components/               # 22 UI components (layout, dashboard, primitives)
-├── features/                 # 5 domain modules (entry, summary, todo, gamification, ai-preferences)
-├── stores/                   # 3 Zustand stores (auth, settings, chat)
-├── i18n/                     # 12 namespaces × 2 languages
-└── lib/                      # API client, notifications, error handling
+---
 
-worker/                        # Cloudflare Worker (Hono.js)
-├── migrations/               # D1 schema migrations
-└── src/
-    ├── routes/               # ~25 API routes
-    │   ├── auth.ts           # Signup, login, refresh, password reset, export, delete
-    │   ├── entries.ts        # Entry CRUD
-    │   ├── summaries.ts      # Summary queries
-    │   ├── todos.ts          # Todo CRUD
-    │   ├── ai.ts             # AI endpoints (chat, tagging, summary, weekly, monthly)
-    │   ├── storage.ts        # Avatar upload/serve (R2)
-    │   └── seed.ts           # Demo data seeder
-    ├── lib/                  # Auth (JWT/bcrypt), OpenAI, email (Resend)
-    └── middleware/           # JWT auth, CORS
-```
-
-## Responsive Design
+## **Responsive Design**
 
 | Environment | Navigation | Layout |
-|-------------|-----------|--------|
-| Desktop (1024px+) | Sidebar | Master-Detail 2-panel |
-| Mobile (~1023px) | Bottom tabs + FAB | Single panel (full screen) |
+|---|---|---|
+| Desktop (1024px+) | Sidebar | Master-Detail (2-panel) |
+| Mobile (< 1024px) | Bottom tabs + FAB | Single panel (fullscreen) |
 
-## Getting Started
+Single codebase supports **Web (PC browser)**, **iOS**, and **Android**.
 
-### Prerequisites
-- Node.js 18+
-- Wrangler CLI (`npm i -g wrangler`)
-- Cloudflare account
-- OpenAI API key
+---
 
-### 1. Install dependencies
-```bash
-npm install
-cd worker && npm install
-```
+## **Screens**
 
-### 2. Environment variables
+### **Tab Navigation (Main)**
 
-**Client** — create `.env` in the project root:
-```
-EXPO_PUBLIC_API_URL=https://your-worker.workers.dev
-```
+1. **Dashboard (Home)** - Streaks, level/badges, recent summaries, quick record button
+2. **Record** - AI chatbot check-in (3 phases) + text input
+3. **Timeline** - Entry list by date + daily/weekly/monthly summary access
+4. **Todo List** - AI-extracted todos + completion + source entry links
+5. **Profile** - User info, achievements, account management, AI personalization
 
-**Worker** — create `worker/.dev.vars` for local development:
-```
-JWT_SECRET=<your-secret>
-OPENAI_API_KEY=<your-openai-key>
-CORS_ORIGINS=http://localhost:8081
-```
+### **Detail / Modal Screens**
 
-For production, set secrets via Wrangler:
-```bash
-cd worker
-npx wrangler secret put JWT_SECRET
-npx wrangler secret put OPENAI_API_KEY
-npx wrangler secret put RESEND_API_KEY    # optional, for email
-npx wrangler secret put INVITE_CODES      # optional, comma-separated
-```
+- **Entry Detail** - View/edit entry, regenerate summary (3/day limit)
+- **Summary Detail** - Summary text with per-sentence evidence chips
+- **Settings** - Language, theme, notifications, support, legal
+- **Edit Profile** - Avatar upload/delete, persona fields
+- **Onboarding** - 3-step interactive setup (growth cycle → weekly review config → notifications)
 
-### 3. Database setup
-```bash
-cd worker
-npx wrangler d1 migrations apply miriel-db
-```
+---
 
-### 4. Run
-```bash
-# Client
-npx expo start        # Platform selection menu
-npx expo start --web  # Web directly
+## **Data Model**
 
-# Worker (local)
-cd worker && npx wrangler dev
-```
+| Entity | Description |
+|---|---|
+| **User** | Account (email, username, metadata JSON) |
+| **Entry** | Journal record (date, raw text, tags, summary regen count) |
+| **Summary** | AI-generated summary (daily/weekly/monthly, per-sentence entry links) |
+| **Todo** | AI-extracted action item (status, due date, source entry link) |
+| **UserAiPreferences** | AI personalization (summary style, focus areas, custom instructions) |
+| **RefreshToken** | JWT refresh token (30-day expiry, rotation) |
+| **EmailVerification** | Email verification code (6-digit, expiry) |
+| **LoginAttempt** | Login attempt record (5 per 15 minutes rate limit) |
 
-## License
+---
 
-Copyright (c) 2026 Arkenstone Lab. All rights reserved.
+## **AI Pipeline**
+
+| Endpoint | Purpose | Details |
+|---|---|---|
+| `POST /ai/chat` | Conversational check-in | 3-phase conversation (Plan → Detail → Reflection), stateless |
+| `POST /ai/tagging` | Auto-tagging | Extract project/people/issue tags |
+| `POST /ai/generate-summary` | Daily summary | Summary + todo extraction in single AI call (3/day limit) |
+| `POST /ai/generate-weekly` | Weekly review | 3-5 key points + source entry IDs |
+| `POST /ai/generate-monthly` | Monthly review | 5-7 key points + source entry IDs |
+
+All AI prompts are inline within Worker routes with 3x auto-retry and input sanitization.
+
+---
+
+## **Deployment**
+
+| Service | URL | Platform |
+|---|---|---|
+| Web | [miriel.app](https://miriel.app) | Cloudflare Pages (Expo Web build) |
+| API | [api.miriel.app](https://api.miriel.app) | Cloudflare Workers |
+| Database | miriel-db (APAC) | Cloudflare D1 |
+| Storage | miriel-avatars | Cloudflare R2 |
+
+---
+
+## **License**
+
+Copyright (c) 2026 Arkenstone Labs. All rights reserved.
 
 See [LICENSE](LICENSE) for details.
